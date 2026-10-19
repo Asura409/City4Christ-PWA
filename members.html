@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#5B2C83" />
+    <title>City4Christ | Member directory</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/connected.css" />
+  </head>
+  <body class="connected-page" data-connected-page="members">
+    <header class="connected-header">
+      <a class="connected-brand" href="home.html"
+        ><img src="assets/images/logo.jpeg" alt="City4Christ" /><span
+          >City4Christ</span
+        ></a
+      >
+      <nav
+        class="api-navigation"
+        data-api-navigation
+        aria-label="Connected preview features"
+      >
+        <a href="home.html">Home</a><a href="word.html">Word Hub</a
+        ><a href="members.html">Members</a><a href="profile.html">My profile</a
+        ><a href="staff.html">Staff tools</a
+        ><a href="auth.html" data-auth-link>Sign in</a>
+      </nav>
+    </header>
+    <main class="connected-main">
+      <p class="eyebrow">City4Christ preview</p>
+      <h1>Member directory</h1>
+      <div
+        id="page-status"
+        class="status"
+        role="status"
+        aria-live="polite"
+        tabindex="-1"
+      ></div>
+      <p class="muted">
+        Find verified members who chose to share their names. Your own profile
+        may stay hidden while you browse.
+      </p>
+      <form id="member-search" aria-label="Search members" class="panel">
+        <label
+          >Search by name<input
+            type="search"
+            name="query"
+            maxlength="200"
+            placeholder="First or last name"
+        /></label>
+        <div class="actions">
+          <button>Search members</button
+          ><a href="profile.html" class="button-link secondary"
+            >Manage my visibility</a
+          >
+        </div>
+      </form>
+      <div id="member-results" class="list-grid" aria-live="polite"></div>
+      <div class="actions">
+        <button id="member-more" type="button" class="secondary" hidden>
+          Load more members
+        </button>
+      </div>
+    </main>
+    <footer class="connected-footer">
+      A community growing in faith. Previewers: use test information only.
+    </footer>
+    <script src="js/app.js"></script>
+    <script src="js/config.js"></script>
+    <script type="module" src="js/connected.js"></script>
+  </body>
+</html>
