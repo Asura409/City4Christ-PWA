@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#5B2C83" />
+    <title>City4Christ | Staff tools</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/connected.css" />
+  </head>
+  <body class="connected-page" data-connected-page="staff">
+    <header class="connected-header">
+      <a class="connected-brand" href="home.html"
+        ><img src="assets/images/logo.jpeg" alt="City4Christ" /><span
+          >City4Christ</span
+        ></a
+      >
+      <nav
+        class="api-navigation"
+        data-api-navigation
+        aria-label="Connected preview features"
+      >
+        <a href="home.html">Home</a><a href="word.html">Word Hub</a
+        ><a href="members.html">Members</a><a href="profile.html">My profile</a
+        ><a href="staff.html">Staff tools</a
+        ><a href="auth.html" data-auth-link>Sign in</a>
+      </nav>
+    </header>
+    <main class="connected-main">
+      <p class="eyebrow">City4Christ preview</p>
+      <h1>Staff tools</h1>
+      <div
+        id="page-status"
+        class="status"
+        role="status"
+        aria-live="polite"
+        tabindex="-1"
+      ></div>
+      <p class="muted">
+        For appointed content editors and access administrators. Permissions are
+        checked by the server on every action.
+      </p>
+      <section class="panel">
+        <h2>Sermon publishing</h2>
+        <form id="load-sermon" aria-label="Load sermon">
+          <label
+            >Sermon ID<input
+              name="sermonId"
+              required
+              placeholder="Paste the sermon ID"
+          /></label>
+          <div class="actions">
+            <button class="secondary">Load sermon</button>
+          </div>
+        </form>
+        <p id="editor-state" class="muted">
+          Create a new draft, or load an existing sermon to edit it.
+        </p>
+        <form id="sermon-editor" aria-label="Sermon editor">
+          <div class="form-grid">
+            <label>Title<input name="title" required maxlength="200" /></label
+            ><label
+              >Speaker<input name="speaker" required maxlength="200" /></label
+            ><label class="full"
+              >Summary<textarea
+                name="summary"
+                maxlength="10000"
+              ></textarea></label
+            ><label>Series<input name="series" maxlength="200" /></label
+            ><label>Topic<input name="topic" maxlength="100" /></label
+            ><label
+              >Preached at (your local time)<input
+                name="preachedAt"
+                type="datetime-local"
+                step="1"
+                required /></label
+            ><label
+              >YouTube link (optional)<input
+                name="videoUrl"
+                type="url"
+                maxlength="2048"
+                placeholder="https://www.youtube.com/watch?v=..."
+            /></label>
+          </div>
+          <div class="actions">
+            <button id="save-sermon">Create draft</button
+            ><button type="button" id="new-sermon" class="secondary">
+              New draft
+            </button>
+          </div>
+        </form>
+        <div id="publication-actions" hidden>
+          <div class="actions">
+            <button type="button" id="publish-sermon">Publish</button
+            ><button type="button" id="unpublish-sermon" class="danger">
+              Unpublish
+            </button>
+          </div>
+          <label
+            >Schedule for (your local time)<input
+              id="schedule-time"
+              type="datetime-local"
+              step="1"
+          /></label>
+          <div class="actions">
+            <button type="button" id="schedule-sermon" class="secondary">
+              Schedule publication</button
+            ><a
+              id="view-public-sermon"
+              class="button-link secondary"
+              href="word.html"
+              >View public sermon</a
+            >
+          </div>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>Role appointments</h2>
+        <p class="muted">
+          Access administrators can grant or revoke editor access and scoped
+          ministry leadership. Self-assignment and privileged administrator
+          appointments are not available here.
+        </p>
+        <form id="role-form" aria-label="Role appointment">
+          <div class="form-grid">
+            <label class="full"
+              >Member account ID<input
+                name="accountId"
+                required
+                placeholder="Use the member's account ID, not your own" /></label
+            ><label
+              >Role<select name="role">
+                <option value="content_editor">Content editor</option>
+                <option value="ministry_leader">Ministry leader</option>
+              </select></label
+            ><label id="scope-label" hidden
+              >Registered ministry ID<input
+                name="scope"
+                placeholder="Ministry UUID" /></label
+            ><label class="full"
+              >Reason<textarea
+                name="reason"
+                required
+                maxlength="500"
+              ></textarea>
+            </label>
+          </div>
+          <div class="actions">
+            <button data-role-action="grant">Grant role</button
+            ><button data-role-action="revoke" class="danger">
+              Revoke role</button
+            ><button type="button" id="view-roles" class="secondary">
+              View assigned roles
+            </button>
+          </div>
+        </form>
+        <ul id="role-results"></ul>
+      </section>
+    </main>
+    <footer class="connected-footer">
+      A community growing in faith. Previewers: use test information only.
+    </footer>
+    <script src="js/app.js"></script>
+    <script src="js/config.js"></script>
+    <script type="module" src="js/connected.js"></script>
+  </body>
+</html>

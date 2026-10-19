@@ -1,234 +1,85 @@
-const CACHE_NAME =
-"city4christ-v5";
-
-
-const APP_FILES = [
-
-    "./",
-
-    "./index.html",
-
-    "./home.html",
-
-    "./community.html",
-
-    "./prayer.html",
-
-    "./messages.html",
-
-    "./word.html",
-
-    "./profile.html",
-
-    "./events.html",
-
-    "./pastor-booking.html",
-
-    "./notifications.html",
-
-    "./settings.html",
-
-    "./live.html",
-
-    "./giving.html",
-
-    "./get-app.html",
-
-    "./css/index.css",
-
-    "./css/style.css",
-
-    "./css/home.css",
-
-    "./css/community.css",
-
-    "./css/prayer.css",
-
-    "./css/messages.css",
-
-    "./css/word.css",
-
-    "./css/profile.css",
-
-    "./css/events.css",
-
-    "./css/pastor-booking.css",
-
-    "./css/notifications.css",
-
-    "./css/settings.css",
-
-    "./css/animation.css",
-
-    "./css/services.css",
-
-    "./js/app.js",
-
-    "./assets/images/logo.jpeg",
-
-    "./assets/images/banner.jpeg",
-
-    "./assets/images/pastorPhoto.jpeg",
-
-    "./assets/images/maleMember.jpeg",
-
-    "./assets/images/femaleMember.jpeg",
-
-    "./assets/images/familyMember.jpeg",
-
-    "./assets/images/youthWorship.jpeg",
-
-    "./assets/images/churchActivities.jpeg"
-
+// Only public application files are cached. Account/API responses are network-only.
+const CACHE_NAME = "city4christ-preview-__BUILD_ID__";
+const ROOT = new URL("./", self.location.href);
+const FILES = [
+  "./",
+  "index.html",
+  "auth.html",
+  "profile.html",
+  "settings.html",
+  "members.html",
+  "staff.html",
+  "word.html",
+  "css/connected.css",
+  "js/app.js",
+  "js/api.js",
+  "js/ui.js",
+  "js/connected.js",
+  "js/pages/auth.js",
+  "js/pages/profile.js",
+  "js/pages/sermons.js",
+  "js/pages/members.js",
+  "js/components/pager.js",
+  "js/components/role-appointments.js",
+  "js/pages/staff.js",
+  "assets/images/logo.jpeg",
 ];
-
-
-
-/* INSTALL */
-
-self.addEventListener(
-"install",
-event => {
-
-    event.waitUntil(
-
-        caches
-        .open(CACHE_NAME)
-
-        .then(cache => {
-
-            return cache.addAll(
-                APP_FILES
-            );
-
-        })
-
-    );
-
-    self.skipWaiting();
-
-});
-
-
-
-/* ACTIVATE */
-
-self.addEventListener(
-"activate",
-event => {
-
-    event.waitUntil(
-
-        caches.keys()
-
-        .then(cacheNames => {
-
-            return Promise.all(
-
-                cacheNames.map(
-                    cacheName => {
-
-                        if(
-                            cacheName
-                            !== CACHE_NAME
-                        ){
-
-                            return caches.delete(
-                                cacheName
-                            );
-
-                        }
-
-                    }
-                )
-
-            );
-
-        })
-
-    );
-
-    self.clients.claim();
-
-});
-
-
-
-/* FETCH */
-
-self.addEventListener(
-"fetch",
-event => {
-
-    if(
-        event.request.method
-        !== "GET"
-    ){
-
-        return;
-
-    }
-
-
-    event.respondWith(
-
-        caches.match(
-            event.request
-        )
-
-        .then(cachedResponse => {
-
-            if(cachedResponse){
-
-                return cachedResponse;
-
-            }
-
-
-            return fetch(
-                event.request
+const SHELL = new Set(FILES.map((path) => new URL(path, ROOT).href));
+self.addEventListener("install", (event) =>
+  event.waitUntil(
+    caches
+      .open(CACHE_NAME)
+      .then((cache) => cache.addAll([...SHELL]))
+      .then(() => self.skipWaiting()),
+  ),
+);
+self.addEventListener("activate", (event) =>
+  event.waitUntil(
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter(
+              (key) => key.startsWith("city4christ-") && key !== CACHE_NAME,
             )
-
-            .then(networkResponse => {
-
-                const responseClone =
-                networkResponse.clone();
-
-
-                caches
-                .open(CACHE_NAME)
-
-                .then(cache => {
-
-                    cache.put(
-                        event.request,
-                        responseClone
-                    );
-
-                });
-
-
-                return networkResponse;
-
-            })
-
-            .catch(() => {
-
-                if(
-                    event.request.mode
-                    === "navigate"
-                ){
-
-                    return caches.match(
-                        "./index.html"
-                    );
-
-                }
-
-            });
-
-        })
-
-    );
-
+            .map((key) => caches.delete(key)),
+        ),
+      )
+      .then(() => self.clients.claim()),
+  ),
+);
+self.addEventListener("fetch", (event) => {
+  const request = event.request,
+    url = new URL(request.url);
+  if (
+    request.method !== "GET" ||
+    url.origin !== self.location.origin ||
+    request.headers.has("Authorization") ||
+    request.cache === "no-store" ||
+    url.pathname.includes("/api/") ||
+    url.pathname.endsWith("/js/config.js")
+  )
+    return;
+  if (!SHELL.has(url.href) && request.mode !== "navigate") return;
+  event.respondWith(
+    (async () => {
+      try {
+        const response = await fetch(request);
+        if (response.ok && SHELL.has(url.href)) {
+          const cache = await caches.open(CACHE_NAME);
+          await cache.put(request, response.clone());
+        }
+        return response;
+      } catch {
+        const cache = await caches.open(CACHE_NAME);
+        return (
+          (await cache.match(request)) ||
+          (request.mode === "navigate"
+            ? await cache.match(new URL("index.html", ROOT).href)
+            : Response.error())
+        );
+      }
+    })(),
+  );
 });

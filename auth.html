@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="theme-color" content="#5B2C83" />
+    <title>City4Christ | Welcome to City4Christ</title>
+    <link rel="manifest" href="manifest.json" />
+    <link rel="stylesheet" href="css/connected.css" />
+  </head>
+  <body class="connected-page" data-connected-page="auth">
+    <header class="connected-header">
+      <a class="connected-brand" href="home.html"
+        ><img src="assets/images/logo.jpeg" alt="City4Christ" /><span
+          >City4Christ</span
+        ></a
+      >
+      <nav
+        class="api-navigation"
+        data-api-navigation
+        aria-label="Connected preview features"
+      >
+        <a href="home.html">Home</a><a href="word.html">Word Hub</a
+        ><a href="members.html">Members</a><a href="profile.html">My profile</a
+        ><a href="staff.html">Staff tools</a
+        ><a href="auth.html" data-auth-link>Sign in</a>
+      </nav>
+    </header>
+    <main class="connected-main">
+      <p class="eyebrow">City4Christ preview</p>
+      <h1>Welcome to City4Christ</h1>
+      <div
+        id="page-status"
+        class="status"
+        role="status"
+        aria-live="polite"
+        tabindex="-1"
+      ></div>
+      <p class="muted">Sign in or create your account to join the preview.</p>
+      <section id="signed-in" class="panel" hidden>
+        <h2 id="signed-in-name"></h2>
+        <div class="actions">
+          <a class="button-link" href="profile.html">Open my profile</a
+          ><button type="button" data-logout class="secondary">Sign out</button>
+        </div>
+      </section>
+      <section id="auth-forms" class="panel">
+        <div class="tabs" role="tablist" aria-label="Account access">
+          <button role="tab" aria-selected="true" data-auth-tab="login">
+            Sign in</button
+          ><button
+            role="tab"
+            aria-selected="false"
+            data-auth-tab="register"
+            class="secondary"
+          >
+            Create account</button
+          ><button
+            role="tab"
+            aria-selected="false"
+            data-auth-tab="verify"
+            class="secondary"
+          >
+            Verify email
+          </button>
+        </div>
+        <form id="login-form" aria-label="Sign in" class="auth-panel">
+          <label
+            >Email<input
+              name="email"
+              type="email"
+              autocomplete="username"
+              required
+              maxlength="254" /></label
+          ><label
+            >Password<input
+              name="password"
+              type="password"
+              autocomplete="current-password"
+              required
+              maxlength="1024"
+          /></label>
+          <div class="actions">
+            <button>Sign in</button
+            ><button type="button" data-google class="secondary">
+              Continue with Google
+            </button>
+          </div>
+        </form>
+        <form
+          id="register-form"
+          aria-label="Create account"
+          class="auth-panel"
+          hidden
+        >
+          <div class="form-grid">
+            <label
+              >First name<input
+                name="firstName"
+                autocomplete="given-name"
+                required
+                maxlength="100" /></label
+            ><label
+              >Last name<input
+                name="lastName"
+                autocomplete="family-name"
+                required
+                maxlength="100" /></label
+            ><label class="full"
+              >Email<input
+                name="email"
+                type="email"
+                autocomplete="email"
+                required
+                maxlength="254" /></label
+            ><label class="full"
+              >Password (at least 15 characters)<input
+                name="password"
+                type="password"
+                autocomplete="new-password"
+                minlength="15"
+                maxlength="1024"
+                required /></label
+            ><label class="full"
+              >Confirm password<input
+                name="confirmPassword"
+                type="password"
+                autocomplete="new-password"
+                required
+            /></label>
+          </div>
+          <div class="actions"><button>Create account</button></div>
+        </form>
+        <form
+          id="verify-form"
+          aria-label="Verify email"
+          class="auth-panel"
+          hidden
+        >
+          <p>
+            Enter the eight-digit code from your email. Codes expire after ten
+            minutes.
+          </p>
+          <label
+            >Email<input
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              maxlength="254" /></label
+          ><label
+            >Verification code<input
+              name="code"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              pattern="[0-9]{8}"
+              minlength="8"
+              maxlength="8"
+              required
+          /></label>
+          <div class="actions">
+            <button>Verify email</button
+            ><button type="button" id="resend-code" class="secondary">
+              Resend code
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+    <footer class="connected-footer">
+      A community growing in faith. Previewers: use test information only.
+    </footer>
+    <script src="js/app.js"></script>
+    <script src="js/config.js"></script>
+    <script type="module" src="js/connected.js"></script>
+  </body>
+</html>

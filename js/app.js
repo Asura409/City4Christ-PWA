@@ -161,7 +161,7 @@ function enterApp(){
 
 
 window.location.href =
-"home.html";
+"auth.html";
 
 
 }
@@ -171,72 +171,6 @@ window.location.href =
 
 
 
-
-
-/*
-DJANGO API FOUNDATION
-*/
-
-
-const CityAPI = {
-
-
-baseURL:
-"http://localhost:8000/api",
-
-
-
-async get(endpoint){
-
-
-const response =
-await fetch(
-this.baseURL + endpoint
-);
-
-
-return response.json();
-
-
-},
-
-
-
-async post(endpoint,data){
-
-
-const response =
-await fetch(
-
-this.baseURL + endpoint,
-
-{
-
-method:"POST",
-
-headers:{
-
-"Content-Type":
-"application/json"
-
-},
-
-body:
-
-JSON.stringify(data)
-
-}
-
-
-);
-
-
-return response.json();
-
-
-}
-
-};
 
 
 /* ======================================

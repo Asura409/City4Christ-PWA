@@ -1,0 +1,17 @@
+{
+  "name": "city4christ-pwa",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": "22.x"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "build": "node --env-file-if-exists=.env scripts/build.mjs",
+    "preview": "node scripts/serve.mjs",
+    "test:browser": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1"
+  }
+}
