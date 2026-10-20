@@ -118,3 +118,105 @@ test("real registration, OTP, secure refresh, profile, directory, publication an
   await page.goto("/members.html");
   await expect(page.getByRole("alert")).toContainText("sign in");
 });
+
+test("real email password recovery, single-use link and new-password login", async ({
+  page,
+  context,
+}, info) => {
+  const email = `recovery-${info.project.name}@example.invalid`;
+  const password = "original synthetic browser password";
+  const origin = process.env.E2E_BASE_URL;
+  const post = (path, data) =>
+    context.request.post(`/api/v1/auth/${path}`, {
+      data,
+      headers: { Origin: origin },
+    });
+  expect(
+    (
+      await post("register", {
+        email,
+        password,
+        firstName: "Recovery",
+        lastName: "Tester",
+      })
+    ).status(),
+  ).toBe(201);
+  const verification = await context.request.get(
+    "/__test/inbox?" + new URLSearchParams({ email }),
+  );
+  const { code } = await verification.json();
+  expect((await post("verification/verify", { email, code })).status()).toBe(
+    200,
+  );
+  expect((await post("login", { email, password })).status()).toBe(200);
+  await page.goto("/auth.html");
+  // Recovery must remain available even when an existing cookie signs us in.
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Forgot password?", exact: true })
+    .click();
+  const forgot = page.getByRole("form", {
+    name: "Request password reset",
+    exact: true,
+  });
+  await forgot.getByLabel("Email", { exact: true }).fill(email);
+  await forgot
+    .getByRole("button", { name: "Send reset link", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("If this email");
+  const inbox = await context.request.get(
+    "/__test/recovery-inbox?" + new URLSearchParams({ email }),
+  );
+  expect(inbox.ok()).toBeTruthy();
+  const { resetURL } = await inbox.json();
+  await page.goto(resetURL);
+  await expect(page).not.toHaveURL(/reset_token/);
+  const reset = page.getByRole("form", { name: "Reset password", exact: true });
+  await expect(reset).toBeVisible();
+  await reset
+    .getByLabel("New password (at least 15 characters)", { exact: true })
+    .fill("replacement synthetic password");
+  await reset
+    .getByLabel("Confirm new password", { exact: true })
+    .fill("different synthetic password");
+  await reset
+    .getByRole("button", { name: "Save new password", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("do not match");
+  await reset
+    .getByLabel("Confirm new password", { exact: true })
+    .fill("replacement synthetic password");
+  await reset
+    .getByRole("button", { name: "Save new password", exact: true })
+    .click();
+  await expect(page.getByRole("status")).toContainText("Password updated", {
+    timeout: 45000,
+  });
+  const login = page.getByRole("form", { name: "Sign in", exact: true });
+  await login.getByLabel("Email", { exact: true }).fill(email);
+  await login.getByLabel("Password", { exact: true }).fill(password);
+  await login.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("incorrect", {
+    timeout: 45000,
+  });
+  await login
+    .getByLabel("Password", { exact: true })
+    .fill("replacement synthetic password");
+  await login.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome, Recovery" }),
+  ).toBeVisible({ timeout: 45000 });
+  await page.goto(resetURL);
+  await reset
+    .getByLabel("New password (at least 15 characters)", { exact: true })
+    .fill("another synthetic password");
+  await reset
+    .getByLabel("Confirm new password", { exact: true })
+    .fill("another synthetic password");
+  await reset
+    .getByRole("button", { name: "Save new password", exact: true })
+    .click();
+  await expect(page.getByRole("alert")).toContainText("invalid or expired", {
+    timeout: 45000,
+  });
+});

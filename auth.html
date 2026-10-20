@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
     <meta name="theme-color" content="#5B2C83" />
     <title>City4Christ | Welcome to City4Christ</title>
     <link rel="manifest" href="manifest.json" />
@@ -86,6 +87,9 @@
               Continue with Google
             </button>
           </div>
+          <button type="button" id="forgot-password" class="secondary">
+            Forgot password?
+          </button>
         </form>
         <form
           id="register-form"
@@ -164,6 +168,55 @@
               Resend code
             </button>
           </div>
+        </form>
+        <form
+          id="forgot-form"
+          aria-label="Request password reset"
+          class="auth-panel"
+          hidden
+        >
+          <h2>Forgot your password?</h2>
+          <p>
+            Enter your verified email to receive a reset link. If you joined
+            with Google, use Continue with Google.
+          </p>
+          <label
+            >Email<input
+              name="email"
+              type="email"
+              autocomplete="email"
+              required
+              maxlength="254"
+          /></label>
+          <div class="actions"><button>Send reset link</button></div>
+        </form>
+        <form
+          id="reset-form"
+          aria-label="Reset password"
+          class="auth-panel"
+          hidden
+        >
+          <h2>Choose a new password</h2>
+          <p>This link works once and expires after fifteen minutes.</p>
+          <label
+            >New password (at least 15 characters)<input
+              name="password"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="15"
+              maxlength="1024"
+          /></label>
+          <label
+            >Confirm new password<input
+              name="confirmPassword"
+              type="password"
+              autocomplete="new-password"
+              required
+              minlength="15"
+              maxlength="1024"
+          /></label>
+          <div class="actions"><button>Save new password</button></div>
         </form>
       </section>
     </main>

@@ -96,7 +96,12 @@ if (api) {
     return result.data;
   });
   initial.catch(() => {});
-  const app = { api, session: () => initial, setProfile };
+  const app = {
+    api,
+    session: () => initial,
+    setProfile,
+    notifyLogout: () => channel?.postMessage({ type: "logout" }),
+  };
   document.querySelectorAll("[data-logout]").forEach((button) =>
     onClick(button, async () => {
       await api.logout();

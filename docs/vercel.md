@@ -1,10 +1,10 @@
 # Vercel setup
 
 1. Import `Asura409/City4Christ-PWA` into Vercel.
-2. Use branch `feat/backend-preview-integration` for this integration preview.
-   The changes are not on `main` until separately merged. For a project whose
-   deployments follow this branch, select it under Settings > Git > Production
-   Branch. Vercel's “Production” label does not make the backend a production API.
+2. Use branch `main` as the Production Branch under Settings > Git. Merge feature
+   PRs into `main` after verification so the stable preview receives the latest
+   approved frontend. Vercel's “Production” label does not make the backend a
+   production API.
 3. Keep Root Directory at the repository root (`.`), not `frontend/` or one of the
    older duplicate app directories. The frontend is its own repository.
 4. Before the first build, add `API_URL` for the Vercel environments you will use:

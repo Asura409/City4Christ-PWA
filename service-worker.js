@@ -16,6 +16,7 @@ const FILES = [
   "js/ui.js",
   "js/connected.js",
   "js/pages/auth.js",
+  "js/pages/password-recovery.js",
   "js/pages/profile.js",
   "js/pages/sermons.js",
   "js/pages/members.js",

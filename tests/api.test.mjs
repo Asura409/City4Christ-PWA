@@ -170,3 +170,30 @@ test("a pending session restoration finishes before a new sign-in changes the co
   await Promise.all([restoration, login]);
   assert.equal(client.isSignedIn(), true);
 });
+
+test("password recovery uses public requests and reset clears local authentication", async () => {
+  const calls = [];
+  const client = createClient({
+    apiURL: "https://api.example",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return url.endsWith("/login")
+        ? json({ data: { accessToken: "old", expiresIn: 600 } })
+        : json({ data: { status: "password_reset" } });
+    },
+  });
+  await client.login("member@example.invalid", "original long password");
+  await client.forgotPassword(
+    "member@example.invalid",
+    "https://preview.example/auth.html",
+  );
+  await client.resetPassword("A".repeat(43), "replacement long password");
+  assert.equal(calls[1].url, "https://api.example/api/v1/auth/password/forgot");
+  assert.equal(calls[1].options.headers.Authorization, undefined);
+  assert.deepEqual(JSON.parse(calls[1].options.body), {
+    email: "member@example.invalid",
+    returnTo: "https://preview.example/auth.html",
+  });
+  assert.equal(calls[2].url, "https://api.example/api/v1/auth/password/reset");
+  assert.equal(client.isSignedIn(), false);
+});
