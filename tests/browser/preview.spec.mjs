@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { mocked, SERMON } from "./fixtures/api.mjs";
+import { mocked, SERMON, STAFF_ACCESS } from "./fixtures/api.mjs";
 test("register, verify, sign in and sign out without storing credentials", async ({
   page,
 }) => {
@@ -107,7 +107,10 @@ test("Word Hub uses public catalog/detail and safely renders supplied text", asy
 test("staff create and publish bodies omit response-only fields and role grants stay explicit", async ({
   page,
 }) => {
-  const { calls } = await mocked(page, { signedIn: true });
+  const { calls } = await mocked(page, {
+    signedIn: true,
+    access: STAFF_ACCESS,
+  });
   await page.goto("/staff.html");
   const editor = page.getByRole("form", { name: "Sermon editor" });
   await editor.getByLabel("Title", { exact: true }).fill("A test sermon");

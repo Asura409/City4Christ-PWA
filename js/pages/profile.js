@@ -1,5 +1,5 @@
 import { $, status, failure, onSubmit, onClick, value } from "../ui.js";
-export async function profilePage({ api, session, setProfile }) {
+export async function profilePage({ api, access, session, setProfile }) {
   const form = $("#profile-form");
   let current;
   function fill(p) {
@@ -30,6 +30,7 @@ export async function profilePage({ api, session, setProfile }) {
     await api.refresh();
     const { data } = await api.me();
     fill(data);
+    await access?.refresh();
     status("Your session is active.", "success");
   });
   onClick($("#link-google"), async () => {

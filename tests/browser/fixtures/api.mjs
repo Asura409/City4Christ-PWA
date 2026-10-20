@@ -1,6 +1,20 @@
 export const ID = "11111111-1111-4111-8111-111111111111",
   SERMON = "22222222-2222-4222-8222-222222222222";
-export async function mocked(page, { signedIn = false } = {}) {
+export const STAFF_ACCESS = {
+  roles: [
+    { role: "content_editor", scope: "" },
+    { role: "access_administrator", scope: "" },
+  ],
+  capabilities: [
+    { permission: "sermons.manage", scope: "" },
+    { permission: "roles.manage", scope: "" },
+  ],
+};
+export async function mocked(
+  page,
+  { signedIn = false, access = { roles: [], capabilities: [] } } = {},
+) {
+  let assignedAccess = access;
   const calls = [];
   let profile = {
     id: ID,
@@ -82,6 +96,28 @@ export async function mocked(page, { signedIn = false } = {}) {
     }
     if (path.endsWith("/auth/google/link"))
       return ok({ url: "https://accounts.google.com/auth?state=test-state" });
+    if (path === "/api/v1/me/access")
+      return authenticated
+        ? ok(assignedAccess)
+        : error(401, "invalid_session", "Sign in again.");
+    if (
+      path.startsWith("/api/v1/admin/sermons") &&
+      !assignedAccess.capabilities.some(
+        (c) => c.permission === "sermons.manage" && c.scope === "",
+      )
+    )
+      return error(403, "forbidden", "Publishing permission is required.");
+    if (
+      path.startsWith("/api/v1/admin/accounts/") &&
+      !assignedAccess.capabilities.some(
+        (c) => c.permission === "roles.manage" && c.scope === "",
+      )
+    )
+      return error(
+        403,
+        "forbidden",
+        "Access management permission is required.",
+      );
     if (path === "/api/v1/me") {
       if (!authenticated)
         return error(401, "invalid_session", "Sign in again.");
@@ -133,5 +169,11 @@ export async function mocked(page, { signedIn = false } = {}) {
         : ok({ changed: true });
     return error(404, "not_found", "Not found.");
   });
-  return { calls, getProfile: () => profile };
+  return {
+    calls,
+    getProfile: () => profile,
+    setAccess: (value) => {
+      assignedAccess = value;
+    },
+  };
 }

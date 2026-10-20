@@ -1,6 +1,12 @@
 import { $, status, failure, onSubmit, onClick, value } from "../ui.js";
 import { passwordRecovery } from "./password-recovery.js";
-export async function authPage({ api, session, setProfile, notifyLogout }) {
+export async function authPage({
+  api,
+  access,
+  session,
+  setProfile,
+  notifyLogout,
+}) {
   const login = $("#login-form"),
     register = $("#register-form"),
     verify = $("#verify-form");
@@ -18,6 +24,7 @@ export async function authPage({ api, session, setProfile, notifyLogout }) {
     .forEach((b) => b.addEventListener("click", () => tab(b.dataset.authTab)));
   function signed(profile) {
     setProfile(profile);
+    void access?.refresh().catch(() => {});
     $("#auth-forms").hidden = true;
     $("#signed-in").hidden = false;
     $("#signed-in-name").textContent = `Welcome, ${profile.firstName}`;

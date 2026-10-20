@@ -8,7 +8,7 @@ import {
   value,
   localDateInput,
 } from "../ui.js";
-export async function staffPage({ api, session }) {
+export async function staffPage({ api, access, session }) {
   const editor = $("#sermon-editor"),
     load = $("#load-sermon"),
     roles = $("#role-form");
@@ -112,6 +112,7 @@ export async function staffPage({ api, session }) {
   roleAppointments(api, roles);
   try {
     await session();
+    await access.refresh();
   } catch (error) {
     failure(error);
   }
