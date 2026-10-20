@@ -169,6 +169,20 @@ export function createClient({
         method: "POST",
         body: { email },
       }),
+    forgotPassword: (email, returnTo) =>
+      send("/api/v1/auth/password/forgot", {
+        method: "POST",
+        body: { email, returnTo },
+      }),
+    resetPassword: (token, password) =>
+      sessionOperation(async () => {
+        const result = await send("/api/v1/auth/password/reset", {
+          method: "POST",
+          body: { token, password },
+        });
+        clear();
+        return result;
+      }),
     me: () => request("/api/v1/me"),
     updateProfile: (body) => request("/api/v1/me", { method: "PATCH", body }),
     logout: () =>

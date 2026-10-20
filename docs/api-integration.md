@@ -65,3 +65,7 @@ prevent it. Related frontend/API custom domains are preferable for a lasting set
 Release the backend directory and Google browser-return migrations before the
 updated frontend. These changes remain local until explicitly pushed and deployed.
 Review the two repositories separately.
+
+## Password recovery
+
+The sign-in page includes Forgot password and an emailed-link reset form. Requests use `POST /api/v1/auth/password/forgot` with `{email, returnTo}` and `POST /api/v1/auth/password/reset` with `{token, password}`. The existing `API_URL` is sufficient; no additional frontend environment variable is needed. The API must allowlist this frontend HTTPS origin. Links expire in 15 minutes and are single-use. The token travels in the URL fragment and is removed from the current history entry on initialization, then retained only in memory. Reopen the email link after a page reload. A reset revokes all sessions and asks the user to sign in again. Google-only accounts continue using Google. Release the backend migration and updated email worker before this frontend.

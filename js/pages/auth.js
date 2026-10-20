@@ -1,5 +1,6 @@
 import { $, status, failure, onSubmit, onClick, value } from "../ui.js";
-export async function authPage({ api, session, setProfile }) {
+import { passwordRecovery } from "./password-recovery.js";
+export async function authPage({ api, session, setProfile, notifyLogout }) {
   const login = $("#login-form"),
     register = $("#register-form"),
     verify = $("#verify-form");
@@ -9,7 +10,7 @@ export async function authPage({ api, session, setProfile }) {
       .forEach((b) =>
         b.setAttribute("aria-selected", String(b.dataset.authTab === name)),
       );
-    for (const form of [login, register, verify])
+    for (const form of document.querySelectorAll(".auth-panel"))
       form.hidden = form.id !== name + "-form";
   }
   document
@@ -82,6 +83,7 @@ export async function authPage({ api, session, setProfile }) {
     });
     history.replaceState(null, "", location.pathname);
   }
+  if (passwordRecovery({ api, tab, notifyLogout })) return;
   try {
     signed(await session());
   } catch (e) {
