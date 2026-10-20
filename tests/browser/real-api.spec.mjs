@@ -79,11 +79,29 @@ test("real registration, OTP, secure refresh, profile, directory, publication an
   expect(await page.locator("#member-results").textContent()).not.toContain(
     email,
   );
+  const accessHeaders = [];
+  page.on("request", (request) => {
+    if (new URL(request.url()).pathname === "/api/v1/me/access")
+      accessHeaders.push(request.headers().authorization);
+  });
+  await page.goto("/profile.html");
+  await page
+    .getByRole("button", { name: "Refresh permissions", exact: true })
+    .click();
+  await expect(
+    page.getByRole("link", { name: "Staff tools", exact: true }),
+  ).toBeHidden();
+  const tokenBeforeAppointment = accessHeaders.at(-1);
   const fixture = await context.request.post(
     "/__test/editor?" + new URLSearchParams({ email }),
   );
   expect(fixture.status()).toBe(204);
-  await page.goto("/staff.html");
+  await page
+    .getByRole("button", { name: "Refresh permissions", exact: true })
+    .click();
+  await expect(page.locator("#access-roles")).toContainText("Content editor");
+  expect(accessHeaders.at(-1)).toBe(tokenBeforeAppointment);
+  await page.getByRole("link", { name: "Staff tools", exact: true }).click();
   const editor = page.getByRole("form", { name: "Sermon editor" });
   const title = `Browser sermon ${info.project.name}`;
   await editor.getByLabel("Title", { exact: true }).fill(title);
@@ -97,6 +115,29 @@ test("real registration, OTP, secure refresh, profile, directory, publication an
   await expect(page.getByRole("status")).toContainText("Draft created");
   await page.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(page.getByRole("status")).toContainText("published");
+  const revoked = await context.request.post(
+    "/__test/editor/revoke?" + new URLSearchParams({ email }),
+  );
+  expect(revoked.status()).toBe(204);
+  await page
+    .getByRole("button", { name: "Refresh permissions", exact: true })
+    .click();
+  await expect(editor).toBeHidden();
+  await expect(
+    page.getByRole("link", { name: "Staff tools", exact: true }),
+  ).toBeHidden();
+  const denied = await context.request.post("/api/v1/admin/sermons", {
+    headers: {
+      Origin: process.env.E2E_BASE_URL,
+      Authorization: accessHeaders.at(-1),
+    },
+    data: {
+      title: "Must not be saved",
+      speaker: "Test",
+      preachedAt: "2026-10-17T12:00:00Z",
+    },
+  });
+  expect(denied.status()).toBe(403);
   await page.goto("/word.html");
   await page
     .getByRole("searchbox", { name: "Search sermons", exact: true })

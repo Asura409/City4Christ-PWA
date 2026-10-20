@@ -1,4 +1,5 @@
 import { createClient } from "./api.js";
+import { bindCurrentAccess } from "./components/current-access.js";
 import { $, element, status, failure, onClick } from "./ui.js";
 import { authPage } from "./pages/auth.js";
 import { profilePage } from "./pages/profile.js";
@@ -74,11 +75,15 @@ try {
   status("The preview API connection has not been configured.", "error");
 }
 if (api) {
+  const access = bindCurrentAccess(api, page);
   const channel = globalThis.BroadcastChannel
     ? new BroadcastChannel("city4christ-session")
     : null;
   channel?.addEventListener("message", (event) => {
-    if (event.data?.type === "logout") location.assign("auth.html");
+    if (event.data?.type === "logout") {
+      access.clear();
+      location.assign("auth.html");
+    }
   });
   const setProfile = (profile) => {
     document.querySelectorAll("[data-auth-link]").forEach((a) => {
@@ -93,18 +98,24 @@ if (api) {
   };
   const initial = api.me().then((result) => {
     setProfile(result.data);
+    void access.refresh().catch(() => {});
     return result.data;
   });
   initial.catch(() => {});
   const app = {
     api,
+    access,
     session: () => initial,
     setProfile,
-    notifyLogout: () => channel?.postMessage({ type: "logout" }),
+    notifyLogout: () => {
+      access.clear();
+      channel?.postMessage({ type: "logout" });
+    },
   };
   document.querySelectorAll("[data-logout]").forEach((button) =>
     onClick(button, async () => {
       await api.logout();
+      access.clear();
       channel?.postMessage({ type: "logout" });
       location.assign("auth.html");
     }),

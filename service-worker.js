@@ -13,6 +13,8 @@ const FILES = [
   "css/connected.css",
   "js/app.js",
   "js/api.js",
+  "js/access.js",
+  "js/components/current-access.js",
   "js/ui.js",
   "js/connected.js",
   "js/pages/auth.js",

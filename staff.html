@@ -40,7 +40,10 @@
         For appointed content editors and access administrators. Permissions are
         checked by the server on every action.
       </p>
-      <section class="panel">
+      <p id="staff-access-empty" class="muted" hidden>
+        No publishing or role-management tools are assigned to your account.
+      </p>
+      <section class="panel" data-requires-permission="sermons.manage" hidden>
         <h2>Sermon publishing</h2>
         <form id="load-sermon" aria-label="Load sermon">
           <label
@@ -114,7 +117,7 @@
           </div>
         </div>
       </section>
-      <section class="panel">
+      <section class="panel" data-requires-permission="roles.manage" hidden>
         <h2>Role appointments</h2>
         <p class="muted">
           Access administrators can grant or revoke editor access and scoped

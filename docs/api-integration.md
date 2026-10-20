@@ -69,3 +69,7 @@ Review the two repositories separately.
 ## Password recovery
 
 The sign-in page includes Forgot password and an emailed-link reset form. Requests use `POST /api/v1/auth/password/forgot` with `{email, returnTo}` and `POST /api/v1/auth/password/reset` with `{token, password}`. The existing `API_URL` is sufficient; no additional frontend environment variable is needed. The API must allowlist this frontend HTTPS origin. Links expire in 15 minutes and are single-use. The token travels in the URL fragment and is removed from the current history entry on initialization, then retained only in memory. Reopen the email link after a page reload. A reset revokes all sessions and asks the user to sign in again. Google-only accounts continue using Google. Release the backend migration and updated email worker before this frontend.
+
+## Current permissions
+
+`GET /api/v1/me/access` returns the authenticated caller’s `{roles, capabilities}` with exact scopes. It requires a Bearer token and has no query parameters. The preview keeps this display state in memory, refreshes it on page entry/focus or Refresh permissions, and hides staff controls when access is unavailable. An editor sees publishing; an access administrator sees role appointments. A scoped leader receives no global publishing/delegation tools. Every protected API operation still authorizes independently. Release the backend endpoint before this frontend. No additional environment variable is required.
