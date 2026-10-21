@@ -100,9 +100,17 @@ export default function App() {
             <Route
               path="/groups"
               element={
-                <DesignPreview>
+                <ProtectedRoute>
                   <GroupsScreen />
-                </DesignPreview>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups/:groupId"
+              element={
+                <ProtectedRoute>
+                  <GroupsScreen />
+                </ProtectedRoute>
               }
             />
             <Route

@@ -5,7 +5,7 @@ import { useSession } from "@/auth/session";
 const tiles = [
   ["/word", "mic", "Sermons"],
   ["/profile", "users", "My profile"],
-  ["/groups", "users", "Groups preview"],
+  ["/groups", "users", "Church groups"],
   ["/events", "cal", "Events preview"],
 ];
 export default function HomeScreen() {
@@ -39,8 +39,8 @@ export default function HomeScreen() {
         ))}
       </div>
       <p className="lead">
-        Sermons and your account are connected. Events, groups and prayer are
-        design previews while those services are being built.
+        Sermons, your account and church groups are connected. Events and prayer
+        are still previews while those services are being built.
       </p>
     </section>
   );
