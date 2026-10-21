@@ -2,6 +2,7 @@
 .app {
   position: relative;
   width: 100%;
+  height: 100dvh;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -12,26 +13,97 @@
   overflow-x: hidden;
 }
 
-/* tablet: constrain to a centered card */
+/* Tablets use the full screen instead of shrinking the app into a phone frame. */
 @media (min-width: 600px) {
-  body { display: flex; justify-content: center; align-items: flex-start; min-height: 100svh; padding: 24px 16px; }
+  body { min-height: 100svh; }
   .app {
-    width: min(480px, 100%);
-    min-height: min(920px, calc(100svh - 48px));
-    max-height: calc(100svh - 48px);
-    border-radius: 32px;
-    box-shadow: 0 0 0 1px var(--line), 0 40px 100px rgba(0,0,0,.6);
+    width: 100%;
+    height: 100dvh;
+    min-height: 100svh;
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
     overflow: hidden;
   }
 }
 
-/* desktop: two-column layout */
+/* Desktop uses a wide content area with a persistent navigation rail. */
 @media (min-width: 1024px) {
-  body { align-items: center; }
-  .app {
-    width: min(440px, 100%);
-    min-height: min(860px, calc(100svh - 48px));
-    max-height: calc(100svh - 48px);
+  .app:has(.topbar) {
+    display: grid;
+    grid-template-columns: 232px minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+    width: min(1600px, 100%);
+    margin-inline: auto;
+  }
+  .app:not(:has(.topbar)) {
+    display: flex;
+  }
+  .topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    min-height: 72px;
+    padding-inline: 28px;
+    border-bottom: 1px solid var(--line);
+  }
+  .app:has(.topbar) > .screens {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    padding: 18px 32px 40px;
+  }
+  .app:has(.topbar) .screen {
+    width: min(1280px, 100%);
+    margin-inline: auto;
+    padding: 12px 0 28px;
+  }
+  .app:has(.topbar) > .nav {
+    position: relative;
+    grid-column: 1;
+    grid-row: 2;
+    inset: auto;
+    width: 100%;
+    height: 100%;
+    align-content: start;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: repeat(5, 58px);
+    gap: 8px;
+    padding: 24px 16px;
+    border: 0;
+    border-right: 1px solid var(--line);
+    border-radius: 0;
+    background: linear-gradient(180deg, rgba(35, 28, 63, .85), rgba(23, 19, 43, .92));
+    box-shadow: none;
+  }
+  .app:has(.topbar) .pill-i {
+    display: none;
+  }
+  .app:has(.topbar) .nav-item {
+    height: 58px;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 14px;
+    padding: 0 16px;
+    border-radius: 16px;
+    font-size: 14px;
+  }
+  .app:has(.topbar) .nav-item .ic {
+    width: 21px;
+    height: 21px;
+  }
+  .app:has(.topbar) .nav-item[aria-current="page"] {
+    background: rgba(255, 255, 255, .14);
+  }
+  .app:has(.topbar) .fab-slot {
+    height: 58px;
+    align-items: center;
+  }
+  .app:has(.topbar) .fab {
+    position: relative;
+    top: auto;
+    width: 48px;
+    height: 48px;
+    box-shadow: 0 8px 24px rgba(176, 114, 214, .35);
   }
 }
 
@@ -50,6 +122,7 @@
 /* ── screens ── */
 .screens {
   flex: 1; overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;
+  min-height: 0;
   padding-bottom: calc(var(--nav-h) + 60px + env(safe-area-inset-bottom,0px));
 }
 .screens::-webkit-scrollbar { display: none; }
