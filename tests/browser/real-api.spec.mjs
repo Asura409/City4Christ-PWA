@@ -14,6 +14,11 @@ test.skip(
 );
 // Real Argon2id runs on the shared test host; simulated UI tests keep short waits.
 test.setTimeout(90000);
+test.beforeEach(async ({ context }, info) => {
+  await context.setExtraHTTPHeaders({
+    "X-C4C-Test-Scenario": info.project.name + "/" + info.testId,
+  });
+});
 
 test("real registration, OTP, secure refresh, profile, directory, publication and logout", async ({
   page,
@@ -68,10 +73,33 @@ test("real registration, OTP, secure refresh, profile, directory, publication an
   expect(
     (await context.cookies()).find((c) => c.name === refresh.name).value,
   ).not.toBe(refresh.value);
+  expect(
+    (
+      await context.request.post(
+        "/__test/session/age?" + new URLSearchParams({ email }),
+      )
+    ).status(),
+  ).toBe(204);
+  const identityPanel = page.getByRole("region", {
+    name: "Confirm your identity",
+  });
+  await identityPanel
+    .getByRole("button", { name: "Check identity confirmation" })
+    .click();
+  await expect(identityPanel).toContainText(
+    "Confirm your identity to continue",
+  );
+  await identityPanel.getByLabel("Current password").fill(password);
+  await identityPanel
+    .getByRole("button", { name: "Confirm with password" })
+    .click();
+  await expect(identityPanel).toContainText("Identity confirmed");
+  await expect(identityPanel.getByLabel("Current password")).toHaveValue("");
   await page.getByLabel("First name", { exact: true }).fill("Hope");
   await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByRole("status")).toContainText("saved");
+  await exerciseMFA(page, context);
   await page.goto("/members.html");
   await expect(
     page.getByRole("heading", { name: `Hope ${info.project.name}` }),
@@ -261,3 +289,95 @@ test("real email password recovery, single-use link and new-password login", asy
     timeout: 45000,
   });
 });
+
+test("real Google-only fresh confirmation keeps the linked account and session", async ({
+  page,
+  context,
+}, info) => {
+  const subject = `e2e-google-${info.project.name}`;
+  const email = subject + "@example.invalid";
+  expect(
+    (
+      await context.request.post(
+        "/__test/google-account?" + new URLSearchParams({ subject }),
+      )
+    ).status(),
+  ).toBe(204);
+  expect(
+    (
+      await context.request.post(
+        "/__test/session/age?" + new URLSearchParams({ email }),
+      )
+    ).status(),
+  ).toBe(204);
+  await page.goto("/profile.html");
+  const panel = page.getByRole("region", { name: "Confirm your identity" });
+  await expect(panel).toContainText("Confirm your identity to continue");
+  await expect(panel.getByLabel("Current password")).toBeHidden();
+  const origin = new URL(page.url()).origin;
+  await page.route("https://accounts.google.com/**", async (route) => {
+    const state = new URL(route.request().url()).searchParams.get("state");
+    const callback =
+      origin +
+      "/api/v1/auth/google/callback?" +
+      new URLSearchParams({ state, code: subject });
+    await route.fulfill({
+      contentType: "text/html",
+      body: `<a href="${callback.replaceAll("&", "&amp;")}">Confirm synthetic Google identity</a>`,
+    });
+  });
+  await panel.getByRole("button", { name: "Confirm with Google" }).click();
+  await page
+    .getByRole("link", { name: "Confirm synthetic Google identity" })
+    .click();
+  await expect(page).toHaveURL(/\/auth.html$/);
+  await expect(
+    page.getByRole("region", { name: "Confirm your identity" }),
+  ).toContainText("Identity confirmed");
+  await page.goto("/profile.html");
+  await expect(page.locator("#profile-email")).toHaveText(email);
+  await expect(page.getByLabel("Current password")).toBeHidden();
+  await exerciseMFA(page, context, { disable: false });
+});
+
+async function exerciseMFA(page, context, { disable = true } = {}) {
+  const panel = page.getByRole("region", { name: "Authenticator protection" });
+  await expect(panel).toBeVisible();
+  await panel.getByRole("button", { name: "Set up authenticator" }).click();
+  await expect(panel.locator("[data-mfa-setup-secret]")).toHaveText(
+    /^[A-Z2-7]{52}$/,
+  );
+  const secret = await panel.locator("[data-mfa-setup-secret]").textContent();
+  expect(secret.length).toBeGreaterThan(20);
+  await expect(panel.getByAltText("Authenticator setup QR code")).toBeVisible();
+  const generated = await context.request.post("/__test/mfa-code", {
+    data: { secret },
+  });
+  expect(generated.ok()).toBeTruthy();
+  const { code } = await generated.json();
+  await panel.getByLabel("Setup verification code").fill(code);
+  await panel.getByRole("button", { name: "Enable authenticator" }).click();
+  await expect(panel).toContainText("10 recovery codes remaining");
+  await expect(panel).not.toContainText(secret);
+  const backup = await panel.locator("ul li").first().textContent();
+  expect(backup.length).toBe(43);
+  await panel.getByRole("button", { name: "Hide private details" }).click();
+  await expect(panel).not.toContainText(backup);
+  await panel.getByLabel("Recovery code", { exact: true }).fill(backup);
+  await panel.getByRole("button", { name: "Use recovery code" }).click();
+  await expect(panel).toContainText("9 recovery codes remaining");
+  await expect(panel.getByLabel("Recovery code", { exact: true })).toHaveValue(
+    "",
+  );
+  if (disable) {
+    await panel
+      .getByRole("checkbox", {
+        name: "I want to disable authenticator protection",
+      })
+      .check();
+    await panel.getByRole("button", { name: "Disable authenticator" }).click();
+    await expect(panel).toContainText(
+      "Authenticator protection is not enabled",
+    );
+  }
+}

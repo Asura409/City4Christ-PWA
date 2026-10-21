@@ -282,3 +282,10 @@ html[data-theme="dark"] {
     font-size: 0.9rem;
   }
 }
+
+.mfa-setup-qr {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin-block: 1rem;
+}
