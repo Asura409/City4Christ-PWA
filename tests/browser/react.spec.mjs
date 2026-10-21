@@ -24,6 +24,7 @@ test("React signup requires OTP, signs in, edits real profile and logs out", asy
   ).toBeVisible();
   await page.getByLabel("Verification code").fill("12345678");
   await page.getByRole("button", { name: "Verify email", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Welcome back" })).toBeVisible();
   await page
     .getByLabel("Email", { exact: true })
     .fill("tester@example.invalid");
