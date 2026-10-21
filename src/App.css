@@ -430,3 +430,12 @@
 
 /* ── toast ── */
 .toast { position: absolute; left: 50%; bottom: calc(var(--nav-h) + 150px); transform: translate(-50%,16px); z-index: 60; background: #fff; color: #1b1730; padding: 11px 18px; border-radius: 999px; font-weight: 700; font-size: 14px; opacity: 0; pointer-events: none; transition: .28s; white-space: nowrap; box-shadow: 0 12px 30px rgba(0,0,0,.4); }
+
+/* Connected account controls and clear design-only boundaries. */
+.preview-notice { margin: 16px; padding: 16px; border: 1px solid #a77ae5; border-radius: 14px; background: #302046; }
+.screen > p, .screen > form { margin: 16px; }
+.screen input:not([type="checkbox"]) { max-width: 100%; padding: 12px; border-radius: 10px; }
+.screen .auth-card { margin: 16px; }
+.auth-card > .btn, .auth-card form > .btn { margin-top: 14px; }
+.screen h1, .screen h2, .screen p { overflow-wrap: anywhere; }
+.topbar .brand { display: flex; gap: 12px; align-items: center; }

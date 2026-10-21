@@ -73,3 +73,41 @@ The sign-in page includes Forgot password and an emailed-link reset form. Reques
 ## Current permissions
 
 `GET /api/v1/me/access` returns the authenticated caller’s `{roles, capabilities}` with exact scopes. It requires a Bearer token and has no query parameters. The preview keeps this display state in memory, refreshes it on page entry/focus or Refresh permissions, and hides staff controls when access is unavailable. An editor sees publishing; an access administrator sees role appointments. A scoped leader receives no global publishing/delegation tools. Every protected API operation still authorizes independently. Release the backend endpoint before this frontend. No additional environment variable is required.
+
+## React interface integration
+
+The responsive React interface is the root entry point (`/#/login`). It shares
+`js/api.js` with the existing connected pages: tokens stay in memory, protected
+requests use Authorization, and refresh/logout use the backend's HttpOnly cookie.
+There is still only one public hosting variable, `API_URL`. `npm run build` now
+builds the React bundle and preserves all connected HTML pages in `dist/`.
+The CSP uses the configured API origin instead of a hardcoded staging hostname.
+
+Connected React routes:
+
+- `/#/signup` → `/#/verify`: real registration, eight-digit OTP and resend.
+- `/#/login`: password login and Google login through the existing callback page.
+- `/#/forgot-password`: recovery email; reset links still use `auth.html`.
+- `/#/home` and `/#/profile`: restored sessions, actual member identity, profile
+  changes, directory opt-in and confirmed logout.
+- `/#/word`: public sermon listing, search, pagination and detail.
+
+Profile links retain the existing account-security, member-directory and staff
+workflows. Google callbacks return to the already allowed `auth.html`; its signed-in
+panel links back to the React home. No additional Google redirect URI is needed.
+Staff navigation is shown according to current capabilities; backend authorization
+remains authoritative for every request.
+
+Groups, prayer and events retain their visual designs behind an explicit sample
+content notice and an inert container. They cannot submit private information,
+claim a successful RSVP, publish a prayer or join a ministry. Onboarding does not
+send requests to a nonexistent endpoint. These workflows await their domain slices.
+
+This release does not include the separate fresh-authentication/MFA feature branch
+and does not require that branch's new backend endpoints. No backend deployment or
+database change is needed for this React integration.
+
+Development uses Node 22 and `npm run dev` (Vite); `.env`/hosting `API_URL` works
+for both development and production builds. Backend CORS must allow the exact
+frontend origin. Cross-site cookie restrictions and real Google acceptance remain
+browser/provider checks; automated tests do not claim Safari or live-provider coverage.
