@@ -139,7 +139,7 @@ export function createClient({
     try {
       return await send(path, { ...options, authorized: true });
     } catch (error) {
-      if (error.status !== 401) throw error;
+      if (error.status !== 401 || error.code !== "invalid_session") throw error;
       await refresh();
       return send(path, { ...options, authorized: true });
     }
@@ -182,6 +182,39 @@ export function createClient({
         });
         clear();
         return result;
+      }),
+    mfaStatus: () => request("/api/v1/auth/mfa"),
+    beginMFA: () =>
+      request("/api/v1/auth/mfa/enroll", { method: "POST", body: {} }),
+    confirmMFA: (enrollmentId, code) =>
+      request("/api/v1/auth/mfa/confirm", {
+        method: "POST",
+        body: { enrollmentId, code },
+      }),
+    verifyMFA: (code) =>
+      request("/api/v1/auth/mfa/verify", { method: "POST", body: { code } }),
+    recoverMFA: (recoveryCode) =>
+      request("/api/v1/auth/mfa/recovery", {
+        method: "POST",
+        body: { recoveryCode },
+      }),
+    regenerateMFARecovery: () =>
+      request("/api/v1/auth/mfa/recovery/regenerate", {
+        method: "POST",
+        body: {},
+      }),
+    disableMFA: () =>
+      request("/api/v1/auth/mfa/disable", { method: "POST", body: {} }),
+    reauthenticationStatus: () => request("/api/v1/auth/reauthentication"),
+    reauthenticatePassword: (password) =>
+      request("/api/v1/auth/reauthentication/password", {
+        method: "POST",
+        body: { password },
+      }),
+    beginGoogleReauthentication: (returnTo) =>
+      request("/api/v1/auth/reauthentication/google", {
+        method: "POST",
+        body: { returnTo },
       }),
     me: () => request("/api/v1/me"),
     updateProfile: (body) => request("/api/v1/me", { method: "PATCH", body }),

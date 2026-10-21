@@ -1,3 +1,5 @@
+import { bindMFA } from "./components/mfa/index.js";
+import { bindReauthentication } from "./components/reauthentication.js";
 import { createClient } from "./api.js";
 import { bindCurrentAccess } from "./components/current-access.js";
 import { $, element, status, failure, onClick } from "./ui.js";
@@ -77,12 +79,16 @@ try {
 }
 if (api) {
   const access = bindCurrentAccess(api, page);
+  const reauthentication = bindReauthentication(api, page);
+  const mfa = bindMFA(api, page);
   const channel = globalThis.BroadcastChannel
     ? new BroadcastChannel("city4christ-session")
     : null;
   channel?.addEventListener("message", (event) => {
     if (event.data?.type === "logout") {
       access.clear();
+      reauthentication.clear();
+      mfa.clear();
       location.assign("auth.html");
     }
   });
@@ -100,16 +106,22 @@ if (api) {
   const initial = api.me().then((result) => {
     setProfile(result.data);
     void access.refresh().catch(() => {});
+    void reauthentication.refresh().catch(() => {});
+    void mfa.refresh().catch(() => {});
     return result.data;
   });
   initial.catch(() => {});
   const app = {
     api,
     access,
+    reauthentication,
+    mfa,
     session: () => initial,
     setProfile,
     notifyLogout: () => {
       access.clear();
+      reauthentication.clear();
+      mfa.clear();
       channel?.postMessage({ type: "logout" });
     },
   };
@@ -117,6 +129,8 @@ if (api) {
     onClick(button, async () => {
       await api.logout();
       access.clear();
+      reauthentication.clear();
+      mfa.clear();
       channel?.postMessage({ type: "logout" });
       location.assign("auth.html");
     }),

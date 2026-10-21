@@ -38,6 +38,10 @@ export function failure(error) {
     version_conflict:
       "This sermon changed. Reload it before editing; your changes have not been saved.",
     sermon_not_found: "This sermon is unavailable or not published.",
+    mfa_required:
+      "Verify your authenticator or use a recovery code in the Authenticator protection panel, then submit this action again.",
+    reauthentication_required:
+      "Confirm your identity from My profile or the confirmation panel, then submit this action again.",
     invalid_session: "Please sign in again.",
     email_unverified: "Verify your email before signing in.",
   };

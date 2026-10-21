@@ -159,6 +159,53 @@
         </form>
         <ul id="role-results"></ul>
       </section>
+      <section class="panel" data-requires-permission="roles.read" hidden>
+        <h2>Church role management</h2>
+        <p>
+          Search verified accounts and review their appointments. Privileged
+          appointments require authenticator protection. Your identity and
+          authenticator must be freshly confirmed. You cannot change your own
+          appointments.
+        </p>
+        <form
+          id="church-member-search"
+          aria-label="Find member for appointment"
+        >
+          <label
+            >Name or email<input
+              name="query"
+              required
+              minlength="3"
+              maxlength="100"
+              autocomplete="off" /></label
+          ><button>Search members</button>
+        </form>
+        <ul id="church-member-results"></ul>
+        <button id="church-members-more" type="button" hidden>
+          More members
+        </button>
+        <p id="church-selected-member">No member selected.</p>
+        <ul id="church-role-results"></ul>
+        <form id="church-role-form" aria-label="Church role appointment">
+          <label>Church role<select name="role"></select></label>
+          <label id="church-scope-label" hidden
+            >Registered ministry ID<input name="scope"
+          /></label>
+          <label
+            >Reason<textarea name="reason" required maxlength="500"></textarea>
+          </label>
+          <label
+            ><input type="checkbox" name="confirmed" />I reviewed this member,
+            role and scope.</label
+          >
+          <div class="actions">
+            <button data-church-action="grant">Grant church role</button
+            ><button data-church-action="revoke" class="danger">
+              Revoke church role
+            </button>
+          </div>
+        </form>
+      </section>
     </main>
     <footer class="connected-footer">
       A community growing in faith. Previewers: use test information only.

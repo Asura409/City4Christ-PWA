@@ -3,6 +3,8 @@ import { passwordRecovery } from "./password-recovery.js";
 export async function authPage({
   api,
   access,
+  reauthentication,
+  mfa,
   session,
   setProfile,
   notifyLogout,
@@ -25,6 +27,8 @@ export async function authPage({
   function signed(profile) {
     setProfile(profile);
     void access?.refresh().catch(() => {});
+    void reauthentication?.refresh().catch(() => {});
+    void mfa?.refresh().catch(() => {});
     $("#auth-forms").hidden = true;
     $("#signed-in").hidden = false;
     $("#signed-in-name").textContent = `Welcome, ${profile.firstName}`;
@@ -90,6 +94,8 @@ export async function authPage({
     });
     history.replaceState(null, "", location.pathname);
   }
+  if (new URL(location.href).searchParams.has("reauthentication"))
+    history.replaceState(null, "", location.pathname);
   if (passwordRecovery({ api, tab, notifyLogout })) return;
   try {
     signed(await session());

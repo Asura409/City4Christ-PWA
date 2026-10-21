@@ -197,3 +197,83 @@ test("password recovery uses public requests and reset clears local authenticati
   assert.equal(calls[2].url, "https://api.example/api/v1/auth/password/reset");
   assert.equal(client.isSignedIn(), false);
 });
+
+test("reauthentication uses existing bearer and never retries incorrect passwords", async () => {
+  const calls = [];
+  const client = createClient({
+    apiURL: "https://api.example",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      if (url.endsWith("/login"))
+        return json({
+          data: { accessToken: "existing-session", expiresIn: 600 },
+        });
+      if (url.endsWith("/password"))
+        return json(
+          {
+            error: {
+              code: "invalid_credentials",
+              message: "Password incorrect.",
+            },
+          },
+          401,
+        );
+      if (url.endsWith("/google"))
+        return json({ data: { url: "https://accounts.google.com/auth" } });
+      return json({
+        data: {
+          fresh: false,
+          passwordAvailable: true,
+          googleAvailable: true,
+          freshUntil: null,
+        },
+      });
+    },
+  });
+  await client.login("member@example.invalid", "synthetic password");
+  await client.reauthenticationStatus();
+  await assert.rejects(
+    () => client.reauthenticatePassword("wrong"),
+    (e) => e.code === "invalid_credentials",
+  );
+  await client.beginGoogleReauthentication("https://front.example/auth.html");
+  assert.equal(calls.length, 4);
+  for (const call of calls.slice(1))
+    assert.equal(call.options.headers.Authorization, "Bearer existing-session");
+  assert.deepEqual(JSON.parse(calls[2].options.body), { password: "wrong" });
+  assert.equal(new URL(calls[3].url).search, "");
+});
+
+test("MFA requests keep setup and recovery data out of URLs and use existing session", async () => {
+  const calls = [];
+  const client = createClient({
+    apiURL: "https://api.example",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return url.endsWith("/login")
+        ? json({ data: { accessToken: "session", expiresIn: 600 } })
+        : json({ data: {} });
+    },
+  });
+  await client.login("member@example.invalid", "synthetic password");
+  await client.mfaStatus();
+  await client.beginMFA();
+  await client.confirmMFA("setup-id", "123456");
+  await client.verifyMFA("654321");
+  await client.recoverMFA("synthetic-recovery-code");
+  await client.regenerateMFARecovery();
+  await client.disableMFA();
+  assert.equal(calls.length, 8);
+  for (const call of calls.slice(1)) {
+    assert.equal(call.options.headers.Authorization, "Bearer session");
+    assert.equal(new URL(call.url).search, "");
+    assert.equal(call.options.cache, "no-store");
+  }
+  assert.deepEqual(JSON.parse(calls[3].options.body), {
+    enrollmentId: "setup-id",
+    code: "123456",
+  });
+  assert.deepEqual(JSON.parse(calls[5].options.body), {
+    recoveryCode: "synthetic-recovery-code",
+  });
+});

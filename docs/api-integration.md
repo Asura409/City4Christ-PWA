@@ -103,11 +103,26 @@ content notice and an inert container. They cannot submit private information,
 claim a successful RSVP, publish a prayer or join a ministry. Onboarding does not
 send requests to a nonexistent endpoint. These workflows await their domain slices.
 
-This release does not include the separate fresh-authentication/MFA feature branch
-and does not require that branch's new backend endpoints. No backend deployment or
-database change is needed for this React integration.
+The original React integration (PR4) did not include fresh authentication/MFA and
+needed no backend change. The subsequent protected church-appointment feature below
+now integrates those security controls and requires backend1.10/migration17 first.
 
 Development uses Node 22 and `npm run dev` (Vite); `.env`/hosting `API_URL` works
 for both development and production builds. Backend CORS must allow the exact
 frontend origin. Cross-site cookie restrictions and real Google acceptance remain
 browser/provider checks; automated tests do not claim Safari or live-provider coverage.
+
+## Protected church appointments (feature branch)
+
+The React profile retains its Staff tools link to the connected `staff.html` page.
+Church appointments use a separate section from legacy editor appointments:
+
+- `roles.read` exposes bounded authorized name/email candidate lookup and church-role reads.
+- `roles.privileged.manage` exposes Super Admin, Assistant Pastor, Staff and Finance Officer appointments.
+- `roles.operational.manage` exposes registered-ministry leader appointments only.
+
+The candidate endpoint is `GET /api/v1/admin/role-candidates?query=...&limit=20&cursor=...`. Search requires 3–100 trimmed characters. Selected account IDs are used with `/api/v1/admin/accounts/{id}/church-roles` and its `/revoke` action. Mutation bodies contain `{role,scope,reason}`. Privileged target appointments require confirmed MFA. Browser restrictions are display assistance; the API independently authorizes every request. No bootstrap or self-grant exists. A Super Admin may explicitly revoke their own Super Admin appointment only when the server confirms another active Super Admin remains.
+
+Writes require both fresh primary identity and authenticator confirmation. A `reauthentication_required` or `mfa_required` response asks the user to complete security confirmation and explicitly review/resubmit; the original action is never automatically replayed. Candidate query changes, access invalidation and page exit clear selected private data. Passwords, authenticator seeds and backup codes remain outside browser storage.
+
+Deploy the backend church-role contract before releasing this frontend. `API_URL` remains the only frontend environment setting. This feature documentation is not evidence of a staging deployment or privileged appointment.

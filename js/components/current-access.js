@@ -1,7 +1,9 @@
+import { churchRoleLabels } from "../church-roles.js";
 import { createAccessState, hasCapability } from "../access.js";
 import { $, element, onClick, status } from "../ui.js";
 
 const labels = {
+  ...churchRoleLabels,
   content_editor: "Content editor",
   system_administrator: "System administrator",
   access_administrator: "Access administrator",
@@ -38,10 +40,11 @@ export function bindCurrentAccess(api, page) {
   access.subscribe((snapshot) => {
     const publisher = hasCapability(snapshot, "sermons.manage");
     const administrator = hasCapability(snapshot, "roles.manage");
+    const churchManager = hasCapability(snapshot, "roles.read");
     document
       .querySelectorAll('[data-api-navigation] a[href="staff.html"]')
       .forEach((link) => {
-        link.hidden = !(publisher || administrator);
+        link.hidden = !(publisher || administrator || churchManager);
       });
     document
       .querySelectorAll("[data-requires-permission]")
@@ -52,7 +55,8 @@ export function bindCurrentAccess(api, page) {
         );
       });
     const empty = $("#staff-access-empty");
-    if (empty) empty.hidden = !snapshot || publisher || administrator;
+    if (empty)
+      empty.hidden = !snapshot || publisher || administrator || churchManager;
     if (!administrator) $("#role-results")?.replaceChildren();
     if (panel) {
       panel.hidden = !api.isSignedIn();
