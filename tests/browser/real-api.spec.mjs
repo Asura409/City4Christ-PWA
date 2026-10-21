@@ -261,3 +261,74 @@ test("real email password recovery, single-use link and new-password login", asy
     timeout: 45000,
   });
 });
+
+
+test("React real signup, OTP, cookie restoration, profile update and logout", async ({
+  page,
+  context,
+}, info) => {
+  const email = `react-${info.project.name}@example.invalid`,
+    password = "a long synthetic React password";
+  await page.goto("/#/signup");
+  await page.getByLabel("First name", { exact: true }).fill("React");
+  await page.getByLabel("Last name", { exact: true }).fill("Tester");
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByLabel("Confirm password", { exact: true }).fill(password);
+  await page
+    .getByRole("button", { name: "Create account", exact: true })
+    .click();
+  await expect(
+    page.getByRole("heading", { name: "Verify email", exact: true }),
+  ).toBeVisible({ timeout: 45000 });
+  const inbox = await context.request.get(
+    "/__test/inbox?" + new URLSearchParams({ email }),
+  );
+  expect(inbox.ok()).toBeTruthy();
+  await page.getByLabel("Verification code").fill((await inbox.json()).code);
+  await page.getByRole("button", { name: "Verify email", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  await page.getByLabel("Email", { exact: true }).fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome, React" }),
+  ).toBeVisible({ timeout: 45000 });
+  const original = (await context.cookies()).find((c) =>
+    c.name.includes("refresh"),
+  );
+  expect(original.secure && original.httpOnly).toBeTruthy();
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Welcome, React" }),
+  ).toBeVisible();
+  expect(
+    (await context.cookies()).find((c) => c.name === original.name).value,
+  ).not.toBe(original.value);
+  await page.getByRole("button", { name: "My profile", exact: true }).click();
+  await page.getByLabel("First name", { exact: true }).fill("Connected");
+  await page.getByRole("button", { name: "Save profile" }).click();
+  await expect(
+    page.getByRole("status").filter({ hasText: "saved" }),
+  ).toBeVisible();
+  await page
+    .getByRole("link", { name: "Account security and Google linking" })
+    .click();
+  await expect(page.getByLabel("First name", { exact: true })).toHaveValue(
+    "Connected",
+  );
+  await page.goto("/#/profile");
+  await page.getByRole("button", { name: "Sign out", exact: true }).click();
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+  expect((await context.cookies()).some((c) => c.name === original.name)).toBe(
+    false,
+  );
+  await page.goto("/#/profile");
+  await expect(
+    page.getByRole("heading", { name: "Welcome back" }),
+  ).toBeVisible();
+});

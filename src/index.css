@@ -1,0 +1,35 @@
+:root {
+  color-scheme: dark;
+  --bg: #17132b; --bg-edge: #0d0a1b;
+  --surface: #231c3f; --surface-2: #2d2551; --surface-3: #382f63;
+  --line: rgba(255,255,255,.08);
+  --text: #f5f2ff; --muted: #a9a1cb;
+  --purple: #7b46c9; --purple-2: #9a6bea; --purple-deep: #4b2a8f;
+  --gold: #dba93e; --gold-2: #f0c866; --gold-ink: #2a1f05;
+  --lavender: #cfc5f8; --lav-ink: #231a45;
+  --cream: #fdf0dc; --cream-ink: #2b2112;
+  --blue: #2563b8; --green: #2f9a58; --rose: #ef4466;
+  --nav-h: 66px;
+  --serif: "Fraunces", Georgia, "Times New Roman", serif;
+  --sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html { height: 100%; }
+body, #root { min-height: 100%; }
+body {
+  background: var(--bg-edge);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; }
+textarea { font: inherit; }
+a { color: inherit; }
+:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

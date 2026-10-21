@@ -24,3 +24,9 @@ The frontend origin must be allowed by the backend's `CORS_ORIGINS` setting.
 
 Older duplicate app directories are excluded from builds. Frontend and backend
 remain independent repositories; review, commit and publish them separately.
+
+The root now uses the responsive React interface. Existing connected account,
+security, directory and staff pages remain available through profile links.
+Groups/events/prayer designs are explicitly marked as noninteractive previews until
+their backend domains are implemented. For Vite development, run `npm run dev`;
+for the exact hosted output use `npm run build` followed by `npm run preview`.

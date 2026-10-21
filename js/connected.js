@@ -14,6 +14,7 @@ if (!$("[data-api-navigation]")) {
     "aria-label": "Connected preview features",
   });
   for (const [label, path] of [
+    ["Community app", "/#/home"],
     ["Sign in", "auth.html"],
     ["My profile", "profile.html"],
     ["Word Hub", "word.html"],
