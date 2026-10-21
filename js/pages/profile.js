@@ -45,7 +45,7 @@ export async function profilePage({ api, access, session, setProfile }) {
     } catch (e) {
       if (e.status === 401) {
         status(
-          "Sign out and sign in again, then link Google within five minutes.",
+          "Confirm your identity below, then try linking Google again.",
           "error",
         );
         return;

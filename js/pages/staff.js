@@ -1,3 +1,4 @@
+import { churchRoleAppointments } from "../components/church-role-appointments.js";
 import { roleAppointments } from "../components/role-appointments.js";
 import {
   $,
@@ -110,6 +111,7 @@ export async function staffPage({ api, access, session }) {
   onClick($("#unpublish-sermon"), () => publish("draft"));
   onClick($("#schedule-sermon"), () => publish("scheduled"));
   roleAppointments(api, roles);
+  churchRoleAppointments({ api, access, session });
   try {
     await session();
     await access.refresh();

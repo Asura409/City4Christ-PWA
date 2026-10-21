@@ -94,6 +94,20 @@ export async function mocked(
       authenticated = false;
       return ok({ status: "logged_out" });
     }
+    if (path === "/api/v1/auth/mfa")
+      return ok({
+        enabled: false,
+        pending: false,
+        freshUntil: null,
+        recoveryCodesRemaining: 0,
+      });
+    if (path === "/api/v1/auth/reauthentication")
+      return ok({
+        fresh: true,
+        freshUntil: new Date(Date.now() + 300000).toISOString(),
+        passwordAvailable: true,
+        googleAvailable: false,
+      });
     if (path.endsWith("/auth/google/link"))
       return ok({ url: "https://accounts.google.com/auth?state=test-state" });
     if (path === "/api/v1/me/access")

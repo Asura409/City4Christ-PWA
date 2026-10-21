@@ -1,3 +1,4 @@
+import { hasCapability } from "../../js/access.js";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
@@ -18,10 +19,8 @@ export default function ProfileScreen() {
       .then(({ data }) => {
         if (live)
           setStaff(
-            data.capabilities.some(
-              (c) =>
-                c.scope === "" &&
-                ["sermons.manage", "roles.manage"].includes(c.permission),
+            ["sermons.manage", "roles.manage", "roles.read"].some(
+              (permission) => hasCapability(data, permission),
             ),
           );
       })
