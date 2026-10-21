@@ -1,5 +1,8 @@
 export const ID = "11111111-1111-4111-8111-111111111111",
-  SERMON = "22222222-2222-4222-8222-222222222222";
+  SERMON = "22222222-2222-4222-8222-222222222222",
+  GROUP = "33333333-3333-4333-8333-333333333333",
+  OTHER_GROUP = "55555555-5555-4555-8555-555555555555",
+  LEADERSHIP_GROUP = "66666666-6666-4666-8666-666666666666";
 export const STAFF_ACCESS = {
   roles: [
     { role: "content_editor", scope: "" },
@@ -39,6 +42,45 @@ export async function mocked(
     status: "draft",
     version: 1,
   };
+  let group = {
+    id: GROUP,
+    name: "Choir",
+    description: "Sunday worship team",
+    audience: "church",
+    joinPolicy: "approval",
+    membershipStatus: "",
+    memberCount: 1,
+    createdAt: "2026-10-17T12:00:00Z",
+  };
+  const otherGroup = {
+    id: OTHER_GROUP,
+    name: "Prayer Team",
+    description: "Serve the church in prayer",
+    audience: "church",
+    joinPolicy: "approval",
+    membershipStatus: "",
+    memberCount: 4,
+    createdAt: "2026-10-18T12:00:00Z",
+  };
+  const leadershipGroup = {
+    id: LEADERSHIP_GROUP,
+    name: "Leadership Council",
+    description: "Coordination for church leaders",
+    audience: "leadership",
+    joinPolicy: "closed",
+    membershipStatus: "",
+    memberCount: 3,
+    createdAt: "2026-10-19T12:00:00Z",
+  };
+  let pendingRequests = [
+    {
+      accountId: ID,
+      firstName: "Grace",
+      lastName: "Member",
+      requestedAt: "2026-10-18T12:00:00Z",
+    },
+  ];
+  let groupMembers = [];
   await page.route("**/js/config.js", (route) =>
     route.fulfill({
       contentType: "text/javascript",
@@ -114,6 +156,32 @@ export async function mocked(
       return authenticated
         ? ok(assignedAccess)
         : error(401, "invalid_session", "Sign in again.");
+    if (path === "/api/v1/groups") {
+      const leadershipEligible = (assignedAccess.roles || []).some((item) => ["super_administrator", "assistant_pastor", "ministry_leader"].includes(item.role));
+      const visibleGroups = [group, otherGroup, ...(leadershipEligible ? [leadershipGroup] : [])];
+      return authenticated ? route.fulfill({ json: { data: visibleGroups, meta: { nextCursor: "" } } }) : error(401, "invalid_session", "Sign in again.");
+    }
+    if (path === `/api/v1/groups/${GROUP}/membership` && method === "POST") {
+      group = { ...group, membershipStatus: "pending" };
+      return ok({ groupId: GROUP, accountId: ID, status: "pending", requestedAt: new Date().toISOString() });
+    }
+    if (path === `/api/v1/groups/${GROUP}/membership` && method === "DELETE") {
+      group = { ...group, membershipStatus: "left" };
+      return ok({ status: "left" });
+    }
+    if (path === `/api/v1/groups/${GROUP}/membership-requests`)
+      return authenticated ? ok(pendingRequests) : error(401, "invalid_session", "Sign in again.");
+    if (path === `/api/v1/groups/${GROUP}/membership-requests/${ID}` && method === "PATCH") {
+      const approved = body?.decision === "approve";
+      pendingRequests = [];
+      if (approved) {
+        groupMembers = [...groupMembers, { accountId: ID, firstName: "Grace", lastName: "Member" }];
+        group = { ...group, memberCount: group.memberCount + 1 };
+      }
+      return ok({ changed: true });
+    }
+    if (path === `/api/v1/groups/${GROUP}/members`)
+      return authenticated ? ok(groupMembers) : error(401, "invalid_session", "Sign in again.");
     if (
       path.startsWith("/api/v1/admin/sermons") &&
       !assignedAccess.capabilities.some(

@@ -1,81 +1,217 @@
-import React, { useState } from 'react';
-import { Icon } from '@/lib/icons';
-import { Avatar } from '@/components/Avatar';
-import { useToast } from '@/components/Toast';
-
-const GROUPS = [
-  {
-    id: 'youth', name: 'Youth Explosion', leader: 'Pastor Daniel',
-    tel: '+18002537739', phone: '+1 (800) 253-7739', time: 'Fridays at 7 PM',
-    members: 48, icon: 'flame', g: ['#e08b4a','#7b46c9'],
-    names: ['Gbande James','Sarah Okafor','Tolu Adeyemi','Kemi B'],
-    peekTitle: 'Latest in the group feed',
-    peek: { who: 'Sarah Okafor', text: "Testimony time: I'm so excited to see what God is doing in this group." },
-    topics: 15,
-  },
-  {
-    id: 'women', name: 'Women of Faith', leader: 'Sister Mary',
-    tel: '+15003738000', phone: '+1 (500) 373-8000', time: 'Fridays at 7 PM',
-    members: 62, icon: 'dove', g: ['#d76b9a','#5b3aa8'],
-    names: ['Mary Eze','Ruth A','Sarah Okafor','Joy N'],
-    peekTitle: "This week's discussion",
-    peek: { who: 'Mary Eze', text: '"Contentment and endurance by faith." Share what this means to you.' },
-    topics: 3,
-  },
-  {
-    id: 'men', name: 'Men of Valor', leader: 'Brother Tunde',
-    tel: '+18003335000', phone: '+1 (800) 333-5000', time: 'Saturdays at 8 AM',
-    members: 37, icon: 'shield', g: ['#3f86c8','#3a2a8a'],
-    names: ['Tunde B','Chidi Okeke','David A','Paul M'],
-    peekTitle: 'Latest in the group feed',
-    peek: { who: 'Tunde B', text: 'Breakfast and prayer this Saturday. Bring a friend who needs encouragement.' },
-    topics: 9,
-  },
-];
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { useToast } from "@/components/Toast";
+import { GroupCard } from "@/groups/GroupCard";
+import { canManageGroup } from "@/groups/access";
+import {
+  decideMembership,
+  getAccess,
+  joinGroup,
+  leaveGroup,
+  listGroupMembers,
+  listGroups,
+  listPendingRequests,
+} from "@/groups/api";
 
 export default function GroupsScreen() {
+  const { groupId } = useParams();
+  return groupId ? <GroupDetailScreen groupId={groupId} /> : <GroupDirectory />;
+}
+
+function GroupDirectory() {
   const toast = useToast();
-  const [joined, setJoined] = useState({});
+  const [groups, setGroups] = useState([]);
+  const [tab, setTab] = useState("all");
+  const [busyGroup, setBusyGroup] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let current = true;
+    listGroups()
+      .then(({ groups: items }) => { if (current) setGroups(items); })
+      .catch((e) => { if (current) setError(e.message); })
+      .finally(() => { if (current) setLoading(false); });
+    return () => { current = false; };
+  }, []);
+
+  async function join(group) {
+    setBusyGroup(group.id);
+    setError("");
+    try {
+      const membership = await joinGroup(group.id);
+      setGroups((items) => items.map((item) => item.id === group.id ? {
+        ...item,
+        membershipStatus: membership.status,
+        memberCount: membership.status === "active" && item.membershipStatus !== "active" ? item.memberCount + 1 : item.memberCount,
+      } : item));
+      toast(membership.status === "active" ? `You joined ${group.name}` : `Request sent to ${group.name}`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyGroup("");
+    }
+  }
+
+  async function leave(group) {
+    setBusyGroup(group.id);
+    setError("");
+    try {
+      await leaveGroup(group.id);
+      setGroups((items) => items.map((item) => item.id === group.id ? {
+        ...item,
+        membershipStatus: "left",
+        memberCount: item.membershipStatus === "active" ? Math.max(0, item.memberCount - 1) : item.memberCount,
+      } : item));
+      toast(`You left ${group.name}`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyGroup("");
+    }
+  }
+
+  const shown = tab === "mine"
+    ? groups.filter((group) => ["active", "pending"].includes(group.membershipStatus))
+    : groups;
 
   return (
-    <section className="screen active" aria-label="Ministry groups">
-      <p className="lead" style={{ marginBottom: 14 }}>Find your people. Join a group to see its private feed.</p>
-      {GROUPS.map(g => {
-        const j = joined[g.id];
-        return (
-          <article key={g.id} className="card group">
-            <div className="cover" style={{ '--g1': g.g[0], '--g2': g.g[1] }}>
-              <div className="g-ic"><Icon name={g.icon} /></div>
-            </div>
-            <div className="g-body">
-              <h3>{g.name}</h3>
-              <div className="g-meta">
-                <div><Icon name="users" />Led by {g.leader}</div>
-                <div><Icon name="clock" />{g.time}</div>
-                <div><Icon name="phone" /><a href={`tel:${g.tel.replace(/[^+\d]/g, '')}`}>{g.phone}</a></div>
-              </div>
-              <div className="members">
-                <div className="stack">{g.names.map(n => <Avatar key={n} name={n} size={28} />)}</div>
-                <span>{g.members + (j ? 1 : 0)} members</span>
-              </div>
-              <div className="peek">
-                <small><Icon name="lock" />{g.peekTitle}</small>
-                <div className="q"><Avatar name={g.peek.who} size={30} /><span>{g.peek.text}</span></div>
-                <span className="n">{g.topics} discussion topics</span>
-              </div>
-              <button
-                className={`btn gold block${j ? ' on' : ''}`}
-                onClick={() => {
-                  setJoined(jn => ({ ...jn, [g.id]: !jn[g.id] }));
-                  if (!j) toast('Request sent to the group leader');
-                }}
-              >
-                {j ? <><Icon name="check" />Request sent</> : 'Join group'}
-              </button>
-            </div>
-          </article>
-        );
-      })}
+    <section className="screen active groups-screen" aria-label="Church groups">
+      <div className="groups-heading">
+        <div>
+          <p className="group-eyebrow">CITY4CHRIST COMMUNITY</p>
+          <h1>Find your group</h1>
+          <p className="lead">Connect, serve and grow with people across the church.</p>
+        </div>
+      </div>
+      <div className="tabs group-tabs" role="tablist" aria-label="Groups">
+        <button className="tab" role="tab" aria-selected={tab === "all"} onClick={() => setTab("all")}>All groups</button>
+        <button className="tab" role="tab" aria-selected={tab === "mine"} onClick={() => setTab("mine")}>My groups</button>
+      </div>
+      {error && <p className="group-error" role="alert">{error}</p>}
+      {loading ? <p className="group-state" role="status">Loading groups…</p> : shown.length === 0 ? (
+        <p className="group-state">{tab === "mine" ? "You have not joined or requested a group yet." : "There are no groups to show right now."}</p>
+      ) : (
+        <div className="group-grid">
+          {shown.map((group) => <GroupCard key={group.id} group={group} busy={busyGroup === group.id} onJoin={join} onLeave={leave} />)}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function GroupDetailScreen({ groupId }) {
+  const navigate = useNavigate();
+  const toast = useToast();
+  const [group, setGroup] = useState(null);
+  const [members, setMembers] = useState([]);
+  const [requests, setRequests] = useState([]);
+  const [showRoster, setShowRoster] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [busyAccount, setBusyAccount] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let current = true;
+    async function load() {
+      setLoading(true);
+      setGroup(null);
+      setMembers([]);
+      setRequests([]);
+      setShowRoster(false);
+      setError("");
+      try {
+        const [{ groups }, access] = await Promise.all([listGroups(), getAccess()]);
+        const found = groups.find((item) => item.id === groupId);
+        if (!found) throw new Error("This group is unavailable to your account.");
+        if (!current) return;
+        setGroup(found);
+        const manager = canManageGroup(access, found);
+        setShowRoster(manager || found.membershipStatus === "active");
+        const reads = [];
+        if (manager) reads.push(listPendingRequests(groupId).then((items) => ["requests", items]));
+        if (manager || found.membershipStatus === "active") reads.push(listGroupMembers(groupId).then((items) => ["members", items]));
+        const results = await Promise.all(reads);
+        if (!current) return;
+        for (const [kind, items] of results) {
+          if (kind === "requests") setRequests(items);
+          if (kind === "members") setMembers(items);
+        }
+      } catch (e) {
+        if (current) setError(e.message);
+      } finally {
+        if (current) setLoading(false);
+      }
+    }
+    void load();
+    return () => { current = false; };
+  }, [groupId]);
+
+  async function decide(request, decision) {
+    setBusyAccount(request.accountId);
+    setError("");
+    try {
+      await decideMembership(groupId, request.accountId, decision);
+      setRequests((items) => items.filter((item) => item.accountId !== request.accountId));
+      if (decision === "approve") {
+        const [{ groups }, roster] = await Promise.all([listGroups(), listGroupMembers(groupId)]);
+        const refreshed = groups.find((item) => item.id === groupId);
+        if (refreshed) setGroup(refreshed);
+        setMembers(roster);
+      }
+      toast(`Request ${decision === "approve" ? "approved" : "declined"}`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyAccount("");
+    }
+  }
+
+  if (loading) return <section className="screen active" aria-label="Group details"><p role="status">Loading group…</p></section>;
+  if (!group) return <section className="screen active" aria-label="Group details"><p role="alert">{error || "This group is unavailable."}</p><button className="btn soft" onClick={() => navigate("/groups")}>Back to groups</button></section>;
+
+  const canSeeRoster = showRoster;
+  return (
+    <section className="screen active groups-screen" aria-label={`${group.name} details`}>
+      <button className="group-back" onClick={() => navigate("/groups")}>← All groups</button>
+      <div className="group-detail-hero">
+        <span className="group-eyebrow">{group.audience === "leadership" ? "LEADERSHIP" : "CHURCH GROUP"}</span>
+        <h1>{group.name}</h1>
+        <p>{group.description || "A place to serve, connect and grow together."}</p>
+        <span className="detail-count">{group.memberCount} {group.memberCount === 1 ? "member" : "members"}</span>
+      </div>
+      {error && <p className="group-error" role="alert">{error}</p>}
+      {requests.length > 0 && (
+        <section className="group-panel" aria-label="Pending membership requests">
+          <div className="sh"><h2>Pending requests</h2><span className="group-number">{requests.length}</span></div>
+          <p className="lead">Review people who want to join this group.</p>
+          <div className="group-list">
+            {requests.map((request) => {
+              const name = `${request.firstName} ${request.lastName}`.trim();
+              return <article className="group-person" key={request.accountId}>
+                <div className="person-initials" aria-hidden="true">{request.firstName?.[0]}{request.lastName?.[0]}</div>
+                <div className="person-name"><b>{name}</b><span>Requested to join</span></div>
+                <div className="person-actions">
+                  <button className="btn gold" disabled={busyAccount === request.accountId} aria-label={`Approve ${name}`} onClick={() => decide(request, "approve")}>Approve</button>
+                  <button className="btn soft" disabled={busyAccount === request.accountId} aria-label={`Decline ${name}`} onClick={() => decide(request, "decline")}>Decline</button>
+                </div>
+              </article>;
+            })}
+          </div>
+        </section>
+      )}
+      {canSeeRoster && (
+        <section className="group-panel" aria-label="Group roster">
+          <div className="sh"><h2>Members</h2><span className="group-number">{members.length || group.memberCount}</span></div>
+          {members.length === 0 ? <p className="lead">No active members are listed yet.</p> : <div className="group-list">
+            {members.map((member) => <article className="group-person" key={member.accountId}>
+              <div className="person-initials" aria-hidden="true">{member.firstName?.[0]}{member.lastName?.[0]}</div>
+              <div className="person-name"><b>{member.firstName} {member.lastName}</b><span>Group member</span></div>
+            </article>)}
+          </div>}
+        </section>
+      )}
+      <div className="group-detail-footer"><span>{group.membershipStatus === "active" ? "You are a member" : group.membershipStatus === "pending" ? "Your request is awaiting approval" : "Membership"}</span></div>
     </section>
   );
 }
