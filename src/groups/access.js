@@ -24,3 +24,11 @@ export function canManageGroup(access, group) {
     hasCapability(access, "ministry.members.manage", group.id)
   );
 }
+
+export function canManageChurchGroups(access) {
+  return hasCapability(access, "groups.manage");
+}
+
+export function canCreateLeadershipGroup(access) {
+  return hasRole(access, "super_administrator");
+}

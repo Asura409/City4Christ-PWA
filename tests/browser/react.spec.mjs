@@ -64,10 +64,14 @@ test("React public sermons use API search and detail safely, old tools remain av
 }) => {
   const { calls } = await mocked(page);
   await page.goto("/#/word");
+  await expect(page.locator(".sermon img").first()).toHaveAttribute(
+    "src",
+    "https://images.unsplash.com/photo-1770097286875-0cbf4ca2f8c1?auto=format&fit=crop&w=1200&q=80",
+  );
   await expect(
     page.getByRole("heading", { name: "<img src=x onerror=alert(1)>" }),
   ).toBeVisible();
-  await expect(page.locator(".sermon img")).toHaveCount(0);
+  await expect(page.locator(".sermon img")).toHaveCount(1);
   await page.getByRole("searchbox").fill("faith");
   await page.getByRole("button", { name: "Search sermons" }).click();
   await expect
@@ -82,6 +86,10 @@ test("React public sermons use API search and detail safely, old tools remain av
   await expect(
     page.getByRole("heading", { name: "Living in Faith" }),
   ).toBeVisible();
+  await expect(page.locator(".sermon iframe")).toHaveAttribute(
+    "src",
+    "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
+  );
   await page.goto("/auth.html");
   await expect(
     page.getByRole("form", { name: "Sign in", exact: true }),

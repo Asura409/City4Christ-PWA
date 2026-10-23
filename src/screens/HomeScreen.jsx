@@ -39,7 +39,7 @@ export default function HomeScreen() {
         ))}
       </div>
       <p className="lead">
-        Sermons, your account and church groups are connected. Events and prayer
+        Sermons, community posts, your account and church groups are connected. Events and prayer
         are still previews while those services are being built.
       </p>
     </section>
