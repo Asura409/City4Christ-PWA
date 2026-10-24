@@ -161,16 +161,13 @@ test("React preserves errors, clears passwords and does not pretend logout succe
     page.getByRole("heading", { name: "Grace Member" }),
   ).toBeVisible();
 });
-test("Unimplemented domains are inert design previews and collect no private data", async ({
+test("Prayer requests load from the authenticated API", async ({
   page,
 }) => {
   const { calls } = await mocked(page, { signedIn: true });
   await page.goto("/#/prayer");
-  await expect(
-    page.getByRole("status").filter({ hasText: "Design preview" }),
-  ).toBeVisible();
-  await expect(page.locator("[inert]")).toHaveCount(1);
-  expect(calls.some((c) => c.path.includes("/prayer"))).toBe(false);
+  await expect(page.getByText("Please pray for peace in our community.")).toBeVisible();
+  expect(calls.some((c) => c.path === "/api/v1/prayer/requests" && c.method === "GET")).toBe(true);
 });
 test("A delayed previous session cannot overwrite a newly signed-in profile", async ({
   page,
