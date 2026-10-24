@@ -11,6 +11,8 @@ test("React release includes configured API origin and every existing connected 
     const html = await readFile(join(out, "index.html"), "utf8");
     assert.match(html, /app-assets/);
     assert.match(html, /connect-src 'self' https:\/\/alternate.example/);
+    assert.match(html, /img-src[^;]+https:\/\/images\.unsplash\.com/);
+    assert.match(html, /frame-src https:\/\/www\.youtube-nocookie\.com/);
     assert.match(html, /js\/config.js/);
     const worker = await readFile(join(out, "service-worker.js"), "utf8");
     assert.match(worker, /app-assets\//);

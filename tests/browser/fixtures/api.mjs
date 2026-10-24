@@ -37,7 +37,8 @@ export async function mocked(
     series: "Faith",
     topic: "Trust",
     preachedAt: "2026-10-17T12:00:00Z",
-    videoUrl: "",
+    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    imageUrl: "https://images.unsplash.com/photo-1770097286875-0cbf4ca2f8c1?auto=format&fit=crop&w=1200&q=80",
     publishedAt: null,
     status: "draft",
     version: 1,
@@ -51,6 +52,15 @@ export async function mocked(
     membershipStatus: "",
     memberCount: 1,
     createdAt: "2026-10-17T12:00:00Z",
+  };
+  let managedGroups = [];
+  let appointedLeaders = [];
+  const roleCandidate = {
+    id: "77777777-7777-4777-8777-777777777777",
+    firstName: "Joy",
+    lastName: "Leader",
+    email: "joy.leader@example.invalid",
+    mfaEnabled: true,
   };
   const otherGroup = {
     id: OTHER_GROUP,
@@ -72,6 +82,7 @@ export async function mocked(
     memberCount: 3,
     createdAt: "2026-10-19T12:00:00Z",
   };
+  managedGroups = [group, otherGroup, leadershipGroup];
   let pendingRequests = [
     {
       accountId: ID,
@@ -81,6 +92,14 @@ export async function mocked(
     },
   ];
   let groupMembers = [];
+  let posts = [{
+    id: "99999999-9999-4999-8999-999999999999",
+    authorId: ID,
+    firstName: "Grace",
+    lastName: "Member",
+    body: "Welcome to church this Sunday.",
+    createdAt: "2026-10-20T10:00:00Z",
+  }];
   await page.route("**/js/config.js", (route) =>
     route.fulfill({
       contentType: "text/javascript",
@@ -156,6 +175,72 @@ export async function mocked(
       return authenticated
         ? ok(assignedAccess)
         : error(401, "invalid_session", "Sign in again.");
+    if (path === "/api/v1/posts") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      if (method === "POST") {
+        const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", authorId: ID, firstName: profile.firstName, lastName: profile.lastName, body: body.body, createdAt: new Date().toISOString() };
+        posts = [created, ...posts];
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+      return route.fulfill({ json: { data: posts, meta: { nextCursor: "" } } });
+    }
+    const canManageGroups = () =>
+      (assignedAccess.capabilities || []).some(
+        (capability) => capability.permission === "groups.manage" && capability.scope === "",
+      );
+    if (path === "/api/v1/admin/groups") {
+      if (!canManageGroups()) return error(403, "forbidden", "You are not authorized to manage groups.");
+      if (method === "GET") {
+        const includeArchived = u.searchParams.get("includeArchived") === "true";
+        const leadershipEligible = (assignedAccess.roles || []).some((item) => ["super_administrator", "assistant_pastor", "ministry_leader"].includes(item.role));
+        return ok(managedGroups.filter((item) => (includeArchived || !item.archived) && (item.audience !== "leadership" || leadershipEligible)));
+      }
+      if (method === "POST") {
+        const created = {
+          id: "88888888-8888-4888-8888-888888888888",
+          name: body.name,
+          description: body.description || "",
+          audience: body.audience,
+          joinPolicy: body.joinPolicy,
+          memberCount: 0,
+          archived: false,
+          createdAt: new Date().toISOString(),
+        };
+        managedGroups = [...managedGroups, created];
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+    }
+    const lifecycleMatch = path.match(/^\/api\/v1\/admin\/groups\/([^/]+)$/);
+    if (lifecycleMatch && method === "PATCH") {
+      if (!canManageGroups()) return error(403, "forbidden", "You are not authorized to manage groups.");
+      managedGroups = managedGroups.map((item) => item.id === lifecycleMatch[1]
+        ? { ...item, archived: body.status === "archived" }
+        : item);
+      return ok({ changed: true });
+    }
+    const leadersMatch = path.match(/^\/api\/v1\/admin\/groups\/([^/]+)\/leaders$/);
+    if (leadersMatch && method === "GET") {
+      if (!canManageGroups()) return error(403, "forbidden", "You are not authorized to manage groups.");
+      return ok(appointedLeaders);
+    }
+    if (path === "/api/v1/admin/role-candidates") {
+      if (!(assignedAccess.capabilities || []).some((capability) => capability.permission === "roles.read"))
+        return error(403, "forbidden", "Role lookup is not permitted.");
+      return route.fulfill({ json: { data: [roleCandidate], meta: { nextCursor: "" } } });
+    }
+    const churchRoleMatch = path.match(/^\/api\/v1\/admin\/accounts\/([^/]+)\/church-roles(?:\/revoke)?$/);
+    if (churchRoleMatch) {
+      if (!(assignedAccess.capabilities || []).some((capability) => ["roles.read", "roles.operational.manage"].includes(capability.permission)))
+        return error(403, "forbidden", "Church role management is not permitted.");
+      if (method === "GET") return ok(appointedLeaders.some((item) => item.accountId === churchRoleMatch[1])
+        ? [{ role: "ministry_leader", scope: GROUP }]
+        : []);
+      if (!(assignedAccess.capabilities || []).some((capability) => capability.permission === "roles.operational.manage"))
+        return error(403, "forbidden", "Church role management is not permitted.");
+      if (path.endsWith("/revoke")) appointedLeaders = appointedLeaders.filter((item) => item.accountId !== churchRoleMatch[1]);
+      else appointedLeaders = [...appointedLeaders, { accountId: churchRoleMatch[1], firstName: roleCandidate.firstName, lastName: roleCandidate.lastName }];
+      return ok({ changed: true });
+    }
     if (path === "/api/v1/groups") {
       const leadershipEligible = (assignedAccess.roles || []).some((item) => ["super_administrator", "assistant_pastor", "ministry_leader"].includes(item.role));
       const visibleGroups = [group, otherGroup, ...(leadershipEligible ? [leadershipGroup] : [])];
@@ -192,7 +277,7 @@ export async function mocked(
     if (
       path.startsWith("/api/v1/admin/accounts/") &&
       !assignedAccess.capabilities.some(
-        (c) => c.permission === "roles.manage" && c.scope === "",
+        (c) => ["roles.manage", "roles.read"].includes(c.permission) && c.scope === "",
       )
     )
       return error(

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
-import { safeUrl } from "@/lib/sanitize";
+import { safeImageUrl, safeUrl, youtubeEmbedUrl } from "@/lib/sanitize";
 export default function WordScreen() {
   const [query, setQuery] = useState(""),
     [items, setItems] = useState([]),
@@ -57,8 +57,10 @@ export default function WordScreen() {
             Back to sermons
           </button>
           <h2>{selected.title}</h2>
+          {safeImageUrl(selected.imageUrl) && <img className="sermon-image sermon-detail-image" src={safeImageUrl(selected.imageUrl)} alt={selected.title} loading="lazy" referrerPolicy="no-referrer" />}
           <p>{selected.summary}</p>
           <p>{selected.speaker}</p>
+          {youtubeEmbedUrl(selected.videoUrl) && <div className="sermon-video"><iframe title={`${selected.title} video`} src={youtubeEmbedUrl(selected.videoUrl)} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div>}
           {selected.videoUrl && safeUrl(selected.videoUrl) !== "#" && (
             <a
               className="btn gold"
@@ -94,6 +96,7 @@ export default function WordScreen() {
           {!busy && !items.length && <p>No published sermons yet.</p>}
           {items.map((s) => (
             <article key={s.id} className="card sermon">
+              {safeImageUrl(s.imageUrl) && <img className="sermon-image" src={safeImageUrl(s.imageUrl)} alt={s.title} loading="lazy" referrerPolicy="no-referrer" />}
               <div className="s-text">
                 <h2>{s.title}</h2>
                 <p>{s.summary}</p>

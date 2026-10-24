@@ -36,3 +36,40 @@ export async function decideMembership(groupId, accountId, decision) {
 export async function getAccess() {
   return (await api.request("/api/v1/me/access")).data;
 }
+
+export async function listManagedGroups(includeArchived = false) {
+  const query = includeArchived ? "?includeArchived=true" : "";
+  const { data } = await api.request(`/api/v1/admin/groups${query}`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createGroup(body) {
+  return (await api.request("/api/v1/admin/groups", {
+    method: "POST",
+    body,
+  })).data;
+}
+
+export async function setGroupLifecycle(groupId, status, reason) {
+  return (await api.request(`/api/v1/admin/groups/${groupId}`, {
+    method: "PATCH",
+    body: { status, reason },
+  })).data;
+}
+
+export async function listGroupLeaders(groupId) {
+  return (await api.request(`/api/v1/admin/groups/${groupId}/leaders`)).data || [];
+}
+
+export async function searchRoleCandidates(query) {
+  const params = new URLSearchParams({ query: query.trim(), limit: "20" });
+  return (await api.request(`/api/v1/admin/role-candidates?${params}`)).data || [];
+}
+
+export async function changeGroupLeader(accountId, groupId, reason, revoke = false) {
+  const suffix = revoke ? "/revoke" : "";
+  return (await api.request(`/api/v1/admin/accounts/${accountId}/church-roles${suffix}`, {
+    method: "POST",
+    body: { role: "ministry_leader", scope: groupId, reason },
+  })).data;
+}

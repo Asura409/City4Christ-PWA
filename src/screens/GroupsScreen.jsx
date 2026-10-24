@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/Toast";
 import { GroupCard } from "@/groups/GroupCard";
-import { canManageGroup } from "@/groups/access";
+import { canManageChurchGroups, canManageGroup } from "@/groups/access";
 import {
   decideMembership,
   getAccess,
@@ -25,11 +25,17 @@ function GroupDirectory() {
   const [busyGroup, setBusyGroup] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [canManage, setCanManage] = useState(false);
 
   useEffect(() => {
     let current = true;
-    listGroups()
-      .then(({ groups: items }) => { if (current) setGroups(items); })
+    Promise.all([listGroups(), getAccess()])
+      .then(([{ groups: items }, access]) => {
+        if (current) {
+          setGroups(items);
+          setCanManage(canManageChurchGroups(access));
+        }
+      })
       .catch((e) => { if (current) setError(e.message); })
       .finally(() => { if (current) setLoading(false); });
     return () => { current = false; };
@@ -83,6 +89,7 @@ function GroupDirectory() {
           <h1>Find your group</h1>
           <p className="lead">Connect, serve and grow with people across the church.</p>
         </div>
+        {canManage && <Link className="btn dark" to="/groups/manage">Manage groups</Link>}
       </div>
       <div className="tabs group-tabs" role="tablist" aria-label="Groups">
         <button className="tab" role="tab" aria-selected={tab === "all"} onClick={() => setTab("all")}>All groups</button>

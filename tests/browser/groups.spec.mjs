@@ -6,7 +6,7 @@ test("members discover church groups, request to join and see their memberships"
   await page.goto("/#/groups");
 
   await expect(page.getByRole("heading", { name: "Choir" })).toBeVisible();
-  await expect(page.getByText("Church group")).toBeVisible();
+  await expect(page.getByText("Church group").first()).toBeVisible();
   await page.getByRole("button", { name: "Request to join Choir" }).click();
   await expect(page.getByRole("status")).toContainText("Request sent");
   expect(calls.some((call) => call.path === `/api/v1/groups/${GROUP}/membership` && call.method === "POST")).toBe(true);
