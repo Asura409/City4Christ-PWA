@@ -6,7 +6,7 @@ const tiles = [
   ["/word", "mic", "Sermons"],
   ["/profile", "users", "My profile"],
   ["/groups", "users", "Church groups"],
-  ["/events", "cal", "Events preview"],
+  ["/events", "cal", "Church events"],
 ];
 export default function HomeScreen() {
   const { profile } = useSession(),
@@ -39,8 +39,7 @@ export default function HomeScreen() {
         ))}
       </div>
       <p className="lead">
-        Sermons, community posts, your account and church groups are connected. Events and prayer
-        are still previews while those services are being built.
+        Sermons, community posts, church events, prayer requests and direct messages are connected.
       </p>
     </section>
   );
