@@ -15,7 +15,7 @@ export const STAFF_ACCESS = {
 };
 export async function mocked(
   page,
-  { signedIn = false, access = { roles: [], capabilities: [] } } = {},
+  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false } = {},
 ) {
   let assignedAccess = access;
   const calls = [];
@@ -53,6 +53,19 @@ export async function mocked(
     memberCount: 1,
     createdAt: "2026-10-17T12:00:00Z",
   };
+  if (activeGroupMembership) group = { ...group, membershipStatus: "active" };
+  let prayers = [{
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    body: "Please pray for peace in our community.",
+    visibility: "community",
+    anonymous: true,
+    status: "open",
+    author: "Anonymous",
+    isOwner: false,
+    createdAt: "2026-10-22T12:00:00Z",
+    prayerCount: 2,
+    hasPrayed: false,
+  }];
   let managedGroups = [];
   let appointedLeaders = [];
   const roleCandidate = {
@@ -92,6 +105,7 @@ export async function mocked(
     },
   ];
   let groupMembers = [];
+  let notifications = [];
   let posts = [{
     id: "99999999-9999-4999-8999-999999999999",
     authorId: ID,
@@ -175,6 +189,23 @@ export async function mocked(
       return authenticated
         ? ok(assignedAccess)
         : error(401, "invalid_session", "Sign in again.");
+    if (path === "/api/v1/notifications/unread-count") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      return ok({ unreadCount: notifications.filter((item) => !item.readAt).length });
+    }
+    if (path === "/api/v1/notifications" && method === "GET") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      return route.fulfill({ json: { data: notifications, meta: { nextCursor: "" } } });
+    }
+    const notificationRead = path.match(/^\/api\/v1\/notifications\/([^/]+)\/read$/);
+    if (notificationRead && method === "PUT") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const item = notifications.find((entry) => entry.id === notificationRead[1]);
+      if (!item) return error(404, "notification_not_found", "Notification not found.");
+      const changed = !item.readAt;
+      item.readAt = item.readAt || new Date().toISOString();
+      return ok({ changed });
+    }
     if (path === "/api/v1/posts") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
       if (method === "POST") {
@@ -183,6 +214,50 @@ export async function mocked(
         return route.fulfill({ status: 201, json: { data: created } });
       }
       return route.fulfill({ json: { data: posts, meta: { nextCursor: "" } } });
+    }
+    if (path === "/api/v1/prayer/requests") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      if (method === "POST") {
+        const created = {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          body: body.body,
+          visibility: body.visibility,
+          groupId: body.groupId,
+          anonymous: body.anonymous,
+          status: "open",
+          author: body.anonymous ? "You" : `${profile.firstName} ${profile.lastName}`,
+          isOwner: true,
+          createdAt: new Date().toISOString(),
+          prayerCount: 0,
+          hasPrayed: false,
+        };
+        prayers = [created, ...prayers];
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+      const requestedStatus = u.searchParams.get("status") || "open";
+      return route.fulfill({
+        json: { data: prayers.filter((item) => item.status === requestedStatus), meta: { nextCursor: "" } },
+      });
+    }
+    const prayerAction = path.match(/^\/api\/v1\/prayer\/requests\/([^/]+)(?:\/(prayed))?$/);
+    if (prayerAction) {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const item = prayers.find((request) => request.id === prayerAction[1]);
+      if (!item) return error(404, "prayer_not_found", "Prayer request not found.");
+      if (method === "PUT" && prayerAction[2] === "prayed") {
+        const changed = !item.hasPrayed;
+        if (changed) {
+          item.hasPrayed = true;
+          item.prayerCount++;
+        }
+        return ok({ changed });
+      }
+      if (method === "PATCH" && !prayerAction[2]) {
+        const changed = item.status !== body.status;
+        item.status = body.status;
+        return ok({ changed });
+      }
+      if (method === "GET" && !prayerAction[2]) return ok(item);
     }
     const canManageGroups = () =>
       (assignedAccess.capabilities || []).some(

@@ -1,120 +1,172 @@
-import React, { useState } from 'react';
-import { Icon } from '@/lib/icons';
-import { useToast } from '@/components/Toast';
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSession } from "@/auth/session";
+import { useToast } from "@/components/Toast";
+import { Icon } from "@/lib/icons";
+import { cancelEventRSVP, listEvents, rsvpEvent } from "@/events/api";
+import { dateKeyInZone, formatEventDateTime, localDateKey } from "@/events/date";
+import { EventManager } from "@/events/EventManager";
 
 const TODAY = new Date();
 TODAY.setHours(0, 0, 0, 0);
+const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const addDays = (date, count) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + count);
+const eventDay = (event) => dateKeyInZone(event.startsAt, event.timeZone);
 
-function addDays(d, n) {
-  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n);
+function dateFromKey(key) {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Date(year, month - 1, day);
 }
-function sameDay(a, b) { return a.getTime() === b.getTime(); }
-function mon(d) { return d.toLocaleDateString('en-US', { month: 'short' }); }
-function when(o) { return o === 0 ? 'Today' : o === 1 ? 'Tomorrow' : `In ${o} days`; }
 
-const EVENTS = [
-  { id: 'e1', off: 2,  title: 'Altar of intercession',  time: '9:00 PM', where: 'Online stream',  going: 128 },
-  { id: 'e2', off: 2,  title: 'Altar of intercession',  time: '9:00 PM', where: 'Main Sanctuary', going: 64  },
-  { id: 'e3', off: 3,  title: 'Youth Explosion',         time: '7:00 PM', where: 'Fellowship Hall',going: 41  },
-  { id: 'e4', off: 6,  title: 'Worship night',           time: '6:00 PM', where: 'Main Sanctuary', going: 212 },
-  { id: 'e5', off: 10, title: 'Women of Faith retreat',  time: '8:00 AM', where: 'Garden Room',    going: 37  },
-];
+function selectedWeekOffset(key) {
+  const selected = dateFromKey(key);
+  const selectedSunday = addDays(selected, -selected.getDay());
+  const currentSunday = addDays(TODAY, -TODAY.getDay());
+  return Math.round((selectedSunday - currentSunday) / (7 * 24 * 60 * 60 * 1000));
+}
 
 export default function EventsScreen() {
   const toast = useToast();
-  const [weekOff, setWeekOff] = useState(0);
-  const [sel, setSel] = useState(addDays(TODAY, 2));
-  const [rsvp, setRsvp] = useState({});
+  const navigate = useNavigate();
+  const { profile } = useSession();
+  const [events, setEvents] = useState([]);
+  const [selectedDay, setSelectedDay] = useState(localDateKey(TODAY));
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [busyEvent, setBusyEvent] = useState("");
+  const [attendeeCounts, setAttendeeCounts] = useState({});
+  const [error, setError] = useState("");
+  const initialDaySet = useRef(false);
 
-  const weekBase = addDays(TODAY, -TODAY.getDay() + weekOff * 7);
-  const weekEnd  = addDays(weekBase, 6);
-  const DAY_NAMES = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  async function loadEvents(signal) {
+    setError("");
+    try {
+      const result = await listEvents({ signal });
+      setEvents(result);
+      if (!initialDaySet.current && result.length) {
+        const firstDay = eventDay(result[0]);
+        setSelectedDay(firstDay);
+        setWeekOffset(selectedWeekOffset(firstDay));
+        initialDaySet.current = true;
+      }
+    } catch (e) {
+      if (!signal?.aborted) setError(e.message);
+    }
+  }
 
-  const monthTitle = mon(weekBase) === mon(weekEnd)
-    ? weekBase.toLocaleDateString('en-US', { month: 'long' }) + ' ' + weekEnd.getFullYear()
-    : `${mon(weekBase)} – ${mon(weekEnd)} ${weekEnd.getFullYear()}`;
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    void loadEvents(controller.signal).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
+  }, [profile?.id]);
 
-  const evOn = d => EVENTS.filter(e => sameDay(addDays(TODAY, e.off), d));
-  const dayEvents = evOn(sel);
+  const weekBase = addDays(TODAY, -TODAY.getDay() + weekOffset * 7);
+  const weekEnd = addDays(weekBase, 6);
+  const monthTitle = weekBase.getMonth() === weekEnd.getMonth()
+    ? weekBase.toLocaleDateString(undefined, { month: "long", year: "numeric" })
+    : `${weekBase.toLocaleDateString(undefined, { month: "short" })} – ${weekEnd.toLocaleDateString(undefined, { month: "short", year: "numeric" })}`;
+  const selectedEvents = useMemo(() => events.filter((event) => eventDay(event) === selectedDay), [events, selectedDay]);
 
-  function prevWeek() { setWeekOff(w => w - 1); setSel(addDays(TODAY, -TODAY.getDay() + (weekOff - 1) * 7)); }
-  function nextWeek() { setWeekOff(w => w + 1); setSel(addDays(TODAY, -TODAY.getDay() + (weekOff + 1) * 7)); }
+  function moveWeek(offset) {
+    const nextOffset = weekOffset + offset;
+    const nextSunday = addDays(TODAY, -TODAY.getDay() + nextOffset * 7);
+    setWeekOffset(nextOffset);
+    setSelectedDay(localDateKey(nextSunday));
+  }
+
+  function selectDay(date) {
+    setSelectedDay(localDateKey(date));
+  }
+
+  function updateLocalEvent(eventId, transform) {
+    setEvents((items) => items.map((item) => item.id === eventId ? transform(item) : item));
+  }
+
+  async function submitRSVP(event) {
+    if (!profile) {
+      navigate("/login", { state: { from: "/events" } });
+      return;
+    }
+    const input = attendeeCounts[event.id] || 1;
+    setBusyEvent(event.id);
+    setError("");
+    const previous = event.myAttendeeCount || 0;
+    try {
+      const saved = await rsvpEvent(event.id, input);
+      updateLocalEvent(event.id, (current) => ({
+        ...current,
+        attendeeCount: current.attendeeCount - previous + saved.attendeeCount,
+        myAttendeeCount: saved.attendeeCount,
+      }));
+      toast(previous ? "Your RSVP was updated" : `You and ${saved.attendeeCount - 1} guest${saved.attendeeCount === 2 ? "" : "s"} are registered`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyEvent("");
+    }
+  }
+
+  async function cancelRSVP(event) {
+    setBusyEvent(event.id);
+    setError("");
+    try {
+      const result = await cancelEventRSVP(event.id);
+      if (result.cancelled) {
+        const previous = event.myAttendeeCount || 0;
+        updateLocalEvent(event.id, (current) => ({ ...current, attendeeCount: Math.max(0, current.attendeeCount - previous), myAttendeeCount: 0 }));
+        toast("Your RSVP was cancelled");
+      }
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyEvent("");
+    }
+  }
 
   return (
-    <section className="screen active" aria-label="Events">
+    <section className="screen active events-screen" aria-label="Events">
+      <header className="events-heading"><p className="event-eyebrow">CITY4CHRIST CHURCH</p><h1>Events</h1><p className="lead">Gather, worship, and serve together.</p></header>
       <div className="card cal">
         <div className="cal-h">
-          <button className="round" onClick={prevWeek} aria-label="Previous week" style={{ width: 36, height: 36, background: 'var(--surface-2)' }}><Icon name="back" /></button>
+          <button className="round" onClick={() => moveWeek(-1)} aria-label="Previous week" style={{ width: 36, height: 36, background: "var(--surface-2)" }}><Icon name="back" /></button>
           <b>{monthTitle}</b>
-          <button className="round" onClick={nextWeek} aria-label="Next week" style={{ width: 36, height: 36, background: 'var(--surface-2)' }}><Icon name="next" /></button>
+          <button className="round" onClick={() => moveWeek(1)} aria-label="Next week" style={{ width: 36, height: 36, background: "var(--surface-2)" }}><Icon name="next" /></button>
         </div>
         <div className="week">
-          {DAY_NAMES.map(n => <small key={n}>{n}</small>)}
-          {Array.from({ length: 7 }, (_, i) => {
-            const d = addDays(weekBase, i);
-            const isToday = sameDay(d, TODAY);
-            const hasDot = evOn(d).length > 0;
-            const isSelected = sameDay(d, sel);
-            return (
-              <button
-                key={i}
-                className={`day${isToday ? ' today' : ''}${hasDot ? ' has' : ''}`}
-                aria-pressed={isSelected}
-                aria-label={d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) + (hasDot ? ', has events' : '')}
-                onClick={() => setSel(d)}
-              >
-                {d.getDate()}
-              </button>
-            );
+          {DAYS.map((name) => <small key={name}>{name}</small>)}
+          {Array.from({ length: 7 }, (_, index) => {
+            const date = addDays(weekBase, index);
+            const key = localDateKey(date);
+            const hasEvent = events.some((event) => eventDay(event) === key);
+            return <button key={key} className={`day${key === localDateKey(TODAY) ? " today" : ""}${hasEvent ? " has" : ""}`} aria-pressed={key === selectedDay} aria-label={date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" }) + (hasEvent ? ", has events" : "")} onClick={() => selectDay(date)}>{date.getDate()}</button>;
           })}
         </div>
       </div>
 
-      <div className="sh">
-        <h2>{sameDay(sel, TODAY) ? 'Today' : sel.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</h2>
-      </div>
-
-      {dayEvents.length === 0
-        ? <div className="empty">Nothing planned for this day.<br />Pick a day with a gold dot.</div>
-        : dayEvents.map(e => {
-            const d = addDays(TODAY, e.off);
-            const going = rsvp[e.id];
-            return (
-              <article key={e.id} className={`ticket${going ? ' going' : ''}`}>
-                <div className="t-main">
-                  <div className="t-top">
-                    <div className="dt"><small>{mon(d)}</small><b>{d.getDate()}</b></div>
-                    <div className="t-info">
-                      <h3>{e.title}</h3>
-                      <p><Icon name="clock" />{e.time}</p>
-                      <p><Icon name="pin" />{e.where}</p>
-                      <p><Icon name="users" /><span>{e.going + (going ? 1 : 0)} going</span></p>
-                    </div>
-                    <span className="when">{when(e.off)}</span>
-                  </div>
-                  <div className="t-extra">
-                    <button className="btn blue" onClick={() => toast('Added to your calendar')}><Icon name="cal" />Add to calendar</button>
-                    <button className="vol" onClick={() => toast('Thanks for serving')}><Icon name="userplus" />Volunteer</button>
-                  </div>
-                  {going && (
-                    <div className="going-row">
-                      <span className="stub-ck"><Icon name="check" /></span>
-                      <div><b>You're going</b><small>Your spot is saved</small></div>
-                      <button className="undo" onClick={() => setRsvp(r => ({ ...r, [e.id]: false }))}>Undo</button>
-                    </div>
-                  )}
-                </div>
-                {!going && (
-                  <div className="t-bottom">
-                    <button className="btn gold block rsvp-btn" onClick={() => { setRsvp(r => ({ ...r, [e.id]: true })); toast(`You're going to ${e.title}`); }}>
-                      <Icon name="ticket" />RSVP
-                    </button>
-                  </div>
-                )}
-              </article>
-            );
-          })
-      }
+      <div className="sh"><h2>{dateFromKey(selectedDay).toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" })}</h2></div>
+      {loading ? <p role="status">Loading events…</p> : error && events.length === 0 ? <p role="alert">{error}</p> : selectedEvents.length === 0 ? <div className="empty">No published events on this day.</div> : selectedEvents.map((event) => {
+        const mine = event.myAttendeeCount || 0;
+        const isFull = event.capacity != null && event.attendeeCount >= event.capacity && mine === 0;
+        return <article key={event.id} className={`ticket${mine ? " going" : ""}`}>
+          <div className="t-main">
+            <div className="t-top">
+              <div className="dt"><small>{new Intl.DateTimeFormat(undefined, { month: "short", timeZone: event.timeZone }).format(new Date(event.startsAt))}</small><b>{new Intl.DateTimeFormat(undefined, { day: "numeric", timeZone: event.timeZone }).format(new Date(event.startsAt))}</b></div>
+              <div className="t-info"><h3>{event.title}</h3><p><Icon name="clock" />{formatEventDateTime(event)}</p><p><Icon name="pin" />{event.location || "Location to be announced"}</p><p><Icon name="users" /><span>{event.capacity == null ? `${event.attendeeCount} attendees registered` : `${event.attendeeCount} / ${event.capacity} seats reserved`}</span></p></div>
+              <span className="when">{event.timeZone}</span>
+            </div>
+            {event.description && <p className="event-description">{event.description}</p>}
+            {mine > 0 ? <div className="going-row"><span className="stub-ck"><Icon name="check" /></span><div><b>Your RSVP: {mine} attendee{mine === 1 ? "" : "s"}</b><small>Your place and guest seats are saved</small></div><button className="undo" disabled={busyEvent === event.id} onClick={() => cancelRSVP(event)}>Cancel RSVP</button></div> : <div className="rsvp-controls">
+              {profile && <label className="auth-field">You and your guests<select value={attendeeCounts[event.id] || 1} onChange={(e) => setAttendeeCounts((values) => ({ ...values, [event.id]: Number(e.target.value) }))}>{Array.from({ length: 10 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>}
+              <button className="btn gold block rsvp-btn" disabled={busyEvent === event.id || isFull} onClick={() => submitRSVP(event)}><Icon name="ticket" />{!profile ? "Sign in to RSVP" : isFull ? "Event full" : "RSVP"}</button>
+            </div>}
+          </div>
+          {error && <p className="event-error" role="alert">{error}</p>}
+        </article>;
+      })}
+      <EventManager profile={profile} />
     </section>
   );
 }

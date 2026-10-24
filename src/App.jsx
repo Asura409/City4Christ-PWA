@@ -14,10 +14,12 @@ import SignUpScreen from "@/screens/SignUpScreen";
 import NewUserScreen from "@/screens/NewUserScreen";
 import "./App.css";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
-import { DesignPreview } from "./components/DesignPreview";
 import VerifyScreen from "./screens/VerifyScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
 import PostsScreen from "./screens/PostsScreen";
+import MessagesScreen from "./screens/MessagesScreen";
+import NotificationsScreen from "./screens/NotificationsScreen";
+import { NotificationButton } from "./components/NotificationButton";
 import { CreateSheet } from "./components/CreateSheet";
 import { createPost } from "./posts/api";
 
@@ -76,6 +78,7 @@ export default function App() {
               </svg>
             </div>
             <b>City4Christ</b>
+            <NotificationButton />
             <a className="link" href="#/profile">
               My account
             </a>
@@ -95,12 +98,14 @@ export default function App() {
             />
             <Route path="/word" element={<WordScreen />} />
             <Route path="/posts" element={<ProtectedRoute><PostsScreen refreshKey={postsVersion} /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><MessagesScreen /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
             <Route
               path="/prayer"
               element={
-                <DesignPreview>
+                <ProtectedRoute>
                   <PrayerScreen />
-                </DesignPreview>
+                </ProtectedRoute>
               }
             />
             <Route
@@ -129,11 +134,7 @@ export default function App() {
             />
             <Route
               path="/events"
-              element={
-                <DesignPreview>
-                  <EventsScreen />
-                </DesignPreview>
-              }
+              element={<EventsScreen />}
             />
             <Route
               path="/profile"
