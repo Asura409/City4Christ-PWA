@@ -98,6 +98,7 @@ export function createClient({
       );
     }
     let result;
+    if (response.status === 204) return { data: null };
     try {
       result = await response.json();
     } catch {

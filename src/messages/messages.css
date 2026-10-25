@@ -6,6 +6,16 @@
   min-height: 460px;
   padding-bottom: 20px;
 }
+.messages-workspace { width: 100%; }
+.messages-view-tabs { display: flex; gap: 8px; width: fit-content; margin: 0 auto 12px; padding: 4px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+.messages-view-tabs button { min-height: 40px; padding: 0 16px; border-radius: 999px; color: var(--muted); font-size: 13px; font-weight: 800; }
+.messages-view-tabs button.active { color: var(--text); background: var(--purple-deep); }
+.group-chat-panel { display: grid; grid-template-columns: minmax(260px, 340px) minmax(0, 1fr); gap: 16px; height: min(760px, calc(100dvh - 210px)); min-height: 420px; padding-bottom: 20px; }
+.group-chat-panel .messages-list-panel, .group-chat-panel .message-thread { min-height: 100%; }
+.group-chat-panel .messages-title-row h2 { font-family: var(--serif); font-size: 24px; line-height: 1.1; }
+.group-chat-avatar { display: grid; width: 44px; height: 44px; flex: none; place-items: center; border-radius: 15px; background: linear-gradient(145deg,#8a4fe0,#5a2fa8); color: #fff; font-family: var(--serif); font-size: 20px; font-weight: 800; }
+.group-message-delete { display: block; margin-top: 5px; color: var(--muted); font-size: 11px; text-decoration: underline; }
+.message-bubble.removed { color: var(--muted); font-style: italic; }
 .messages-list-panel, .message-thread {
   min-width: 0;
   overflow: hidden;
@@ -56,6 +66,12 @@
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 680px) {
   .messages-screen { display: block; height: auto; min-height: calc(100dvh - 145px); padding-bottom: 8px; }
+  .messages-view-tabs { margin-bottom: 8px; }
+  .group-chat-panel { display: block; height: auto; min-height: calc(100dvh - 190px); padding-bottom: 8px; }
+  .group-chat-panel .messages-list-panel, .group-chat-panel .message-thread { min-height: calc(100dvh - 210px); border-radius: 18px; }
+  .group-chat-panel .message-thread { display: none; }
+  .group-chat-panel.has-selection .messages-list-panel { display: none; }
+  .group-chat-panel.has-selection .message-thread { display: flex; }
   .messages-list-panel, .message-thread { min-height: calc(100dvh - 170px); border-radius: 18px; }
   .message-thread { display: none; }
   .messages-screen.has-selection .messages-list-panel { display: none; }

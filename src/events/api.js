@@ -35,3 +35,19 @@ export async function cancelEventRSVP(eventId) {
 export async function getEventsAccess() {
   return (await api.request("/api/v1/me/access")).data;
 }
+
+export async function listEventCoordinators(eventId) {
+  const { data } = await api.request(`/api/v1/events/${eventId}/coordinators`);
+  return Array.isArray(data) ? data : [];
+}
+
+export async function assignEventCoordinator(eventId, groupId, accountId) {
+  return (await api.request(`/api/v1/events/${eventId}/coordinators`, {
+    method: "PUT",
+    body: { groupId, accountId },
+  })).data;
+}
+
+export async function removeEventCoordinator(eventId, accountId) {
+  return api.request(`/api/v1/events/${eventId}/coordinators/${accountId}`, { method: "DELETE" });
+}

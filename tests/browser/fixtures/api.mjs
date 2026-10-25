@@ -63,6 +63,7 @@ export async function mocked(
     author: "Anonymous",
     isOwner: false,
     createdAt: "2026-10-22T12:00:00Z",
+    expiresAt: "2027-04-20T12:00:00Z",
     prayerCount: 2,
     hasPrayed: false,
   }];
@@ -228,6 +229,7 @@ export async function mocked(
           author: body.anonymous ? "You" : `${profile.firstName} ${profile.lastName}`,
           isOwner: true,
           createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 180 * 24 * 60 * 60 * 1000).toISOString(),
           prayerCount: 0,
           hasPrayed: false,
         };

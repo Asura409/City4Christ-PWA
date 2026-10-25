@@ -42,6 +42,23 @@ test("login uses cookies, access stays in memory and protected calls use Authori
   assert.equal(calls[1].options.cache, "no-store");
   await assert.rejects(() => client.request("https://evil.example/api/v1/me"));
 });
+test("protected DELETE requests accept a 204 response without attempting JSON parsing", async () => {
+  const calls = [];
+  const client = createClient({
+    apiURL: "https://api.example",
+    fetchImpl: async (url, options) => {
+      calls.push({ url, options });
+      return url.endsWith("/refresh")
+        ? json({ data: { accessToken: "private-access", expiresIn: 600 } })
+        : new Response(null, { status: 204 });
+    },
+  });
+  const result = await client.request("/api/v1/groups/group/messages/message", {
+    method: "DELETE",
+  });
+  assert.deepEqual(result, { data: null });
+  assert.equal(calls[1].options.headers.Authorization, "Bearer private-access");
+});
 test("concurrent protected requests share one refresh operation", async () => {
   let refreshes = 0;
   const client = createClient({
