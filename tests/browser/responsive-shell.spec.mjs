@@ -10,7 +10,7 @@ test(
 
   const nav = page.getByRole("navigation", { name: "Main" });
   await expect(nav).toBeVisible();
-  for (const label of ["Home", "Word", "Create a post", "Prayer", "Chat"])
+  for (const label of ["Home", "Word", "Community", "Create a post", "Prayer", "Chat"])
     await expect(nav.getByRole("button", { name: label })).toBeVisible();
 
   const bounds = await nav.boundingBox();

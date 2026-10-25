@@ -1,5 +1,8 @@
 export const ID = "11111111-1111-4111-8111-111111111111",
-  SERMON = "22222222-2222-4222-8222-222222222222";
+  SERMON = "22222222-2222-4222-8222-222222222222",
+  GROUP = "33333333-3333-4333-8333-333333333333",
+  OTHER_GROUP = "55555555-5555-4555-8555-555555555555",
+  LEADERSHIP_GROUP = "66666666-6666-4666-8666-666666666666";
 export const STAFF_ACCESS = {
   roles: [
     { role: "content_editor", scope: "" },
@@ -12,7 +15,7 @@ export const STAFF_ACCESS = {
 };
 export async function mocked(
   page,
-  { signedIn = false, access = { roles: [], capabilities: [] } } = {},
+  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false } = {},
 ) {
   let assignedAccess = access;
   const calls = [];
@@ -34,11 +37,83 @@ export async function mocked(
     series: "Faith",
     topic: "Trust",
     preachedAt: "2026-10-17T12:00:00Z",
-    videoUrl: "",
+    videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    imageUrl: "https://images.unsplash.com/photo-1770097286875-0cbf4ca2f8c1?auto=format&fit=crop&w=1200&q=80",
     publishedAt: null,
     status: "draft",
     version: 1,
   };
+  let group = {
+    id: GROUP,
+    name: "Choir",
+    description: "Sunday worship team",
+    audience: "church",
+    joinPolicy: "approval",
+    membershipStatus: "",
+    memberCount: 1,
+    createdAt: "2026-10-17T12:00:00Z",
+  };
+  if (activeGroupMembership) group = { ...group, membershipStatus: "active" };
+  let prayers = [{
+    id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    body: "Please pray for peace in our community.",
+    visibility: "community",
+    anonymous: true,
+    status: "open",
+    author: "Anonymous",
+    isOwner: false,
+    createdAt: "2026-10-22T12:00:00Z",
+    prayerCount: 2,
+    hasPrayed: false,
+  }];
+  let managedGroups = [];
+  let appointedLeaders = [];
+  const roleCandidate = {
+    id: "77777777-7777-4777-8777-777777777777",
+    firstName: "Joy",
+    lastName: "Leader",
+    email: "joy.leader@example.invalid",
+    mfaEnabled: true,
+  };
+  const otherGroup = {
+    id: OTHER_GROUP,
+    name: "Prayer Team",
+    description: "Serve the church in prayer",
+    audience: "church",
+    joinPolicy: "approval",
+    membershipStatus: "",
+    memberCount: 4,
+    createdAt: "2026-10-18T12:00:00Z",
+  };
+  const leadershipGroup = {
+    id: LEADERSHIP_GROUP,
+    name: "Leadership Council",
+    description: "Coordination for church leaders",
+    audience: "leadership",
+    joinPolicy: "closed",
+    membershipStatus: "",
+    memberCount: 3,
+    createdAt: "2026-10-19T12:00:00Z",
+  };
+  managedGroups = [group, otherGroup, leadershipGroup];
+  let pendingRequests = [
+    {
+      accountId: ID,
+      firstName: "Grace",
+      lastName: "Member",
+      requestedAt: "2026-10-18T12:00:00Z",
+    },
+  ];
+  let groupMembers = [];
+  let notifications = [];
+  let posts = [{
+    id: "99999999-9999-4999-8999-999999999999",
+    authorId: ID,
+    firstName: "Grace",
+    lastName: "Member",
+    body: "Welcome to church this Sunday.",
+    createdAt: "2026-10-20T10:00:00Z",
+  }];
   await page.route("**/js/config.js", (route) =>
     route.fulfill({
       contentType: "text/javascript",
@@ -114,6 +189,159 @@ export async function mocked(
       return authenticated
         ? ok(assignedAccess)
         : error(401, "invalid_session", "Sign in again.");
+    if (path === "/api/v1/notifications/unread-count") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      return ok({ unreadCount: notifications.filter((item) => !item.readAt).length });
+    }
+    if (path === "/api/v1/notifications" && method === "GET") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      return route.fulfill({ json: { data: notifications, meta: { nextCursor: "" } } });
+    }
+    const notificationRead = path.match(/^\/api\/v1\/notifications\/([^/]+)\/read$/);
+    if (notificationRead && method === "PUT") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const item = notifications.find((entry) => entry.id === notificationRead[1]);
+      if (!item) return error(404, "notification_not_found", "Notification not found.");
+      const changed = !item.readAt;
+      item.readAt = item.readAt || new Date().toISOString();
+      return ok({ changed });
+    }
+    if (path === "/api/v1/posts") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      if (method === "POST") {
+        const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", authorId: ID, firstName: profile.firstName, lastName: profile.lastName, body: body.body, createdAt: new Date().toISOString() };
+        posts = [created, ...posts];
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+      return route.fulfill({ json: { data: posts, meta: { nextCursor: "" } } });
+    }
+    if (path === "/api/v1/prayer/requests") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      if (method === "POST") {
+        const created = {
+          id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+          body: body.body,
+          visibility: body.visibility,
+          groupId: body.groupId,
+          anonymous: body.anonymous,
+          status: "open",
+          author: body.anonymous ? "You" : `${profile.firstName} ${profile.lastName}`,
+          isOwner: true,
+          createdAt: new Date().toISOString(),
+          prayerCount: 0,
+          hasPrayed: false,
+        };
+        prayers = [created, ...prayers];
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+      const requestedStatus = u.searchParams.get("status") || "open";
+      return route.fulfill({
+        json: { data: prayers.filter((item) => item.status === requestedStatus), meta: { nextCursor: "" } },
+      });
+    }
+    const prayerAction = path.match(/^\/api\/v1\/prayer\/requests\/([^/]+)(?:\/(prayed))?$/);
+    if (prayerAction) {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const item = prayers.find((request) => request.id === prayerAction[1]);
+      if (!item) return error(404, "prayer_not_found", "Prayer request not found.");
+      if (method === "PUT" && prayerAction[2] === "prayed") {
+        const changed = !item.hasPrayed;
+        if (changed) {
+          item.hasPrayed = true;
+          item.prayerCount++;
+        }
+        return ok({ changed });
+      }
+      if (method === "PATCH" && !prayerAction[2]) {
+        const changed = item.status !== body.status;
+        item.status = body.status;
+        return ok({ changed });
+      }
+      if (method === "GET" && !prayerAction[2]) return ok(item);
+    }
+    const canManageGroups = () =>
+      (assignedAccess.capabilities || []).some(
+        (capability) => capability.permission === "groups.manage" && capability.scope === "",
+      );
+    if (path === "/api/v1/admin/groups") {
+      if (!canManageGroups()) return error(403, "forbidden", "You are not authorized to manage groups.");
+      if (method === "GET") {
+        const includeArchived = u.searchParams.get("includeArchived") === "true";
+        const leadershipEligible = (assignedAccess.roles || []).some((item) => ["super_administrator", "assistant_pastor", "ministry_leader"].includes(item.role));
+        return ok(managedGroups.filter((item) => (includeArchived || !item.archived) && (item.audience !== "leadership" || leadershipEligible)));
+      }
+      if (method === "POST") {
+        const created = {
+          id: "88888888-8888-4888-8888-888888888888",
+          name: body.name,
+          description: body.description || "",
+          audience: body.audience,
+          joinPolicy: body.joinPolicy,
+          memberCount: 0,
+          archived: false,
+          createdAt: new Date().toISOString(),
+        };
+        managedGroups = [...managedGroups, created];
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+    }
+    const lifecycleMatch = path.match(/^\/api\/v1\/admin\/groups\/([^/]+)$/);
+    if (lifecycleMatch && method === "PATCH") {
+      if (!canManageGroups()) return error(403, "forbidden", "You are not authorized to manage groups.");
+      managedGroups = managedGroups.map((item) => item.id === lifecycleMatch[1]
+        ? { ...item, archived: body.status === "archived" }
+        : item);
+      return ok({ changed: true });
+    }
+    const leadersMatch = path.match(/^\/api\/v1\/admin\/groups\/([^/]+)\/leaders$/);
+    if (leadersMatch && method === "GET") {
+      if (!canManageGroups()) return error(403, "forbidden", "You are not authorized to manage groups.");
+      return ok(appointedLeaders);
+    }
+    if (path === "/api/v1/admin/role-candidates") {
+      if (!(assignedAccess.capabilities || []).some((capability) => capability.permission === "roles.read"))
+        return error(403, "forbidden", "Role lookup is not permitted.");
+      return route.fulfill({ json: { data: [roleCandidate], meta: { nextCursor: "" } } });
+    }
+    const churchRoleMatch = path.match(/^\/api\/v1\/admin\/accounts\/([^/]+)\/church-roles(?:\/revoke)?$/);
+    if (churchRoleMatch) {
+      if (!(assignedAccess.capabilities || []).some((capability) => ["roles.read", "roles.operational.manage"].includes(capability.permission)))
+        return error(403, "forbidden", "Church role management is not permitted.");
+      if (method === "GET") return ok(appointedLeaders.some((item) => item.accountId === churchRoleMatch[1])
+        ? [{ role: "ministry_leader", scope: GROUP }]
+        : []);
+      if (!(assignedAccess.capabilities || []).some((capability) => capability.permission === "roles.operational.manage"))
+        return error(403, "forbidden", "Church role management is not permitted.");
+      if (path.endsWith("/revoke")) appointedLeaders = appointedLeaders.filter((item) => item.accountId !== churchRoleMatch[1]);
+      else appointedLeaders = [...appointedLeaders, { accountId: churchRoleMatch[1], firstName: roleCandidate.firstName, lastName: roleCandidate.lastName }];
+      return ok({ changed: true });
+    }
+    if (path === "/api/v1/groups") {
+      const leadershipEligible = (assignedAccess.roles || []).some((item) => ["super_administrator", "assistant_pastor", "ministry_leader"].includes(item.role));
+      const visibleGroups = [group, otherGroup, ...(leadershipEligible ? [leadershipGroup] : [])];
+      return authenticated ? route.fulfill({ json: { data: visibleGroups, meta: { nextCursor: "" } } }) : error(401, "invalid_session", "Sign in again.");
+    }
+    if (path === `/api/v1/groups/${GROUP}/membership` && method === "POST") {
+      group = { ...group, membershipStatus: "pending" };
+      return ok({ groupId: GROUP, accountId: ID, status: "pending", requestedAt: new Date().toISOString() });
+    }
+    if (path === `/api/v1/groups/${GROUP}/membership` && method === "DELETE") {
+      group = { ...group, membershipStatus: "left" };
+      return ok({ status: "left" });
+    }
+    if (path === `/api/v1/groups/${GROUP}/membership-requests`)
+      return authenticated ? ok(pendingRequests) : error(401, "invalid_session", "Sign in again.");
+    if (path === `/api/v1/groups/${GROUP}/membership-requests/${ID}` && method === "PATCH") {
+      const approved = body?.decision === "approve";
+      pendingRequests = [];
+      if (approved) {
+        groupMembers = [...groupMembers, { accountId: ID, firstName: "Grace", lastName: "Member" }];
+        group = { ...group, memberCount: group.memberCount + 1 };
+      }
+      return ok({ changed: true });
+    }
+    if (path === `/api/v1/groups/${GROUP}/members`)
+      return authenticated ? ok(groupMembers) : error(401, "invalid_session", "Sign in again.");
     if (
       path.startsWith("/api/v1/admin/sermons") &&
       !assignedAccess.capabilities.some(
@@ -124,7 +352,7 @@ export async function mocked(
     if (
       path.startsWith("/api/v1/admin/accounts/") &&
       !assignedAccess.capabilities.some(
-        (c) => c.permission === "roles.manage" && c.scope === "",
+        (c) => ["roles.manage", "roles.read"].includes(c.permission) && c.scope === "",
       )
     )
       return error(

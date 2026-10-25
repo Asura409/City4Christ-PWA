@@ -1,11 +1,11 @@
 import React, { useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Icon } from '@/lib/icons';
-import { useToast } from './Toast';
 
 const ITEMS = [
   { path: '/home', icon: 'home', label: 'Home' },
   { path: '/word', icon: 'book', label: 'Word' },
+  { path: '/posts', icon: 'users', label: 'Community' },
   null, // FAB slot
   { path: '/prayer', icon: 'flame', label: 'Prayer' },
   { path: '/chat', icon: 'chat', label: 'Chat' },
@@ -14,7 +14,6 @@ const ITEMS = [
 export function Nav({ onFab }) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const toast = useToast();
   const pillRef = useRef(null);
   const navRef = useRef(null);
 
@@ -50,10 +49,7 @@ export function Nav({ onFab }) {
             key={item.path}
             className="nav-item"
             aria-current={active ? 'page' : undefined}
-            onClick={() => {
-              if (item.path === '/chat') { toast('Chat is coming soon'); return; }
-              navigate(item.path);
-            }}
+            onClick={() => navigate(item.path)}
           >
             <Icon name={item.icon} />
             {item.label}

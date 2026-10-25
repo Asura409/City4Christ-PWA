@@ -6,6 +6,7 @@ import HomeScreen from "@/screens/HomeScreen";
 import WordScreen from "@/screens/WordScreen";
 import PrayerScreen from "@/screens/PrayerScreen";
 import GroupsScreen from "@/screens/GroupsScreen";
+import GroupAdminScreen from "@/screens/GroupAdminScreen";
 import EventsScreen from "@/screens/EventsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import LoginScreen from "@/screens/LoginScreen";
@@ -13,9 +14,14 @@ import SignUpScreen from "@/screens/SignUpScreen";
 import NewUserScreen from "@/screens/NewUserScreen";
 import "./App.css";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
-import { DesignPreview } from "./components/DesignPreview";
 import VerifyScreen from "./screens/VerifyScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import PostsScreen from "./screens/PostsScreen";
+import MessagesScreen from "./screens/MessagesScreen";
+import NotificationsScreen from "./screens/NotificationsScreen";
+import { NotificationButton } from "./components/NotificationButton";
+import { CreateSheet } from "./components/CreateSheet";
+import { createPost } from "./posts/api";
 
 const AUTH_ROUTES = [
   "/login",
@@ -27,6 +33,7 @@ const AUTH_ROUTES = [
 
 export default function App() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [postsVersion, setPostsVersion] = useState(0);
   const { pathname } = useLocation();
   const isAuth = AUTH_ROUTES.some((r) => pathname.startsWith(r));
 
@@ -71,6 +78,7 @@ export default function App() {
               </svg>
             </div>
             <b>City4Christ</b>
+            <NotificationButton />
             <a className="link" href="#/profile">
               My account
             </a>
@@ -89,29 +97,44 @@ export default function App() {
               }
             />
             <Route path="/word" element={<WordScreen />} />
+            <Route path="/posts" element={<ProtectedRoute><PostsScreen refreshKey={postsVersion} /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><MessagesScreen /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
             <Route
               path="/prayer"
               element={
-                <DesignPreview>
+                <ProtectedRoute>
                   <PrayerScreen />
-                </DesignPreview>
+                </ProtectedRoute>
               }
             />
             <Route
               path="/groups"
               element={
-                <DesignPreview>
+                <ProtectedRoute>
                   <GroupsScreen />
-                </DesignPreview>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups/manage"
+              element={<ProtectedRoute><GroupAdminScreen /></ProtectedRoute>}
+            />
+            <Route
+              path="/groups/manage/:groupId"
+              element={<ProtectedRoute><GroupAdminScreen /></ProtectedRoute>}
+            />
+            <Route
+              path="/groups/:groupId"
+              element={
+                <ProtectedRoute>
+                  <GroupsScreen />
+                </ProtectedRoute>
               }
             />
             <Route
               path="/events"
-              element={
-                <DesignPreview>
-                  <EventsScreen />
-                </DesignPreview>
-              }
+              element={<EventsScreen />}
             />
             <Route
               path="/profile"
@@ -127,14 +150,11 @@ export default function App() {
 
         <Nav onFab={() => setCreateOpen(true)} />
 
-        {createOpen && (
-          <div className="card" role="status">
-            Posting is not available yet.
-            <button className="btn soft" onClick={() => setCreateOpen(false)}>
-              Close
-            </button>
-          </div>
-        )}
+        <CreateSheet
+          open={createOpen}
+          onClose={() => setCreateOpen(false)}
+          onPost={async ({ body }) => { await createPost({ body }); setPostsVersion((value) => value + 1); }}
+        />
       </div>
     </ToastProvider>
   );

@@ -24,14 +24,16 @@ from the build. Browser setup is documented in [browser-testing.md](browser-test
 | `word.html`     | Published sermon search, filters, pagination and detail                                  |
 | `members.html`  | Authenticated opt-in directory search and pagination; names and IDs only                 |
 | `staff.html`    | Sermon create/load/edit/publish/unpublish/schedule; role read/grant/revoke with reason   |
+| `/#/events`     | Published church event calendar, guest-count RSVP/cancellation, event management by capability |
+| `/#/prayer`     | Community, active-group and owner-only prayer requests; anonymity and acknowledgements |
+| `/#/chat`       | Participant-only direct conversations, directory lookup, durable messages and read receipts |
 
 The backend checks current permissions on every protected request. Staff screens
 do not confer access. Access administrators cannot appoint themselves; ministry
 scope IDs must already exist. Stale sermon versions require reloading the editor.
 Failed mutations are not blindly retried.
 
-Home, messaging, community, prayer, events, bookings, giving and live screens remain
-design previews with notices and inactive save/post controls.
+The React home, prayer wall, church events and direct messaging now use the API. Bookings, giving and live screens remain previews with inactive controls.
 
 ## Code organization
 
@@ -126,3 +128,20 @@ The candidate endpoint is `GET /api/v1/admin/role-candidates?query=...&limit=20&
 Writes require both fresh primary identity and authenticator confirmation. A `reauthentication_required` or `mfa_required` response asks the user to complete security confirmation and explicitly review/resubmit; the original action is never automatically replayed. Candidate query changes, access invalidation and page exit clear selected private data. Passwords, authenticator seeds and backup codes remain outside browser storage.
 
 Deploy the backend church-role contract before releasing this frontend. `API_URL` remains the only frontend environment setting. This feature documentation is not evidence of a staging deployment or privileged appointment.
+
+## Connected member features
+
+- Events use public published church-wide reads and verified member RSVP. Each
+  account has one RSVP with 1–10 attendees; capacity is checked transactionally.
+  Event managers need `events.manage`. The React calendar supports registration,
+  cancellation and event drafting/publication. Group events and calendar export
+  remain future work.
+- Prayer requests support church community, active group and owner-only visibility.
+  Anonymous requests hide the author from other members; only owners may mark
+  their request answered or archived. Moderation, expiry, comments, uploads and
+  notifications remain future work.
+- Direct messages are one-to-one and visible only to their participants. Any
+  verified member can start a chat using the existing opt-in directory. There is
+  no staff backdoor; group chats and realtime delivery remain future work.
+
+The React notification bell links to `/#/notifications`. The inbox and unread badge use the same public `API_URL`; no additional frontend environment variable is needed. Notices are private to the signed-in account. Email, SMS, push, broadcasts and domain-event generation are separate follow-up work.
