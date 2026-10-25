@@ -66,6 +66,9 @@ export default function NotificationsScreen() {
               <div className="notification-card-copy">
                 <h2>{item.title}</h2>
                 {item.body && <p>{item.body}</p>}
+                {typeof item.resourcePath === "string" && item.resourcePath.startsWith("/#/") && !/[?#\\]/.test(item.resourcePath.slice(3)) && (
+                  <a className="link notification-link" href={item.resourcePath}>View details</a>
+                )}
                 <time dateTime={item.createdAt}>{createdLabel(item.createdAt)}</time>
               </div>
               {!item.readAt && <button className="btn notification-read" disabled={busyId === item.id} onClick={() => void markRead(item)}>{busyId === item.id ? "Saving…" : "Mark read"}</button>}
