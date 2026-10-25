@@ -9,6 +9,7 @@ import {
   searchDirectoryMembers,
   sendMessage,
 } from "@/messages/api";
+import GroupMessagesPanel from "@/screens/GroupMessagesPanel";
 import "@/messages/messages.css";
 
 function nameOf(value) {
@@ -24,6 +25,7 @@ function timeLabel(value) {
 
 export default function MessagesScreen() {
   const { profile } = useSession();
+  const [view, setView] = useState("direct");
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [messages, setMessages] = useState([]);
@@ -162,7 +164,12 @@ export default function MessagesScreen() {
   }
 
   return (
-    <section className={`screen active messages-screen${selected ? " has-selection" : ""}`} aria-label="Messages">
+    <div className="messages-workspace">
+      <div className="messages-view-tabs" role="group" aria-label="Message type">
+        <button type="button" className={view === "direct" ? "active" : ""} aria-pressed={view === "direct"} onClick={() => setView("direct")}>Direct messages</button>
+        <button type="button" className={view === "groups" ? "active" : ""} aria-pressed={view === "groups"} onClick={() => setView("groups")}>Group chats</button>
+      </div>
+      {view === "direct" ? <section className={`screen active messages-screen${selected ? " has-selection" : ""}`} aria-label="Messages">
       <aside className="messages-list-panel" aria-label="Conversations">
         <div className="messages-title-row">
           <div><p className="group-eyebrow">CITY4CHRIST COMMUNITY</p><h1>Messages</h1></div>
@@ -212,6 +219,7 @@ export default function MessagesScreen() {
           </form>
         </>}
       </section>
-    </section>
+      </section> : <GroupMessagesPanel />}
+    </div>
   );
 }

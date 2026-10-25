@@ -35,6 +35,10 @@ test("public event page loads published events from the API", async ({ page }) =
   await expect(page.getByText("Lunch and fellowship on the church grounds.")).toBeVisible();
   await expect(page.getByText("1 / 5 seats reserved")).toBeVisible();
   await expect(page.getByText("Design preview", { exact: false })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Add to calendar" })).toHaveAttribute(
+    "href",
+    `/api/v1/events/${event.id}/calendar.ics`,
+  );
 });
 
 test("member RSVP sends attendeeCount and reflects the saved guest count", async ({ page }) => {
@@ -133,4 +137,37 @@ test("event managers can create a draft and publish it", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Community service and cleanup day" })).toBeVisible();
   await page.getByRole("button", { name: "Publish event" }).click();
   await expect(page.getByText("published · 1 reserved")).toBeVisible();
+});
+
+test("event managers can assign and remove an eligible group coordinator", async ({ page }) => {
+  await mocked(page, {
+    signedIn: true,
+    access: {
+      roles: [{ role: "staff", scope: "" }],
+      capabilities: [{ permission: "events.manage", scope: "" }],
+    },
+  });
+  const event = sampleEvent({ id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa" });
+  await page.route("**/api/v1/events", (route) => route.fulfill({ json: { data: [event] } }));
+  await page.route("**/api/v1/admin/events**", (route) => route.fulfill({ json: { data: [event] } }));
+  await page.route("**/api/v1/groups?**", (route) => route.fulfill({ json: { data: [{ id: "33333333-3333-4333-8333-333333333333", name: "Choir", audience: "church" }] } }));
+  await page.route("**/api/v1/groups/*/members", (route) => route.fulfill({ json: { data: [{ accountId: "11111111-1111-4111-8111-111111111111", firstName: "Grace", lastName: "Member" }] } }));
+  let coordinator = null;
+  await page.route("**/api/v1/events/*/coordinators**", async (route) => {
+    if (route.request().method() === "GET") return route.fulfill({ json: { data: coordinator ? [coordinator] : [] } });
+    if (route.request().method() === "PUT") {
+      coordinator = { eventId: event.id, groupId: "33333333-3333-4333-8333-333333333333", groupName: "Choir", accountId: "11111111-1111-4111-8111-111111111111", firstName: "Grace", lastName: "Member" };
+      return route.fulfill({ json: { data: coordinator } });
+    }
+    coordinator = null;
+    return route.fulfill({ status: 204, body: "" });
+  });
+
+  await page.goto("/#/events");
+  await page.getByLabel("Coordinator group").selectOption("33333333-3333-4333-8333-333333333333");
+  await page.getByLabel("Event coordinator").selectOption("11111111-1111-4111-8111-111111111111");
+  await page.getByRole("button", { name: "Assign coordinator" }).click();
+  await expect(page.getByText("Grace Member · Choir")).toBeVisible();
+  await page.getByRole("button", { name: "Remove Grace Member" }).click();
+  await expect(page.getByText("Grace Member · Choir")).toHaveCount(0);
 });

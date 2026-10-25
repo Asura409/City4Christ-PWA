@@ -12,6 +12,10 @@ TODAY.setHours(0, 0, 0, 0);
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const addDays = (date, count) => new Date(date.getFullYear(), date.getMonth(), date.getDate() + count);
 const eventDay = (event) => dateKeyInZone(event.startsAt, event.timeZone);
+const calendarURL = (eventId) => {
+  const base = globalThis.City4ChristConfig?.API_URL || globalThis.location?.origin || "";
+  return `${base.replace(/\/$/, "")}/api/v1/events/${encodeURIComponent(eventId)}/calendar.ics`;
+};
 
 function dateFromKey(key) {
   const [year, month, day] = key.split("-").map(Number);
@@ -158,6 +162,7 @@ export default function EventsScreen() {
               <span className="when">{event.timeZone}</span>
             </div>
             {event.description && <p className="event-description">{event.description}</p>}
+            <a className="btn soft event-calendar-link" href={calendarURL(event.id)} download="city4christ-event.ics">Add to calendar</a>
             {mine > 0 ? <div className="going-row"><span className="stub-ck"><Icon name="check" /></span><div><b>Your RSVP: {mine} attendee{mine === 1 ? "" : "s"}</b><small>Your place and guest seats are saved</small></div><button className="undo" disabled={busyEvent === event.id} onClick={() => cancelRSVP(event)}>Cancel RSVP</button></div> : <div className="rsvp-controls">
               {profile && <label className="auth-field">You and your guests<select value={attendeeCounts[event.id] || 1} onChange={(e) => setAttendeeCounts((values) => ({ ...values, [event.id]: Number(e.target.value) }))}>{Array.from({ length: 10 }, (_, index) => <option key={index + 1} value={index + 1}>{index + 1}</option>)}</select></label>}
               <button className="btn gold block rsvp-btn" disabled={busyEvent === event.id || isFull} onClick={() => submitRSVP(event)}><Icon name="ticket" />{!profile ? "Sign in to RSVP" : isFull ? "Event full" : "RSVP"}</button>

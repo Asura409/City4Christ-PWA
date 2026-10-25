@@ -57,6 +57,7 @@ test("members discover directory-visible contacts and send durable direct messag
   await page.goto("/#/chat");
 
   await expect(page.getByRole("heading", { name: "Messages" })).toBeVisible();
+  await expect(page.getByText("Loading conversations…")).toBeVisible();
   await expect(page.getByText("No conversations yet")).toBeVisible();
   await page.getByRole("button", { name: "New conversation" }).click();
   await page.getByRole("searchbox", { name: "Search members" }).fill("Daniel");

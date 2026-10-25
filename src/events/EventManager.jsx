@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useToast } from "@/components/Toast";
-import { createEvent, getEventsAccess, listManagedEvents, updateEvent } from "@/events/api";
+import { assignEventCoordinator, createEvent, getEventsAccess, listEventCoordinators, listManagedEvents, removeEventCoordinator, updateEvent } from "@/events/api";
 import { instantToLocalDateTime, localDateTimeToInstant } from "@/events/date";
+import { listGroupMembers, listGroups } from "@/groups/api";
 
 const eventTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
 const canManageEvents = (access) =>
@@ -20,6 +21,11 @@ export function EventManager({ profile }) {
   const [startsAt, setStartsAt] = useState("");
   const [capacity, setCapacity] = useState("");
   const [editing, setEditing] = useState(null);
+  const [groups, setGroups] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [coordinators, setCoordinators] = useState({});
+  const [coordinatorGroup, setCoordinatorGroup] = useState("");
+  const [coordinatorAccount, setCoordinatorAccount] = useState("");
 
   async function load() {
     if (!profile) {
@@ -33,7 +39,19 @@ export function EventManager({ profile }) {
     try {
       const current = await getEventsAccess();
       setAccess(current);
-      setItems(canManageEvents(current) ? await listManagedEvents() : []);
+      const managed = canManageEvents(current) ? await listManagedEvents() : [];
+      setItems(managed);
+      if (canManageEvents(current)) {
+        const [{ groups: availableGroups }, ...assignments] = await Promise.all([
+          listGroups(),
+          ...managed.map((item) => item.status === "published" ? listEventCoordinators(item.id) : Promise.resolve([])),
+        ]);
+        setGroups(availableGroups.filter((group) => group.audience === "church" && !group.archived));
+        setCoordinators(Object.fromEntries(managed.map((item, index) => [item.id, assignments[index]])));
+      } else {
+        setGroups([]);
+        setCoordinators({});
+      }
     } catch (e) {
       setError(e.message);
     } finally {
@@ -42,6 +60,45 @@ export function EventManager({ profile }) {
   }
 
   useEffect(() => { void load(); }, [profile?.id]);
+
+  useEffect(() => {
+    setMembers([]);
+    setCoordinatorAccount("");
+    if (coordinatorGroup) void listGroupMembers(coordinatorGroup).then(setMembers).catch((e) => setError(e.message));
+  }, [coordinatorGroup]);
+
+  async function assign(item) {
+    if (!coordinatorGroup || !coordinatorAccount) return;
+    setBusy(true);
+    setError("");
+    try {
+      await assignEventCoordinator(item.id, coordinatorGroup, coordinatorAccount);
+      const updated = await listEventCoordinators(item.id);
+      setCoordinators((current) => ({ ...current, [item.id]: updated }));
+      toast("Event coordinator assigned");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function removeCoordinator(item, coordinator) {
+    setBusy(true);
+    setError("");
+    try {
+      await removeEventCoordinator(item.id, coordinator.accountId);
+      setCoordinators((current) => ({
+        ...current,
+        [item.id]: (current[item.id] || []).filter((entry) => entry.accountId !== coordinator.accountId),
+      }));
+      toast("Event coordinator removed");
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -143,6 +200,23 @@ export function EventManager({ profile }) {
             {item.status !== "cancelled" && <button className="btn soft" disabled={busy} onClick={() => edit(item)}>Edit</button>}
             {item.status === "draft" && <button className="btn blue" disabled={busy} onClick={() => transition(item, "published")}>Publish event</button>}
             {item.status === "published" && <button className="btn soft" disabled={busy} onClick={() => transition(item, "cancelled")}>Cancel event</button>}
+            <div className="event-coordinators" aria-label={`${item.title} coordinators`}>
+              {(coordinators[item.id] || []).map((coordinator) => <div key={coordinator.accountId} className="event-coordinator">
+                <span>{coordinator.firstName} {coordinator.lastName} · {coordinator.groupName}</span>
+                <button className="btn soft" aria-label={`Remove ${coordinator.firstName} ${coordinator.lastName}`} disabled={busy} onClick={() => removeCoordinator(item, coordinator)}>Remove</button>
+              </div>)}
+              {item.status === "published" && <div className="event-coordinator-form">
+                <label className="auth-field">Coordinator group<select aria-label="Coordinator group" value={coordinatorGroup} onChange={(e) => setCoordinatorGroup(e.target.value)}>
+                  <option value="">Choose a church group</option>
+                  {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
+                </select></label>
+                {coordinatorGroup && <label className="auth-field">Event coordinator<select aria-label="Event coordinator" value={coordinatorAccount} onChange={(e) => setCoordinatorAccount(e.target.value)}>
+                  <option value="">Choose an active group member</option>
+                  {members.filter((member) => member.status === undefined || member.status === "active").map((member) => <option key={member.accountId} value={member.accountId}>{member.firstName} {member.lastName}</option>)}
+                </select></label>}
+                <button className="btn soft" disabled={busy || !coordinatorGroup || !coordinatorAccount} onClick={() => assign(item)}>Assign coordinator</button>
+              </div>}
+            </div>
           </article>
         ))}
       </div>
