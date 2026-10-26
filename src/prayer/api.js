@@ -23,6 +23,18 @@ export async function acknowledgePrayer(requestId) {
   })).data;
 }
 
+export async function listPrayerEncouragements(requestId, { signal } = {}) {
+  const result = await api.request(`${REQUESTS}/${encodeURIComponent(requestId)}/encouragements`, { signal });
+  return Array.isArray(result.data) ? result.data : [];
+}
+
+export async function createPrayerEncouragement(requestId, body) {
+  return (await api.request(`${REQUESTS}/${encodeURIComponent(requestId)}/encouragements`, {
+    method: "POST",
+    body: { body },
+  })).data;
+}
+
 export async function updatePrayerStatus(requestId, status) {
   if (status !== "answered" && status !== "archived") {
     throw new TypeError("Unsupported prayer request status.");

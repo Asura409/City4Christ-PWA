@@ -67,6 +67,7 @@ export async function mocked(
     prayerCount: 2,
     hasPrayed: false,
   }];
+  const prayerEncouragements = new Map();
   let managedGroups = [];
   let appointedLeaders = [];
   const roleCandidate = {
@@ -281,6 +282,19 @@ export async function mocked(
         json: { data: prayers.filter((item) => item.status === requestedStatus), meta: { nextCursor: "" } },
       });
     }
+    const encouragementPath = path.match(/^\/api\/v1\/prayer\/requests\/([^/]+)\/encouragements$/);
+    if (encouragementPath) {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const request = prayers.find((item) => item.id === encouragementPath[1]);
+      if (!request) return error(404, "prayer_not_found", "Prayer request not found.");
+      const items = prayerEncouragements.get(request.id) || [];
+      if (method === "GET") return ok(items);
+      if (method === "POST") {
+        const created = { id: crypto.randomUUID(), requestId: request.id, body: body.body, author: `${profile.firstName} ${profile.lastName}`, isOwner: false, createdAt: new Date().toISOString() };
+        prayerEncouragements.set(request.id, [...items, created]);
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+    }
     const prayerAction = path.match(/^\/api\/v1\/prayer\/requests\/([^/]+)(?:\/(prayed))?$/);
     if (prayerAction) {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
@@ -423,6 +437,7 @@ export async function mocked(
           meta: { nextCursor: "" },
         },
       });
+    if (path === "/api/v1/sermons/series") return ok([]);
     if (path === "/api/v1/sermons")
       return route.fulfill({
         json: {
