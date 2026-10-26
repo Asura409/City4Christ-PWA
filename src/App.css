@@ -250,6 +250,9 @@
 .sermon-detail-image { border-radius: 16px; margin: 12px 0; }
 .sermon-video { width: 100%; aspect-ratio: 16 / 9; margin: 14px 0; overflow: hidden; border-radius: 16px; background: #090812; }
 .sermon-video iframe { display: block; width: 100%; height: 100%; border: 0; }
+.sermon-search { display: grid; gap: 8px; }
+.sermon-search input, .sermon-search select { width: 100%; min-height: 46px; border: 1px solid var(--line); border-radius: 12px; padding: 0 12px; background: var(--surface-2); color: var(--text); font: inherit; }
+.sermon-search select { color-scheme: dark; }
 .s-main { display: flex; gap: 13px; padding: 14px; }
 .thumb { width: 54px; height: 54px; border-radius: 15px; flex: none; position: relative; display: grid; place-items: center; overflow: hidden; background: linear-gradient(140deg,var(--g1),var(--g2)); }
 .thumb .play { width: 36px; height: 36px; background: rgba(255,255,255,.92); }
@@ -613,6 +616,11 @@
 .sermon-attachments { display: grid; gap: 10px; width: 100%; margin-top: 12px; }
 .sermon-attachments img, .sermon-attachments video { display: block; width: 100%; max-height: 560px; object-fit: contain; border-radius: 14px; background: #100d1c; }
 .sermon-attachments audio { width: 100%; }
+.sermon-member-tools { display: grid; gap: 10px; margin: 16px 0; padding: 16px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: var(--surface-2); }
+.sermon-member-tools h3 { margin: 0; }
+.sermon-member-tools form { display: grid; gap: 8px; }
+.sermon-member-tools textarea { width: 100%; min-height: 110px; resize: vertical; border: 1px solid rgba(255,255,255,.12); border-radius: 12px; padding: 12px; background: var(--surface); color: var(--text); font: inherit; }
+.sermon-member-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .cr-attachments { display: grid; gap: 8px; list-style: none; margin: 10px 0 0; padding: 0; }
 .cr-attachments li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface); font-size: 13px; overflow-wrap: anywhere; }
 .cr-attachments button { flex: none; color: var(--gold-2); font-weight: 700; }
