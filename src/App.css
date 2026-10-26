@@ -592,6 +592,21 @@
 .post-actions { display: flex; justify-content: flex-start; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.07); }
 .post-amen { min-height: 40px; }
 .post-amen.is-active { color: var(--gold-2); border-color: rgba(255,207,87,.35); }
+.post-comments-toggle { min-height: 40px; }
+.post-comments { display: grid; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.07); }
+.post-comment-list { display: grid; gap: 9px; }
+.post-comment { padding: 12px; border-radius: 12px; background: rgba(255,255,255,.035); }
+.post-comment-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.post-comment-header > div { display: grid; gap: 3px; }
+.post-comment-header span, .post-comments-empty { color: var(--muted); font-size: 12px; }
+.post-comment p { margin: 8px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.post-comment-delete { flex: none; color: var(--gold-2); font-size: 12px; font-weight: 700; }
+.post-comment-form { display: grid; gap: 8px; }
+.post-comment-form label { font-weight: 700; font-size: 13px; }
+.post-comment-form textarea { min-height: 78px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; }
+.post-comment-form .btn { justify-self: start; }
+.post-comments-more { justify-self: start; }
+.post-comment-error { margin: 0; color: #ffd4d4; }
 .sermon-composer { display: grid; gap: 12px; margin: 12px 0 20px; }
 .sermon-composer h2 { margin: 0; }
 .sermon-composer .auth-field { margin: 0; }

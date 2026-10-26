@@ -116,7 +116,9 @@ export async function mocked(
     createdAt: "2026-10-20T10:00:00Z",
     amenCount: 0,
     reacted: false,
+    commentCount: 0,
   }];
+  let postComments = [];
   await page.route("**/js/config.js", (route) =>
     route.fulfill({
       contentType: "text/javascript",
@@ -212,11 +214,31 @@ export async function mocked(
     if (path === "/api/v1/posts") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
       if (method === "POST") {
-        const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", authorId: ID, firstName: profile.firstName, lastName: profile.lastName, body: body.body, attachments: body.attachmentIds?.map((id) => ({ id, contentType: "image/png", size: 16, url: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/available/photo.png?signature=fixture", expiresAt: new Date(Date.now() + 60000).toISOString() })) || [], amenCount: 0, reacted: false, createdAt: new Date().toISOString() };
+        const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", authorId: ID, firstName: profile.firstName, lastName: profile.lastName, body: body.body, attachments: body.attachmentIds?.map((id) => ({ id, contentType: "image/png", size: 16, url: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/available/photo.png?signature=fixture", expiresAt: new Date(Date.now() + 60000).toISOString() })) || [], amenCount: 0, reacted: false, commentCount: 0, createdAt: new Date().toISOString() };
         posts = [created, ...posts];
         return route.fulfill({ status: 201, json: { data: created } });
       }
       return route.fulfill({ json: { data: posts, meta: { nextCursor: "" } } });
+    }
+    const commentRoute = path.match(/^\/api\/v1\/posts\/([^/]+)\/comments(?:\/([^/]+))?$/);
+    if (commentRoute) {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const post = posts.find((item) => item.id === commentRoute[1]);
+      if (!post) return error(404, "comment_not_found", "Post or comment not found.");
+      if (method === "GET") return route.fulfill({ json: { data: postComments.filter((item) => item.postId === post.id), meta: { nextCursor: "" } } });
+      if (method === "POST") {
+        const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", postId: post.id, authorId: profile.id, firstName: profile.firstName, lastName: profile.lastName, body: body.body, createdAt: new Date().toISOString() };
+        postComments.unshift(created);
+        post.commentCount = postComments.filter((item) => item.postId === post.id).length;
+        return route.fulfill({ status: 201, json: { data: created } });
+      }
+      if (method === "DELETE") {
+        const index = postComments.findIndex((item) => item.id === commentRoute[2] && item.postId === post.id && item.authorId === profile.id);
+        if (index < 0) return error(404, "comment_not_found", "Post or comment not found.");
+        postComments.splice(index, 1);
+        post.commentCount = postComments.filter((item) => item.postId === post.id).length;
+        return route.fulfill({ status: 204, body: "" });
+      }
     }
     const postReaction = path.match(/^\/api\/v1\/posts\/([^/]+)\/reaction$/);
     if (postReaction) {

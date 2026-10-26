@@ -24,6 +24,25 @@ export async function removePostAmen(postId) {
   })).data;
 }
 
+export async function listPostComments(postId, { cursor = "", limit = 20, signal } = {}) {
+  const query = new URLSearchParams({ limit: String(limit) });
+  if (cursor) query.set("cursor", cursor);
+  const result = await api.request(`/api/v1/posts/${encodeURIComponent(postId)}/comments?${query}`, { signal });
+  return { comments: Array.isArray(result.data) ? result.data : [], nextCursor: result.meta?.nextCursor || "" };
+}
+
+export async function createPostComment(postId, body) {
+  return (await api.request(`/api/v1/posts/${encodeURIComponent(postId)}/comments`, {
+    method: "POST", body: { body },
+  })).data;
+}
+
+export async function deletePostComment(postId, commentId) {
+  await api.request(`/api/v1/posts/${encodeURIComponent(postId)}/comments/${encodeURIComponent(commentId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function uploadMedia(file, purpose, { onStatus = () => {}, signal } = {}) {
   const reservation = (await api.request("/api/v1/uploads/presign", {
     method: "POST",
