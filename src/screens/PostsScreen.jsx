@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
-import { listPosts, removePostAmen, setPostAmen } from "@/posts/api";
+import { useSession } from "@/auth/session";
+import { createPostComment, deletePostComment, listPostComments, listPosts, removePostAmen, setPostAmen } from "@/posts/api";
 import { safeUrl } from "@/lib/sanitize";
 
 function dateLabel(value) {
@@ -9,12 +10,19 @@ function dateLabel(value) {
 }
 
 export default function PostsScreen({ refreshKey = 0 }) {
+  const { profile } = useSession();
   const [posts, setPosts] = useState([]);
   const [cursor, setCursor] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [reactionBusy, setReactionBusy] = useState({});
+  const [expandedComments, setExpandedComments] = useState({});
+  const [comments, setComments] = useState({});
+  const [commentCursors, setCommentCursors] = useState({});
+  const [commentLoading, setCommentLoading] = useState({});
+  const [commentBusy, setCommentBusy] = useState({});
+  const [commentErrors, setCommentErrors] = useState({});
 
   const load = useCallback(async (next = "", signal) => {
     try {
@@ -43,6 +51,63 @@ export default function PostsScreen({ refreshKey = 0 }) {
       setError(err.message || "Could not update your Amen reaction.");
     } finally {
       setReactionBusy((current) => ({ ...current, [post.id]: false }));
+    }
+  };
+
+  const loadComments = async (postId, cursor = "") => {
+    setCommentLoading((current) => ({ ...current, [postId]: true }));
+    setCommentErrors((current) => ({ ...current, [postId]: "" }));
+    try {
+      const page = await listPostComments(postId, { cursor });
+      setComments((current) => ({ ...current, [postId]: cursor ? [...(current[postId] || []), ...page.comments] : page.comments }));
+      setCommentCursors((current) => ({ ...current, [postId]: page.nextCursor }));
+    } catch (err) {
+      setCommentErrors((current) => ({ ...current, [postId]: err.message || "Could not load comments." }));
+    } finally {
+      setCommentLoading((current) => ({ ...current, [postId]: false }));
+    }
+  };
+
+  const toggleComments = async (post) => {
+    if (expandedComments[post.id]) {
+      setExpandedComments((current) => ({ ...current, [post.id]: false }));
+      return;
+    }
+    setExpandedComments((current) => ({ ...current, [post.id]: true }));
+    if (!Object.hasOwn(comments, post.id)) await loadComments(post.id);
+  };
+
+  const submitComment = async (post, event) => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const body = new FormData(form).get("body");
+    if (commentBusy[post.id] || typeof body !== "string" || !body.trim()) return;
+    setCommentBusy((current) => ({ ...current, [post.id]: true }));
+    setCommentErrors((current) => ({ ...current, [post.id]: "" }));
+    try {
+      const comment = await createPostComment(post.id, body);
+      setComments((current) => ({ ...current, [post.id]: [comment, ...(current[post.id] || [])] }));
+      setPosts((current) => current.map((item) => item.id === post.id ? { ...item, commentCount: (item.commentCount || 0) + 1 } : item));
+      form.reset();
+    } catch (err) {
+      setCommentErrors((current) => ({ ...current, [post.id]: err.message || "Could not add your comment." }));
+    } finally {
+      setCommentBusy((current) => ({ ...current, [post.id]: false }));
+    }
+  };
+
+  const removeComment = async (post, comment) => {
+    if (commentBusy[comment.id]) return;
+    setCommentBusy((current) => ({ ...current, [comment.id]: true }));
+    setCommentErrors((current) => ({ ...current, [post.id]: "" }));
+    try {
+      await deletePostComment(post.id, comment.id);
+      setComments((current) => ({ ...current, [post.id]: (current[post.id] || []).filter((item) => item.id !== comment.id) }));
+      setPosts((current) => current.map((item) => item.id === post.id ? { ...item, commentCount: Math.max(0, (item.commentCount || 0) - 1) } : item));
+    } catch (err) {
+      setCommentErrors((current) => ({ ...current, [post.id]: err.message || "Could not delete your comment." }));
+    } finally {
+      setCommentBusy((current) => ({ ...current, [comment.id]: false }));
     }
   };
 
@@ -81,7 +146,30 @@ export default function PostsScreen({ refreshKey = 0 }) {
               <button className={`btn soft post-amen${post.reacted ? " is-active" : ""}`} type="button" aria-pressed={Boolean(post.reacted)} disabled={Boolean(reactionBusy[post.id])} onClick={() => void toggleAmen(post)}>
                 {post.reacted ? `Remove Amen (${post.amenCount || 0})` : `Say Amen (${post.amenCount || 0})`}
               </button>
+              <button className="btn soft post-comments-toggle" type="button" aria-expanded={Boolean(expandedComments[post.id])} onClick={() => void toggleComments(post)}>
+                {expandedComments[post.id] ? `Hide comments (${post.commentCount || 0})` : `View comments (${post.commentCount || 0})`}
+              </button>
             </div>
+            {expandedComments[post.id] && <section className="post-comments" aria-label={`Comments on ${author}'s post`}>
+              {commentErrors[post.id] && <p className="post-comment-error" role="alert">{commentErrors[post.id]}</p>}
+              {commentLoading[post.id] && <p role="status">Loading comments…</p>}
+              {!commentLoading[post.id] && (comments[post.id] || []).length === 0 && <p className="post-comments-empty">No comments yet. Start the conversation.</p>}
+              <div className="post-comment-list">{(comments[post.id] || []).map((item) => {
+                const commenter = [item.firstName, item.lastName].filter(Boolean).join(" ") || "Church member";
+                return <article className="post-comment" key={item.id}>
+                  <div className="post-comment-header"><div><b>{commenter}</b><span>{dateLabel(item.createdAt)}</span></div>
+                    {profile?.id === item.authorId && <button type="button" className="post-comment-delete" disabled={Boolean(commentBusy[item.id])} onClick={() => void removeComment(post, item)}>Delete comment</button>}
+                  </div>
+                  <p>{item.body}</p>
+                </article>;
+              })}</div>
+              {commentCursors[post.id] && <button type="button" className="btn soft post-comments-more" disabled={Boolean(commentLoading[post.id])} onClick={() => void loadComments(post.id, commentCursors[post.id])}>Load more comments</button>}
+              <form className="post-comment-form" onSubmit={(event) => void submitComment(post, event)}>
+                <label htmlFor={`comment-${post.id}`}>Write a comment</label>
+                <textarea id={`comment-${post.id}`} name="body" maxLength={2000} required placeholder="Share a thoughtful reply…" />
+                <button className="btn primary" type="submit" disabled={Boolean(commentBusy[post.id])}>{commentBusy[post.id] ? "Posting…" : "Comment"}</button>
+              </form>
+            </section>}
           </article>;
         })}
       </div>

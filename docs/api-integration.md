@@ -148,3 +148,11 @@ Deploy the backend church-role contract before releasing this frontend. `API_URL
   no staff backdoor; group chats and realtime delivery remain future work.
 
 The React notification bell links to `/#/notifications`. The inbox and unread badge use the same public `API_URL`; no additional frontend environment variable is needed. Notices are private to the signed-in account. Email, SMS, push, broadcasts and domain-event generation are separate follow-up work.
+
+The React church feed reads `GET /api/v1/posts`, supports scanned media,
+per-member Amen reactions, and paginated comments at
+`GET /api/v1/posts/{postId}/comments`. Verified members add comments with
+`POST /api/v1/posts/{postId}/comments` and can delete only their own comments
+with `DELETE /api/v1/posts/{postId}/comments/{commentId}`. Comments are visible
+church-wide to signed-in members; leaders’ moderation actions remain a separate
+backend slice.

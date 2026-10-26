@@ -27,6 +27,25 @@ test("members can add and remove their Amen reaction", async ({ page }) => {
   expect(fixture.calls.filter((call) => call.path.endsWith("/reaction")).map((call) => call.method)).toEqual(["PUT", "DELETE"]);
 });
 
+test("members can read, add, and delete their own post comments", async ({ page }) => {
+  const fixture = await mocked(page, { signedIn: true });
+  await page.goto("/#/posts");
+  await page.getByRole("button", { name: "View comments (0)" }).click();
+  const composer = page.getByLabel("Write a comment");
+  await expect(composer).toBeVisible();
+  await composer.fill("Praying with you.");
+  await page.getByRole("button", { name: "Comment", exact: true }).click();
+  const comment = page.locator(".post-comment").filter({ hasText: "Praying with you." });
+  await expect(comment).toBeVisible();
+  await expect(page.getByRole("button", { name: "Hide comments (1)" })).toBeVisible();
+  await comment.getByRole("button", { name: "Delete comment" }).click();
+  await expect(comment).toHaveCount(0);
+  expect(fixture.calls.some((call) => call.path.endsWith("/comments") && call.method === "GET")).toBe(true);
+  expect(fixture.calls.find((call) => call.path.endsWith("/comments") && call.method === "POST")?.body)
+    .toEqual({ body: "Praying with you." });
+  expect(fixture.calls.some((call) => call.path.endsWith("/comments/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa") && call.method === "DELETE")).toBe(true);
+});
+
 test("sermon editors attach scanned media to a draft and publish it from React", async ({ page }) => {
   const fixture = await mocked(page, { signedIn: true, access: STAFF_ACCESS });
   await page.route("https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/**", (route) => route.fulfill({ status: 200, headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "image/png" } }));
