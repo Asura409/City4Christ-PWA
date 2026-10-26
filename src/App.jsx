@@ -22,6 +22,8 @@ import NotificationsScreen from "./screens/NotificationsScreen";
 import { NotificationButton } from "./components/NotificationButton";
 import { CreateSheet } from "./components/CreateSheet";
 import { createPost, uploadPostMedia } from "./posts/api";
+import GivingScreen from "./screens/GivingScreen";
+import GivingReturnScreen from "./screens/GivingReturnScreen";
 
 const AUTH_ROUTES = [
   "/login",
@@ -100,6 +102,8 @@ export default function App() {
             <Route path="/posts" element={<ProtectedRoute><PostsScreen refreshKey={postsVersion} /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><MessagesScreen /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
+            <Route path="/giving/return" element={<GivingReturnScreen />} />
+            <Route path="/giving" element={<ProtectedRoute><GivingScreen /></ProtectedRoute>} />
             <Route
               path="/prayer"
               element={
