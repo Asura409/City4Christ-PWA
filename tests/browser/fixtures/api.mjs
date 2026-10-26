@@ -423,6 +423,7 @@ export async function mocked(
           meta: { nextCursor: "" },
         },
       });
+    if (path === "/api/v1/sermons/series") return ok([]);
     if (path === "/api/v1/sermons")
       return route.fulfill({
         json: {
