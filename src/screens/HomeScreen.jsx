@@ -38,6 +38,11 @@ export default function HomeScreen() {
           </button>
         ))}
       </div>
+      <button className="home-giving" type="button" onClick={() => navigate("/giving")}>
+        <span className="home-giving-icon"><Icon name="heart" fill /></span>
+        <span className="home-giving-copy"><b>Give to City4Christ</b><small>Support the church through Give A Little</small></span>
+        <Icon name="next" />
+      </button>
       <p className="lead">
         Sermons, community posts, church events, prayer requests and direct messages are connected.
       </p>
