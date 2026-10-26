@@ -3,9 +3,11 @@ import { Avatar } from "@/components/Avatar";
 import { listGroups } from "@/groups/api";
 import {
   acknowledgePrayer,
+  createPrayerEncouragement,
   createPrayerRequest,
   getPrayerModerationAccess,
   listPrayerReports,
+  listPrayerEncouragements,
   listPrayerRequests,
   reportPrayerRequest,
   reviewPrayerReport,
@@ -51,6 +53,48 @@ export default function PrayerScreen() {
   const [reportDetails, setReportDetails] = useState("");
   const [reportedIds, setReportedIds] = useState(() => new Set());
   const [moderationReason, setModerationReason] = useState("");
+  const [encouragements, setEncouragements] = useState({});
+  const [encouragementsOpen, setEncouragementsOpen] = useState(() => new Set());
+  const [encouragementDrafts, setEncouragementDrafts] = useState({});
+  const [encouragementLoading, setEncouragementLoading] = useState(() => new Set());
+
+  async function toggleEncouragements(item) {
+    const isOpen = encouragementsOpen.has(item.id);
+    if (isOpen) {
+      setEncouragementsOpen((current) => { const next = new Set(current); next.delete(item.id); return next; });
+      return;
+    }
+    setEncouragementsOpen((current) => new Set(current).add(item.id));
+    if (Object.hasOwn(encouragements, item.id)) return;
+    setEncouragementLoading((current) => new Set(current).add(item.id));
+    try {
+      const items = await listPrayerEncouragements(item.id);
+      setEncouragements((current) => ({ ...current, [item.id]: items }));
+    } catch (err) {
+      setError(err.message || "Could not load prayer encouragements.");
+      setEncouragementsOpen((current) => { const next = new Set(current); next.delete(item.id); return next; });
+    } finally {
+      setEncouragementLoading((current) => { const next = new Set(current); next.delete(item.id); return next; });
+    }
+  }
+
+  async function submitEncouragement(event, item) {
+    event.preventDefault();
+    const draft = (encouragementDrafts[item.id] || "").trim();
+    if (!draft || pendingIds.has(item.id)) return;
+    setPendingIds((current) => new Set(current).add(item.id));
+    setError("");
+    try {
+      const created = await createPrayerEncouragement(item.id, draft);
+      setEncouragements((current) => ({ ...current, [item.id]: [...(current[item.id] || []), created] }));
+      setEncouragementDrafts((current) => ({ ...current, [item.id]: "" }));
+      setNotice("Your encouragement was shared.");
+    } catch (err) {
+      setError(err.message || "Could not share this encouragement.");
+    } finally {
+      setPendingIds((current) => { const next = new Set(current); next.delete(item.id); return next; });
+    }
+  }
 
   const load = useCallback(async (nextCursor = "", signal) => {
     try {
@@ -297,6 +341,21 @@ export default function PrayerScreen() {
                 {item.isOwner && item.status === "open" && <button className="btn soft" type="button" disabled={busy} onClick={() => void changeStatus(item, "answered")}>Mark answered</button>}
                 {item.isOwner && <button className="prayer-archive" type="button" disabled={busy} onClick={() => void changeStatus(item, "archived")}>Archive</button>}
                 {!item.isOwner && item.visibility !== "private" && !reportedIds.has(item.id) && <button className="prayer-archive" type="button" disabled={busy} onClick={() => { setReportingId(reportingId === item.id ? "" : item.id); setReportReason("safety"); }}>Report request</button>}
+              </div>
+              <div className="prayer-encouragements">
+                <button className="prayer-archive" type="button" aria-expanded={encouragementsOpen.has(item.id)} onClick={() => void toggleEncouragements(item)}>
+                  {encouragementsOpen.has(item.id) ? "Hide encouragements" : "Encourage"}
+                </button>
+                {encouragementsOpen.has(item.id) && <div className="prayer-encouragement-panel">
+                  {encouragementLoading.has(item.id) && <p role="status">Loading encouragements…</p>}
+                  {!encouragementLoading.has(item.id) && (encouragements[item.id] || []).length === 0 && <p className="prayer-help">Be the first to share a kind word.</p>}
+                  {(encouragements[item.id] || []).map((reply) => <div className="prayer-encouragement" key={reply.id}><b>{reply.author || "Church member"}</b><p>{reply.body}</p><small>{dateLabel(reply.createdAt)}</small></div>)}
+                  <form aria-label="Share encouragement" onSubmit={(event) => void submitEncouragement(event, item)}>
+                    <label htmlFor={`encouragement-${item.id}`}>Your encouragement</label>
+                    <textarea id={`encouragement-${item.id}`} maxLength={1000} value={encouragementDrafts[item.id] || ""} onChange={(event) => setEncouragementDrafts((current) => ({ ...current, [item.id]: event.target.value }))} />
+                    <button className="btn soft" type="submit" disabled={busy || !(encouragementDrafts[item.id] || "").trim()}>Share encouragement</button>
+                  </form>
+                </div>}
               </div>
               {reportingId === item.id && <form className="prayer-report-form" aria-label="Report prayer request" onSubmit={(event) => { event.preventDefault(); void submitReport(item); }}>
                 <label htmlFor={`report-reason-${item.id}`}>Reason for report</label>

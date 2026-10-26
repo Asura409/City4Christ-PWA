@@ -36,6 +36,20 @@ test("members can scope a prayer request to an active group membership", async (
     .toEqual({ body: "Please pray for the choir.", visibility: "group", anonymous: false, groupId: "33333333-3333-4333-8333-333333333333" });
 });
 
+test("members can read and share encouragements on a visible request", async ({ page }) => {
+  const { calls } = await mocked(page, { signedIn: true });
+  await page.goto("/#/prayer");
+  const card = page.locator("article.prayer-card").filter({ hasText: "Please pray for peace in our community." });
+  await card.getByRole("button", { name: "Encourage" }).click();
+  await expect(card.getByText("Be the first to share a kind word.")).toBeVisible();
+  await card.getByLabel("Your encouragement").fill("Standing with you in prayer.");
+  await card.getByRole("button", { name: "Share encouragement" }).click();
+  await expect(card.getByText("Standing with you in prayer.")).toBeVisible();
+  expect(calls.some((call) => call.path.endsWith("/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/encouragements") && call.method === "GET")).toBe(true);
+  expect(calls.find((call) => call.path.endsWith("/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb/encouragements") && call.method === "POST")?.body)
+    .toEqual({ body: "Standing with you in prayer." });
+});
+
 test("members can file a scoped report without exposing private requests", async ({ page }) => {
   const { calls } = await mocked(page, { signedIn: true });
   let reports = 0;
