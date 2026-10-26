@@ -1,6 +1,9 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { useSession } from "@/auth/session";
+import RealtimeStatus from "@/messages/RealtimeStatus";
+import { mergeMessageHistory } from "@/messages/realtimeClient";
+import { useRealtimeMessages } from "@/messages/useRealtimeMessages";
 import {
   createConversation,
   listConversations,
@@ -42,6 +45,8 @@ export default function MessagesScreen() {
   const [contactsLoading, setContactsLoading] = useState(false);
   const [contactsError, setContactsError] = useState("");
   const pendingClientIDs = useRef(new Map());
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
 
   const refreshConversations = useCallback(async (signal) => {
     setConversationError("");
@@ -54,6 +59,44 @@ export default function MessagesScreen() {
       setLoading(false);
     }
   }, []);
+
+  const syncConversations = useCallback(async () => {
+    try { setConversations(await listConversations()); } catch {}
+  }, []);
+
+  const syncThread = useCallback(async (conversationId) => {
+    try {
+      const page = await listMessages(conversationId);
+      if (selectedIdRef.current !== conversationId) return;
+      setMessages((current) => mergeMessageHistory(current, page.messages));
+      setHasOlder(page.nextBeforeSequence > 0);
+      const latest = page.messages.at(-1);
+      if (latest) {
+        await markConversationRead(conversationId, latest.id);
+        setConversations((current) => current.map((item) => item.id === conversationId
+          ? { ...item, unreadCount: 0, myLastReadSequence: Math.max(item.myLastReadSequence || 0, latest.sequence) }
+          : item));
+      }
+    } catch {}
+  }, []);
+
+  const onRealtimeEvent = useCallback((event) => {
+    if (event.scope !== "direct") return;
+    void syncConversations();
+    if (event.conversationId === selectedIdRef.current) void syncThread(event.conversationId);
+  }, [syncConversations, syncThread]);
+
+  const onRealtimeReady = useCallback(() => {
+    void syncConversations();
+    const conversationId = selectedIdRef.current;
+    if (conversationId) void syncThread(conversationId);
+  }, [syncConversations, syncThread]);
+
+  const realtimeStatus = useRealtimeMessages({
+    enabled: Boolean(profile?.id) && view === "direct",
+    onEvent: onRealtimeEvent,
+    onReady: onRealtimeReady,
+  });
 
   useEffect(() => {
     const controller = new AbortController();
@@ -86,6 +129,7 @@ export default function MessagesScreen() {
   const selected = conversations.find((item) => item.id === selectedId) || null;
 
   const openConversation = useCallback(async (conversation) => {
+    selectedIdRef.current = conversation.id;
     setSelectedId(conversation.id);
     setMessages([]);
     setHasOlder(false);
@@ -172,7 +216,7 @@ export default function MessagesScreen() {
       {view === "direct" ? <section className={`screen active messages-screen${selected ? " has-selection" : ""}`} aria-label="Messages">
       <aside className="messages-list-panel" aria-label="Conversations">
         <div className="messages-title-row">
-          <div><p className="group-eyebrow">CITY4CHRIST COMMUNITY</p><h1>Messages</h1></div>
+          <div><p className="group-eyebrow">CITY4CHRIST COMMUNITY</p><h1>Messages</h1><RealtimeStatus status={realtimeStatus} /></div>
           <button className="btn dark" type="button" onClick={() => { setSearchOpen((open) => !open); setSearch(""); }} aria-label="New conversation">New</button>
         </div>
         {searchOpen && <div className="message-member-search">
@@ -198,7 +242,7 @@ export default function MessagesScreen() {
       <section className="message-thread" aria-label="Conversation">
         {!selected ? <div className="message-thread-placeholder"><p>Choose a conversation or start a new one.</p></div> : <>
           <header className="message-thread-header">
-            <button type="button" className="messages-back" onClick={() => setSelectedId("")} aria-label="Back to conversations">Back</button>
+            <button type="button" className="messages-back" onClick={() => { selectedIdRef.current = ""; setSelectedId(""); }} aria-label="Back to conversations">Back</button>
             <Avatar name={nameOf(selected)} size={40} />
             <div><h2>{nameOf(selected)}</h2><p>Private direct conversation</p></div>
           </header>

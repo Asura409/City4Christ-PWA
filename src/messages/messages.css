@@ -26,6 +26,9 @@
 .messages-list-panel { display: flex; flex-direction: column; padding: 16px; }
 .messages-title-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
 .messages-title-row h1 { font-family: var(--serif); font-size: 28px; line-height: 1.1; }
+.realtime-status { display: inline-block; margin-top: 4px; color: var(--muted); font-size: 11px; line-height: 1.3; }
+.realtime-status-connected { color: #a7e0c4; }
+.realtime-status-auth_required { color: #f3c87d; }
 .messages-title-row .group-eyebrow { margin-bottom: 4px; }
 .messages-title-row .btn { min-height: 42px; height: auto; }
 .message-member-search { display: grid; gap: 8px; padding: 12px; margin-bottom: 10px; border-radius: 14px; background: var(--surface-2); }

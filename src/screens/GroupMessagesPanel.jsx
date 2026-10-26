@@ -1,5 +1,8 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/auth/session";
+import RealtimeStatus from "@/messages/RealtimeStatus";
+import { mergeMessageHistory } from "@/messages/realtimeClient";
+import { useRealtimeMessages } from "@/messages/useRealtimeMessages";
 import {
   deleteGroupMessage,
   listGroupConversations,
@@ -25,6 +28,8 @@ export default function GroupMessagesPanel() {
   const [error, setError] = useState("");
   const [threadError, setThreadError] = useState("");
   const pendingIDs = useRef(new Map());
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
   const selected = groups.find((group) => group.groupId === selectedId) || null;
 
   const refresh = useCallback(async (signal) => {
@@ -45,7 +50,45 @@ export default function GroupMessagesPanel() {
     return () => controller.abort();
   }, [refresh]);
 
+  const syncGroups = useCallback(async () => {
+    try { setGroups(await listGroupConversations()); } catch {}
+  }, []);
+
+  const syncGroupThread = useCallback(async (groupId) => {
+    try {
+      const page = await listGroupMessages(groupId);
+      if (selectedIdRef.current !== groupId) return;
+      setMessages((current) => mergeMessageHistory(current, page.messages));
+      const latest = page.messages.at(-1);
+      if (latest) {
+        await markGroupConversationRead(groupId, latest.id);
+        setGroups((current) => current.map((item) => item.groupId === groupId
+          ? { ...item, unreadCount: 0, myLastReadSequence: Math.max(item.myLastReadSequence || 0, latest.sequence) }
+          : item));
+      }
+    } catch {}
+  }, []);
+
+  const onRealtimeEvent = useCallback((event) => {
+    if (event.scope !== "group") return;
+    void syncGroups();
+    if (event.groupId === selectedIdRef.current) void syncGroupThread(event.groupId);
+  }, [syncGroups, syncGroupThread]);
+
+  const onRealtimeReady = useCallback(() => {
+    void syncGroups();
+    const groupId = selectedIdRef.current;
+    if (groupId) void syncGroupThread(groupId);
+  }, [syncGroups, syncGroupThread]);
+
+  const realtimeStatus = useRealtimeMessages({
+    enabled: Boolean(profile?.id),
+    onEvent: onRealtimeEvent,
+    onReady: onRealtimeReady,
+  });
+
   const openGroup = useCallback(async (group) => {
+    selectedIdRef.current = group.groupId;
     setSelectedId(group.groupId);
     setMessages([]);
     setThreadError("");
@@ -105,7 +148,7 @@ export default function GroupMessagesPanel() {
   return (
     <section className={`group-chat-panel${selected ? " has-selection" : ""}`} aria-label="Group chats">
       <aside className="messages-list-panel" aria-label="Church group conversations">
-        <div className="messages-title-row"><div><p className="group-eyebrow">CHURCH GROUPS</p><h2>Group chats</h2></div><button className="btn soft" type="button" onClick={() => void refresh()} disabled={loading}>Refresh</button></div>
+        <div className="messages-title-row"><div><p className="group-eyebrow">CHURCH GROUPS</p><h2>Group chats</h2><RealtimeStatus status={realtimeStatus} /></div><button className="btn soft" type="button" onClick={() => void refresh()} disabled={loading}>Refresh</button></div>
         {error && <p className="messages-error" role="alert">{error}</p>}
         {loading ? <p className="messages-state" role="status">Loading group chats…</p> : !error && groups.length === 0 ? <p className="messages-empty">No group chats are available. Join a church group to see its chat.</p> : null}
         <ul className="conversation-list">
@@ -118,7 +161,7 @@ export default function GroupMessagesPanel() {
       </aside>
       <section className="message-thread" aria-label="Group conversation">
         {!selected ? <div className="message-thread-placeholder"><p>Choose one of your church group conversations.</p></div> : <>
-          <header className="message-thread-header"><button type="button" className="messages-back" onClick={() => setSelectedId("")} aria-label="Back to group chats">Back</button><span className="group-chat-avatar" aria-hidden="true">{selected.groupName.slice(0, 1).toUpperCase()}</span><div><h2>{selected.groupName}</h2><p>{selected.audience === "leadership" ? "Leadership group conversation" : "Church group conversation"}</p></div></header>
+          <header className="message-thread-header"><button type="button" className="messages-back" onClick={() => { selectedIdRef.current = ""; setSelectedId(""); }} aria-label="Back to group chats">Back</button><span className="group-chat-avatar" aria-hidden="true">{selected.groupName.slice(0, 1).toUpperCase()}</span><div><h2>{selected.groupName}</h2><p>{selected.audience === "leadership" ? "Leadership group conversation" : "Church group conversation"}</p></div></header>
           {threadError && <div className="messages-error thread-error" role="alert"><span>{threadError}</span><button className="btn soft" type="button" onClick={() => void openGroup(selected)}>Try again</button></div>}
           {threadLoading && <p role="status" className="messages-state">Loading group messages…</p>}
           <div className="message-history" aria-live="polite">

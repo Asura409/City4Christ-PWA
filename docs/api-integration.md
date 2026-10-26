@@ -29,14 +29,14 @@ from the build. Browser setup is documented in [browser-testing.md](browser-test
 | `staff.html`    | Sermon create/load/edit/publish/unpublish/schedule; role read/grant/revoke with reason   |
 | `/#/events`     | Published church event calendar, guest-count RSVP/cancellation, event management by capability |
 | `/#/prayer`     | Community, active-group and owner-only prayer requests; anonymity and acknowledgements |
-| `/#/chat`       | Participant-only direct conversations, directory lookup, durable messages and read receipts |
+| `/#/chat`       | Participant-only direct conversations, eligible group chats, durable history, read receipts and realtime updates |
 
 The backend checks current permissions on every protected request. Staff screens
 do not confer access. Access administrators cannot appoint themselves; ministry
 scope IDs must already exist. Stale sermon versions require reloading the editor.
 Failed mutations are not blindly retried.
 
-The React home, prayer wall, church events and direct messaging now use the API. Bookings, giving and live screens remain previews with inactive controls.
+The React home, prayer wall, church events, groups and messaging now use the API. Bookings, giving and live screens remain previews with inactive controls.
 
 ## Code organization
 
@@ -103,10 +103,8 @@ panel links back to the React home. No additional Google redirect URI is needed.
 Staff navigation is shown according to current capabilities; backend authorization
 remains authoritative for every request.
 
-Groups, prayer and events retain their visual designs behind an explicit sample
-content notice and an inert container. They cannot submit private information,
-claim a successful RSVP, publish a prayer or join a ministry. Onboarding does not
-send requests to a nonexistent endpoint. These workflows await their domain slices.
+Groups, prayer and events use their implemented API flows. Onboarding does not
+send requests to a nonexistent endpoint and remains a separate domain slice.
 
 The original React integration (PR4) did not include fresh authentication/MFA and
 needed no backend change. The subsequent protected church-appointment feature below
@@ -145,7 +143,24 @@ Deploy the backend church-role contract before releasing this frontend. `API_URL
   notifications remain future work.
 - Direct messages are one-to-one and visible only to their participants. Any
   verified member can start a chat using the existing opt-in directory. There is
-  no staff backdoor; group chats and realtime delivery remain future work.
+  no staff backdoor. Group chats are restricted by current group eligibility;
+  direct and group chat use realtime message notifications with REST history for
+  durable catch-up.
+
+### Realtime messaging
+
+The React chat requests `POST /api/v1/realtime/tickets` with the active Bearer
+session, then opens `wss://<API_URL>/api/v1/realtime`. It sends the opaque,
+single-use ticket in the first JSON WebSocket frame; the ticket is never placed
+in a URL. The client fetches a new ticket for each connection and uses bounded
+automatic reconnects. After every connection and message event it refreshes the
+relevant REST conversation list/history, merging messages by ID and sequence.
+WebSocket events contain message metadata only, so REST remains the source of
+message content and reconnect recovery. Logging out or losing the session closes
+the client connection. `API_URL` remains the only required frontend environment
+variable; the backend must allow the frontend's exact origin and have realtime
+transport enabled before release. This frontend change is local and is not yet
+deployed to the preview.
 
 The React notification bell links to `/#/notifications`. The inbox and unread badge use the same public `API_URL`; no additional frontend environment variable is needed. Notices are private to the signed-in account. Email, SMS, push, broadcasts and domain-event generation are separate follow-up work.
 
