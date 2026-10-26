@@ -7,15 +7,20 @@
    production API.
 3. Keep Root Directory at the repository root (`.`), not `frontend/` or one of the
    older duplicate app directories. The frontend is its own repository.
-4. Before the first build, add `API_URL` for the Vercel environments you will use:
+4. Before the first build, add `API_URL` and `MEDIA_ORIGIN` for the Vercel
+   environments you will use:
 
    ```dotenv
    API_URL=https://city4christ-staging-api.onrender.com
+   MEDIA_ORIGIN=https://<CLOUDFLARE_ACCOUNT_ID>.r2.cloudflarestorage.com
    ```
 
 5. `vercel.json` selects Other as the framework, installs with `npm ci`, builds
    with `npm run build`, and publishes only `dist/`. `package.json` selects Node
    22.x. Keep these defaults rather than adding dashboard build overrides.
+   `MEDIA_ORIGIN` is a public Cloudflare R2 origin, not a secret. It allows the
+   React security policy to upload and display media from the private bucket;
+   configure matching bucket CORS for this exact Vercel site origin.
 6. Deploy when ready, then provide the exact HTTPS URL so its origin can be added
    to the backend's `CORS_ORIGINS`, preserving existing origins. Use a stable
    project URL for beta testing; per-commit preview URLs change and are not
