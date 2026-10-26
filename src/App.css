@@ -586,6 +586,22 @@
 .posts-feed { display: grid; gap: 14px; }
 .community-post { border: 1px solid rgba(255,255,255,.06); }
 .community-post .body { margin: 14px 2px 4px; font-size: 16px; line-height: 1.55; white-space: pre-wrap; }
+.post-media { display: grid; gap: 10px; margin-top: 12px; }
+.post-media img, .post-media video { display: block; width: 100%; max-height: 560px; object-fit: contain; border-radius: 14px; background: #100d1c; }
+.post-media audio { width: 100%; min-height: 44px; }
+.post-actions { display: flex; justify-content: flex-start; margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.07); }
+.post-amen { min-height: 40px; }
+.post-amen.is-active { color: var(--gold-2); border-color: rgba(255,207,87,.35); }
+.sermon-composer { display: grid; gap: 12px; margin: 12px 0 20px; }
+.sermon-composer h2 { margin: 0; }
+.sermon-composer .auth-field { margin: 0; }
+.sermon-attachments { display: grid; gap: 10px; width: 100%; margin-top: 12px; }
+.sermon-attachments img, .sermon-attachments video { display: block; width: 100%; max-height: 560px; object-fit: contain; border-radius: 14px; background: #100d1c; }
+.sermon-attachments audio { width: 100%; }
+.cr-attachments { display: grid; gap: 8px; list-style: none; margin: 10px 0 0; padding: 0; }
+.cr-attachments li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 12px; background: var(--surface); font-size: 13px; overflow-wrap: anywhere; }
+.cr-attachments button { flex: none; color: var(--gold-2); font-weight: 700; }
+.cr-upload-status { color: var(--gold-2); font-size: 13px; }
 .posts-error { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 16px 0; padding: 14px; border-radius: 14px; background: var(--surface); color: #ffd4d4; }
 .posts-state, .posts-more { margin: 18px 0; }
 .topbar .brand { display: flex; gap: 12px; align-items: center; }

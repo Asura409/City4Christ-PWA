@@ -21,7 +21,7 @@ import MessagesScreen from "./screens/MessagesScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import { NotificationButton } from "./components/NotificationButton";
 import { CreateSheet } from "./components/CreateSheet";
-import { createPost } from "./posts/api";
+import { createPost, uploadPostMedia } from "./posts/api";
 
 const AUTH_ROUTES = [
   "/login",
@@ -153,7 +153,12 @@ export default function App() {
         <CreateSheet
           open={createOpen}
           onClose={() => setCreateOpen(false)}
-          onPost={async ({ body }) => { await createPost({ body }); setPostsVersion((value) => value + 1); }}
+          onPost={async ({ body, files, setUploadStatus }) => {
+            const attachmentIds = [];
+            for (const file of files) attachmentIds.push(await uploadPostMedia(file, { onStatus: setUploadStatus }));
+            await createPost({ body, ...(attachmentIds.length ? { attachmentIds } : {}) });
+            setPostsVersion((value) => value + 1);
+          }}
         />
       </div>
     </ToastProvider>

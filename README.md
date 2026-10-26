@@ -18,8 +18,10 @@ npm run preview
 ```
 
 Open the printed local address. The preview server binds only to this machine.
-For hosting, set `API_URL=https://city4christ-staging-api.onrender.com`, build with
-`npm ci && npm run build`, and publish `dist/`. Never include secrets in API_URL.
+For hosting, set `API_URL=https://city4christ-staging-api.onrender.com` and
+`MEDIA_ORIGIN=https://<CLOUDFLARE_ACCOUNT_ID>.r2.cloudflarestorage.com`, build
+with `npm ci && npm run build`, and publish `dist/`. Both are public origins;
+never include secrets in either variable.
 The frontend origin must be allowed by the backend's `CORS_ORIGINS` setting.
 
 Older duplicate app directories are excluded from builds. Frontend and backend

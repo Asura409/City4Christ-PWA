@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { safeImageUrl, safeUrl, youtubeEmbedUrl } from "@/lib/sanitize";
+import { SermonComposer } from "@/sermons/SermonComposer";
+
+function AttachmentList({ items = [] }) {
+  return <div className="sermon-attachments">{items.map((item) => {
+    const url = safeUrl(item.url);
+    if (url === "#") return null;
+    if (item.contentType?.startsWith("image/")) return <img key={item.id} src={url} alt="Sermon attachment" loading="lazy" />;
+    if (item.contentType?.startsWith("audio/")) return <audio key={item.id} src={url} controls preload="metadata" aria-label="Sermon audio" />;
+    if (item.contentType?.startsWith("video/")) return <video key={item.id} src={url} controls playsInline preload="metadata" aria-label="Sermon video" />;
+    return null;
+  })}</div>;
+}
 export default function WordScreen() {
   const [query, setQuery] = useState(""),
     [items, setItems] = useState([]),
@@ -50,6 +62,7 @@ export default function WordScreen() {
       <div className="sh">
         <h1>Word Hub</h1>
       </div>
+      <SermonComposer onPublished={() => { setSelected(null); void load(); }} />
       {error && <p role="alert">{error}</p>}
       {selected ? (
         <article className="card sermon">
@@ -71,6 +84,7 @@ export default function WordScreen() {
               Watch sermon
             </a>
           )}
+          <AttachmentList items={selected.attachments} />
         </article>
       ) : (
         <>
@@ -102,6 +116,7 @@ export default function WordScreen() {
                 <p>{s.summary}</p>
                 <small>{s.speaker}</small>
               </div>
+              <AttachmentList items={s.attachments} />
               <button
                 className="btn soft"
                 disabled={busy}
