@@ -688,6 +688,15 @@
 .prayer-answered { flex: none; color: #c9f2d6; font-size: 12px; font-weight: 800; }
 .prayer-body { margin: 15px 1px; white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.55; }
 .prayer-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.prayer-encouragements { margin-top: 12px; border-top: 1px solid var(--line); padding-top: 10px; }
+.prayer-encouragement-panel { display: grid; gap: 10px; padding: 12px 0 0; }
+.prayer-encouragement-panel form { display: grid; gap: 8px; }
+.prayer-encouragement-panel label { color: var(--muted); font-size: 13px; font-weight: 700; }
+.prayer-encouragement-panel textarea { width: 100%; min-height: 68px; resize: vertical; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 11px 12px; background: var(--surface-2); color: var(--text); font: inherit; }
+.prayer-encouragement-panel .btn { min-height: 40px; justify-self: start; }
+.prayer-encouragement { padding: 10px 12px; border-radius: 12px; background: var(--surface-2); }
+.prayer-encouragement p { margin: 5px 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.prayer-encouragement small { color: var(--muted); }
 .prayer-actions .btn { height: 40px; font-size: 13px; }
 .prayer-archive { min-height: 40px; padding: 0 10px; color: var(--muted); font-size: 13px; font-weight: 700; }
 .prayer-more { width: 100%; }
