@@ -4,12 +4,15 @@ Set the frontend hosting environment variable:
 
 ```dotenv
 API_URL=https://city4christ-staging-api.onrender.com
+MEDIA_ORIGIN=https://<CLOUDFLARE_ACCOUNT_ID>.r2.cloudflarestorage.com
 ```
 
 Use Node.js 22+, build command `npm ci && npm run build`, and publish directory
 `dist`. API_URL is a public origin without `/api/v1`, not a secret. Changing it
 requires rebuilding. Never put provider secrets, database credentials or tokens in
-the frontend environment. For local builds copy `.env.example` to `.env`.
+the frontend environment. MEDIA_ORIGIN is the public R2 endpoint used by signed
+media URLs and must match the bucket selected for the API. For local builds copy
+`.env.example` to `.env`.
 
 The canonical app is the repository root. Older duplicate app folders are excluded
 from the build. Browser setup is documented in [browser-testing.md](browser-testing.md).

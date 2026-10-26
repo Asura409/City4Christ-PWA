@@ -113,6 +113,8 @@ export async function mocked(
     lastName: "Member",
     body: "Welcome to church this Sunday.",
     createdAt: "2026-10-20T10:00:00Z",
+    amenCount: 0,
+    reacted: false,
   }];
   await page.route("**/js/config.js", (route) =>
     route.fulfill({
@@ -209,12 +211,28 @@ export async function mocked(
     if (path === "/api/v1/posts") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
       if (method === "POST") {
-        const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", authorId: ID, firstName: profile.firstName, lastName: profile.lastName, body: body.body, createdAt: new Date().toISOString() };
+        const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", authorId: ID, firstName: profile.firstName, lastName: profile.lastName, body: body.body, attachments: body.attachmentIds?.map((id) => ({ id, contentType: "image/png", size: 16, url: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/available/photo.png?signature=fixture", expiresAt: new Date(Date.now() + 60000).toISOString() })) || [], amenCount: 0, reacted: false, createdAt: new Date().toISOString() };
         posts = [created, ...posts];
         return route.fulfill({ status: 201, json: { data: created } });
       }
       return route.fulfill({ json: { data: posts, meta: { nextCursor: "" } } });
     }
+    const postReaction = path.match(/^\/api\/v1\/posts\/([^/]+)\/reaction$/);
+    if (postReaction) {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const post = posts.find((item) => item.id === postReaction[1]);
+      if (!post) return error(404, "post_not_found", "Post not found.");
+      const reacted = method === "PUT";
+      post.reacted = reacted;
+      post.amenCount = Math.max(0, Number(post.amenCount || 0) + (reacted ? 1 : -1));
+      return ok({ postId: post.id, amenCount: post.amenCount, reacted });
+    }
+    if (path === "/api/v1/uploads/presign" && method === "POST")
+      return ok({ uploadId: "88888888-8888-4888-8888-888888888888", url: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/upload?signature=fixture", method: "PUT", headers: { "Content-Type": body.contentType }, expiresAt: new Date(Date.now() + 300000).toISOString() });
+    if (path === "/api/v1/uploads/88888888-8888-4888-8888-888888888888/complete")
+      return route.fulfill({ status: 202, json: { data: { id: "88888888-8888-4888-8888-888888888888", status: "scan_queued" } } });
+    if (path === "/api/v1/uploads/88888888-8888-4888-8888-888888888888")
+      return ok({ id: "88888888-8888-4888-8888-888888888888", status: "available" });
     if (path === "/api/v1/prayer/requests") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
       if (method === "POST") {
@@ -397,7 +415,7 @@ export async function mocked(
     if (path === "/api/v1/sermons/" + SERMON)
       return ok({ ...sermon, status: "published" });
     if (path === "/api/v1/admin/sermons" && method === "POST") {
-      sermon = { ...sermon, ...body };
+      sermon = { ...sermon, ...body, attachments: body.attachmentIds?.map((id) => ({ id, contentType: "image/png", size: 16, url: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/available/sermon.png?signature=fixture", expiresAt: new Date(Date.now() + 60000).toISOString() })) || [] };
       return route.fulfill({ status: 201, json: { data: sermon } });
     }
     if (path === "/api/v1/admin/sermons/" + SERMON) {

@@ -16,10 +16,18 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const root = fileURLToPath(new URL("../", import.meta.url));
 export async function buildSite({
   apiURL = process.env.API_URL,
+  mediaOrigin = process.env.MEDIA_ORIGIN || "",
   outDir = join(root, "dist"),
 } = {}) {
   if (!apiURL) throw new Error("Set API_URL before building.");
   const origin = apiURL === "/" ? "" : validateAPIURL(apiURL);
+  if (mediaOrigin) {
+    let parsed;
+    try { parsed = new URL(mediaOrigin); } catch { throw new Error("MEDIA_ORIGIN must be a Cloudflare R2 HTTPS origin."); }
+    if (parsed.protocol !== "https:" || !/^[a-f0-9]{32}\.r2\.cloudflarestorage\.com$/i.test(parsed.hostname) || parsed.port || parsed.username || parsed.password || parsed.pathname !== "/" || parsed.search || parsed.hash)
+      throw new Error("MEDIA_ORIGIN must be a Cloudflare R2 HTTPS origin without credentials, path, query or fragment.");
+    mediaOrigin = parsed.origin;
+  }
   if (resolve(outDir) === resolve(root))
     throw new Error("Build output must not overwrite source files.");
   const temporary = await mkdtemp(join(tmpdir(), "c4c-vite-"));
@@ -35,7 +43,7 @@ export async function buildSite({
     });
     const html = (
       await readFile(join(temporary, "index.html"), "utf8")
-    ).replace("__API_ORIGIN__", origin);
+    ).replace("__API_ORIGIN__", origin).replaceAll("__MEDIA_ORIGIN__", mediaOrigin);
     await writeFile(join(outDir, "index.html"), html);
     const assets = (await readdir(join(outDir, "app-assets")))
       .sort()
