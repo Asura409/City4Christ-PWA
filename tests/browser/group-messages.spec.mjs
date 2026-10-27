@@ -55,6 +55,7 @@ async function mockRealtime(page) {
       open() { this.readyState = FakeWebSocket.OPEN; this.onopen?.(); }
       receive(value) { this.onmessage?.({ data: JSON.stringify(value) }); }
       close() { this.readyState = FakeWebSocket.CLOSED; }
+      drop() { this.readyState = FakeWebSocket.CLOSED; this.onclose?.({ code: 1006 }); }
     }
     window.WebSocket = FakeWebSocket;
   });
@@ -125,4 +126,46 @@ test("group chat catches up from REST when a realtime deletion arrives", async (
   await expect(thread.getByText("This message was removed by a group moderator.")).toBeVisible();
   await expect(thread.getByText("Welcome to choir practice.")).toHaveCount(0);
   expect(fixture.calls.some((call) => call.method === "GET" && call.path === `/api/v1/groups/${GROUP}/messages`)).toBe(true);
+});
+
+test("group chat catches up with messages sent while its realtime socket reconnects", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  const fixture = await groupMocks(page);
+  const realtime = await mockRealtime(page);
+  await page.goto("/#/chat");
+  await page.getByRole("button", { name: "Group chats", exact: true }).click();
+  await page.getByRole("button", { name: "Open group conversation Choir" }).click();
+  const thread = page.getByRole("region", { name: "Group conversation" });
+  await expect(thread.getByText("Welcome to choir practice.")).toBeVisible();
+  await expect.poll(() => realtime.ticketCount(), { timeout: 5000 }).toBeGreaterThanOrEqual(2);
+  await page.waitForFunction(() => window.__realtimeSockets?.some((socket) => socket.readyState === 0));
+  const initialTicketCount = realtime.ticketCount();
+  const initialSocketCount = await page.evaluate(() => {
+    window.__activeRealtimeSocket = window.__realtimeSockets.find((socket) => socket.readyState === 0);
+    window.__activeRealtimeSocket.open();
+    window.__activeRealtimeSocket.receive({ type: "ready" });
+    return window.__realtimeSockets.length;
+  });
+
+  await page.evaluate(() => window.__activeRealtimeSocket.drop());
+  fixture.addMessage({
+    id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    groupId: GROUP,
+    senderId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    clientMessageId: "11111111-1111-4111-8111-111111111114",
+    body: "Sent while group chat reconnected.",
+    sequence: 2,
+    createdAt: new Date().toISOString(),
+    deleted: false,
+  });
+  await page.waitForFunction((count) => window.__realtimeSockets?.length > count, initialSocketCount, { timeout: 5000 });
+  await page.evaluate((count) => {
+    window.__activeRealtimeSocket = window.__realtimeSockets.slice(count).find((socket) => socket.readyState === 0);
+    window.__activeRealtimeSocket.open();
+    window.__activeRealtimeSocket.receive({ type: "ready" });
+  }, initialSocketCount);
+
+  await expect(thread.getByText("Sent while group chat reconnected.")).toBeVisible();
+  expect(realtime.ticketCount()).toBeGreaterThanOrEqual(initialTicketCount + 1);
+  expect(fixture.calls.filter((call) => call.method === "GET" && call.path === `/api/v1/groups/${GROUP}/messages`).length).toBeGreaterThanOrEqual(2);
 });
