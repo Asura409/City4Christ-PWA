@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { mocked } from "./fixtures/api.mjs";
+import { mocked, MODERATOR_ACCESS } from "./fixtures/api.mjs";
 import { STAFF_ACCESS } from "./fixtures/api.mjs";
 
 test("members read and publish church-wide posts", async ({ page }) => {
@@ -49,6 +49,54 @@ test("members can add and remove their Amen reaction", async ({ page }) => {
   await page.getByRole("button", { name: "Remove Amen (1)" }).click();
   await expect(page.getByRole("button", { name: "Say Amen (0)" })).toBeVisible();
   expect(fixture.calls.filter((call) => call.path.endsWith("/reaction")).map((call) => call.method)).toEqual(["PUT", "DELETE"]);
+});
+
+test("members can report posts and comments but not their own content", async ({ page }) => {
+  const fixture = await mocked(page, { signedIn: true, includeOtherPost: true });
+  await page.goto("/#/posts");
+  const ownPost = page.locator(".community-post").filter({ hasText: "Welcome to church this Sunday." });
+  const otherPost = page.locator(".community-post").filter({ hasText: "A post from another member." });
+  await expect(ownPost.getByRole("button", { name: "Report post" })).toHaveCount(0);
+  await otherPost.getByRole("button", { name: "Report post" }).click();
+  await page.getByLabel("Why are you reporting this post?").selectOption("harassment");
+  await page.getByPlaceholder("Add details for the moderation team (optional).").first().fill("Targets a member.");
+  await otherPost.getByRole("button", { name: "Send report" }).click();
+  await expect(otherPost.getByRole("button", { name: "Post reported" })).toBeVisible();
+  expect(fixture.calls.find((call) => call.path === "/api/v1/content-reports")?.body).toEqual({
+    targetType: "post",
+    targetId: "99999999-9999-4999-8999-111111111111",
+    reason: "harassment",
+    details: "Targets a member.",
+  });
+
+  await otherPost.getByRole("button", { name: "View comments (1)" }).click();
+  const comment = otherPost.locator(".post-comment").filter({ hasText: "A comment for the church to review." });
+  await comment.getByRole("button", { name: "Report comment" }).click();
+  await comment.getByLabel("Why are you reporting this comment?").selectOption("inappropriate");
+  await comment.getByRole("button", { name: "Send report" }).click();
+  await expect(comment.getByRole("button", { name: "Reported" })).toBeVisible();
+  expect(fixture.calls.filter((call) => call.path === "/api/v1/content-reports").map((call) => call.body.targetType)).toEqual(["post", "comment"]);
+});
+
+test("staff can review a report and hide the reported post", async ({ page }) => {
+  const fixture = await mocked(page, { signedIn: true, access: MODERATOR_ACCESS, includeOtherPost: true, includePendingReport: true });
+  await page.goto("/#/posts");
+  await page.getByRole("button", { name: "Review reported content" }).click();
+  const queue = page.getByRole("region", { name: "Community moderation" });
+  const report = queue.locator(".community-report-card");
+  await expect(report).toContainText("A post from another member.");
+  await report.getByLabel("Decision reason").fill("Confirmed harassment.");
+  await report.getByRole("button", { name: "Hide content" }).click();
+  await expect(report).toHaveCount(0);
+  await expect(page.getByText("A post from another member.")).toHaveCount(0);
+  expect(fixture.calls.find((call) => call.path.includes("/moderation/content-reports/") && call.method === "POST")?.body)
+    .toEqual({ decision: "hide", reason: "Confirmed harassment." });
+});
+
+test("members do not see the staff moderation queue", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  await page.goto("/#/posts");
+  await expect(page.getByRole("button", { name: "Review reported content" })).toHaveCount(0);
 });
 
 test("members can read, add, and delete their own post comments", async ({ page }) => {

@@ -13,9 +13,13 @@ export const STAFF_ACCESS = {
     { permission: "roles.manage", scope: "" },
   ],
 };
+export const MODERATOR_ACCESS = {
+  roles: [{ role: "staff", scope: "" }],
+  capabilities: [{ permission: "groups.content.moderate", scope: "" }],
+};
 export async function mocked(
   page,
-  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false } = {},
+  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false, includePendingReport = false } = {},
 ) {
   let assignedAccess = access;
   const calls = [];
@@ -131,7 +135,27 @@ export async function mocked(
     reacted: false,
     commentCount: 0,
   });
-  let postComments = [];
+  let postComments = includeOtherPost ? [{
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab",
+    postId: "99999999-9999-4999-8999-111111111111",
+    authorId: "33333333-3333-4333-8333-333333333333",
+    firstName: "Other",
+    lastName: "Commenter",
+    body: "A comment for the church to review.",
+    createdAt: "2026-10-19T10:30:00Z",
+  }] : [];
+  if (includeOtherPost) posts[1].commentCount = postComments.length;
+  let communityReports = includePendingReport && includeOtherPost ? [{
+    id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac",
+    targetType: "post",
+    targetId: posts[1].id,
+    postId: posts[1].id,
+    content: posts[1].body,
+    reason: "harassment",
+    details: "Reported by a member.",
+    status: "pending",
+    createdAt: "2026-10-20T10:00:00Z",
+  }] : [];
   await page.route("**/js/config.js", (route) =>
     route.fulfill({
       contentType: "text/javascript",
@@ -210,6 +234,38 @@ export async function mocked(
     if (path === "/api/v1/notifications/unread-count") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
       return ok({ unreadCount: notifications.filter((item) => !item.readAt).length });
+    }
+    if (path === "/api/v1/content-reports" && method === "POST") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const target = body.targetType === "post"
+        ? posts.find((item) => item.id === body.targetId)
+        : postComments.find((item) => item.id === body.targetId);
+      if (!target || target.authorId === profile.id) return error(409, "state_conflict", "Report not accepted.");
+      const created = { id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac", targetType: body.targetType, targetId: body.targetId, postId: body.targetType === "post" ? target.id : target.postId, content: target.body, reason: body.reason, details: body.details || "", status: "pending", createdAt: new Date().toISOString() };
+      communityReports.push(created);
+      return route.fulfill({ status: 201, json: { data: created } });
+    }
+    if (path === "/api/v1/moderation/content-reports" && method === "GET") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      if (!(assignedAccess.capabilities || []).some((item) => item.permission === "groups.content.moderate" && item.scope === "")) return error(403, "forbidden", "Not allowed.");
+      return route.fulfill({ json: { data: communityReports, meta: { nextCursor: "" } } });
+    }
+    const contentReview = path.match(/^\/api\/v1\/moderation\/content-reports\/([^/]+)\/review$/);
+    if (contentReview && method === "POST") {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      if (!(assignedAccess.capabilities || []).some((item) => item.permission === "groups.content.moderate" && item.scope === "")) return error(403, "forbidden", "Not allowed.");
+      const report = communityReports.find((item) => item.id === contentReview[1]);
+      if (!report) return error(409, "state_conflict", "Already reviewed.");
+      communityReports = communityReports.filter((item) => item.id !== report.id && !(body.decision === "hide" && item.postId === report.postId));
+      if (body.decision === "hide") {
+        if (report.targetType === "post") {
+          posts = posts.filter((item) => item.id !== report.postId);
+          postComments = postComments.filter((item) => item.postId !== report.postId);
+        } else {
+          postComments = postComments.filter((item) => item.id !== report.targetId);
+        }
+      }
+      return route.fulfill({ status: 204, body: "" });
     }
     if (path === "/api/v1/notifications" && method === "GET") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");

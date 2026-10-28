@@ -55,6 +55,32 @@ export async function deletePostComment(postId, commentId) {
   });
 }
 
+export async function reportCommunityContent(targetType, targetId, reason, details = "") {
+  return (await api.request("/api/v1/content-reports", {
+    method: "POST",
+    body: { targetType, targetId, reason, ...(details.trim() ? { details: details.trim() } : {}) },
+  })).data;
+}
+
+export async function listCommunityReports({ status = "pending", cursor = "", limit = 20, signal } = {}) {
+  const query = new URLSearchParams({ status, limit: String(limit) });
+  if (cursor) query.set("cursor", cursor);
+  const result = await api.request(`/api/v1/moderation/content-reports?${query}`, { signal });
+  return { reports: Array.isArray(result.data) ? result.data : [], nextCursor: result.meta?.nextCursor || "" };
+}
+
+export async function getCommunityModerationAccess({ signal } = {}) {
+  return (await api.request("/api/v1/me/access", { signal })).data;
+}
+
+export async function reviewCommunityReport(reportId, decision, reason) {
+  if (decision !== "hide" && decision !== "dismiss") throw new TypeError("Unsupported community report decision.");
+  await api.request(`/api/v1/moderation/content-reports/${encodeURIComponent(reportId)}/review`, {
+    method: "POST",
+    body: { decision, reason },
+  });
+}
+
 export async function uploadMedia(file, purpose, { onStatus = () => {}, signal } = {}) {
   const reservation = (await api.request("/api/v1/uploads/presign", {
     method: "POST",
