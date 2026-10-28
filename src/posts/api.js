@@ -11,6 +11,18 @@ export async function createPost(body) {
   return (await api.request("/api/v1/posts", { method: "POST", body })).data;
 }
 
+export async function updatePost(postId, body, attachmentIds = []) {
+  return (await api.request(`/api/v1/posts/${encodeURIComponent(postId)}`, {
+    method: "PUT", body: { body, attachmentIds },
+  })).data;
+}
+
+export async function deletePost(postId) {
+  await api.request(`/api/v1/posts/${encodeURIComponent(postId)}`, {
+    method: "DELETE",
+  });
+}
+
 export async function setPostAmen(postId) {
   return (await api.request(`/api/v1/posts/${encodeURIComponent(postId)}/reaction`, {
     method: "PUT",

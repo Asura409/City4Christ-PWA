@@ -15,7 +15,7 @@ export const STAFF_ACCESS = {
 };
 export async function mocked(
   page,
-  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false } = {},
+  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false } = {},
 ) {
   let assignedAccess = access;
   const calls = [];
@@ -119,6 +119,18 @@ export async function mocked(
     reacted: false,
     commentCount: 0,
   }];
+  if (includeOtherPost) posts.push({
+    id: "99999999-9999-4999-8999-111111111111",
+    authorId: "22222222-2222-4222-8222-222222222222",
+    firstName: "Another",
+    lastName: "Member",
+    body: "A post from another member.",
+    createdAt: "2026-10-19T10:00:00Z",
+    attachments: [],
+    amenCount: 0,
+    reacted: false,
+    commentCount: 0,
+  });
   let postComments = [];
   await page.route("**/js/config.js", (route) =>
     route.fulfill({
@@ -220,6 +232,21 @@ export async function mocked(
         return route.fulfill({ status: 201, json: { data: created } });
       }
       return route.fulfill({ json: { data: posts, meta: { nextCursor: "" } } });
+    }
+    const ownedPost = path.match(/^\/api\/v1\/posts\/([^/]+)$/);
+    if (ownedPost) {
+      if (!authenticated) return error(401, "invalid_session", "Sign in again.");
+      const post = posts.find((item) => item.id === ownedPost[1] && item.authorId === profile.id);
+      if (!post) return error(404, "post_not_found", "Post not found.");
+      if (method === "PUT") {
+        post.body = body.body;
+        return ok(post);
+      }
+      if (method === "DELETE") {
+        posts = posts.filter((item) => item.id !== post.id);
+        postComments = postComments.filter((item) => item.postId !== post.id);
+        return route.fulfill({ status: 204, body: "" });
+      }
     }
     const commentRoute = path.match(/^\/api\/v1\/posts\/([^/]+)\/comments(?:\/([^/]+))?$/);
     if (commentRoute) {

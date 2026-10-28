@@ -15,6 +15,30 @@ test("members read and publish church-wide posts", async ({ page }) => {
     .toEqual({ body: "Looking forward to worship together." });
 });
 
+test("members can edit and delete only their own posts", async ({ page }) => {
+  const fixture = await mocked(page, { signedIn: true, includeOtherPost: true });
+  await page.goto("/#/posts");
+  const ownPost = page.locator(".community-post").filter({ hasText: "Grace Member" });
+  const otherPost = page.locator(".community-post").filter({ hasText: "A post from another member." });
+  await expect(ownPost.getByRole("button", { name: "Edit post" })).toBeVisible();
+  await expect(ownPost.getByRole("button", { name: "Delete post" })).toBeVisible();
+  await expect(otherPost.getByRole("button", { name: "Edit post" })).toHaveCount(0);
+  await expect(otherPost.getByRole("button", { name: "Delete post" })).toHaveCount(0);
+
+  await ownPost.getByRole("button", { name: "Edit post" }).click();
+  await page.getByLabel("Edit post").fill("Updated Sunday announcement.");
+  await ownPost.getByRole("button", { name: "Save changes" }).click();
+  await expect(ownPost.getByText("Updated Sunday announcement.")).toBeVisible();
+  expect(fixture.calls.find((call) => call.path.endsWith("/99999999-9999-4999-8999-999999999999") && call.method === "PUT")?.body)
+    .toEqual({ body: "Updated Sunday announcement.", attachmentIds: [] });
+
+  await ownPost.getByRole("button", { name: "Delete post" }).click();
+  await expect(ownPost.getByText("Delete this post and its comments?", { exact: true })).toBeVisible();
+  await ownPost.getByRole("button", { name: "Confirm delete" }).click();
+  await expect(ownPost).toHaveCount(0);
+  expect(fixture.calls.some((call) => call.path.endsWith("/99999999-9999-4999-8999-999999999999") && call.method === "DELETE")).toBe(true);
+});
+
 test("members can add and remove their Amen reaction", async ({ page }) => {
   const fixture = await mocked(page, { signedIn: true });
   await page.goto("/#/posts");

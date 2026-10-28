@@ -617,6 +617,16 @@
 .posts-feed { display: grid; gap: 14px; }
 .community-post { border: 1px solid rgba(255,255,255,.06); }
 .community-post .body { margin: 14px 2px 4px; font-size: 16px; line-height: 1.55; white-space: pre-wrap; }
+.post-manage-actions, .post-editor-actions, .post-delete-confirmation { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.post-manage-actions { justify-content: flex-end; margin-top: 8px; }
+.post-editor, .post-delete-confirmation { display: grid; justify-items: start; gap: 9px; margin-top: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.post-editor { width: 100%; }
+.post-editor label { font-size: 13px; font-weight: 700; }
+.post-editor textarea { width: 100%; min-height: 100px; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--ink); background: var(--surface); font: inherit; }
+.post-editor-actions { width: 100%; }
+.post-delete-confirmation p { margin: 0; }
+.post-manage-error { margin: 8px 0 0; color: #ffd4d4; }
+.btn.danger { color: #ffd4d4; border: 1px solid rgba(255,120,120,.45); background: rgba(150,35,50,.2); }
 .post-media { display: grid; gap: 10px; margin-top: 12px; }
 .post-media img, .post-media video { display: block; width: 100%; max-height: 560px; object-fit: contain; border-radius: 14px; background: #100d1c; }
 .post-media audio { width: 100%; min-height: 44px; }

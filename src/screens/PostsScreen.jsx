@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
 import { useSession } from "@/auth/session";
-import { createPostComment, deletePostComment, listPostComments, listPosts, removePostAmen, setPostAmen } from "@/posts/api";
+import { createPostComment, deletePost, deletePostComment, listPostComments, listPosts, removePostAmen, setPostAmen, updatePost } from "@/posts/api";
 import { safeUrl } from "@/lib/sanitize";
 
 function dateLabel(value) {
@@ -23,6 +23,10 @@ export default function PostsScreen({ refreshKey = 0 }) {
   const [commentLoading, setCommentLoading] = useState({});
   const [commentBusy, setCommentBusy] = useState({});
   const [commentErrors, setCommentErrors] = useState({});
+  const [editingPostId, setEditingPostId] = useState("");
+  const [postBusy, setPostBusy] = useState({});
+  const [postErrors, setPostErrors] = useState({});
+  const [confirmDeleteId, setConfirmDeleteId] = useState("");
 
   const load = useCallback(async (next = "", signal) => {
     try {
@@ -111,6 +115,41 @@ export default function PostsScreen({ refreshKey = 0 }) {
     }
   };
 
+  const savePost = async (post, event) => {
+    event.preventDefault();
+    const body = new FormData(event.currentTarget).get("body");
+    if (postBusy[post.id] || typeof body !== "string" || !body.trim()) return;
+    setPostBusy((current) => ({ ...current, [post.id]: true }));
+    setPostErrors((current) => ({ ...current, [post.id]: "" }));
+    try {
+      const attachmentIds = (post.attachments || []).map((item) => item.id);
+      const updated = await updatePost(post.id, body, attachmentIds);
+      setPosts((current) => current.map((item) => item.id === post.id ? updated : item));
+      setEditingPostId("");
+    } catch (err) {
+      setPostErrors((current) => ({ ...current, [post.id]: err.message || "Could not update your post." }));
+    } finally {
+      setPostBusy((current) => ({ ...current, [post.id]: false }));
+    }
+  };
+
+  const removePost = async (post) => {
+    if (postBusy[post.id]) return;
+    setPostBusy((current) => ({ ...current, [post.id]: true }));
+    setPostErrors((current) => ({ ...current, [post.id]: "" }));
+    try {
+      await deletePost(post.id);
+      setPosts((current) => current.filter((item) => item.id !== post.id));
+      setComments((current) => { const next = { ...current }; delete next[post.id]; return next; });
+      setEditingPostId("");
+      setConfirmDeleteId("");
+    } catch (err) {
+      setPostErrors((current) => ({ ...current, [post.id]: err.message || "Could not delete your post." }));
+    } finally {
+      setPostBusy((current) => ({ ...current, [post.id]: false }));
+    }
+  };
+
   useEffect(() => {
     const controller = new AbortController();
     setPosts([]);
@@ -131,9 +170,27 @@ export default function PostsScreen({ refreshKey = 0 }) {
       <div className="posts-feed">
         {posts.map((post) => {
           const author = [post.firstName, post.lastName].filter(Boolean).join(" ") || "Church member";
+          const isAuthor = profile?.id === post.authorId;
           return <article className="card community-post" key={post.id}>
             <div className="who"><Avatar name={author} size={42} /><div><b>{author}</b><span>{dateLabel(post.createdAt)} · Church</span></div></div>
-            <p className="body">{post.body}</p>
+            {isAuthor && <div className="post-manage-actions">
+              <button className="btn soft" type="button" onClick={() => { setEditingPostId(post.id); setConfirmDeleteId(""); setPostErrors((current) => ({ ...current, [post.id]: "" })); }}>Edit post</button>
+              <button className="btn soft" type="button" onClick={() => { setConfirmDeleteId(post.id); setEditingPostId(""); setPostErrors((current) => ({ ...current, [post.id]: "" })); }}>Delete post</button>
+            </div>}
+            {postErrors[post.id] && <p className="post-manage-error" role="alert">{postErrors[post.id]}</p>}
+            {editingPostId === post.id ? <form className="post-editor" onSubmit={(event) => void savePost(post, event)}>
+              <label htmlFor={`edit-post-${post.id}`}>Edit post</label>
+              <textarea id={`edit-post-${post.id}`} name="body" maxLength={5000} required defaultValue={post.body} />
+              <div className="post-editor-actions">
+                <button className="btn primary" type="submit" disabled={Boolean(postBusy[post.id])}>{postBusy[post.id] ? "Saving…" : "Save changes"}</button>
+                <button className="btn soft" type="button" disabled={Boolean(postBusy[post.id])} onClick={() => setEditingPostId("")}>Cancel</button>
+              </div>
+            </form> : <p className="body">{post.body}</p>}
+            {confirmDeleteId === post.id && <div className="post-delete-confirmation" role="group" aria-label="Delete post confirmation">
+              <p>Delete this post and its comments?</p>
+              <button className="btn danger" type="button" disabled={Boolean(postBusy[post.id])} onClick={() => void removePost(post)}>{postBusy[post.id] ? "Deleting…" : "Confirm delete"}</button>
+              <button className="btn soft" type="button" disabled={Boolean(postBusy[post.id])} onClick={() => setConfirmDeleteId("")}>Cancel</button>
+            </div>}
             {post.attachments?.length > 0 && <div className="post-media">{post.attachments.map((item) => {
               const url = safeUrl(item.url);
               if (url === "#") return null;
