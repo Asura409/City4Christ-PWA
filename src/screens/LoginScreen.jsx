@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
 import { Icon } from "@/lib/icons";
 import { api, useSession } from "@/auth/session";
+import {googleReturnURL} from '@/auth/google';
 
 export default function LoginScreen() {
   const navigate = useNavigate();
@@ -129,7 +130,7 @@ export default function LoginScreen() {
         className="btn soft block"
         onClick={() =>
           location.assign(
-            api.googleStartURL(new URL("/auth.html", location.origin).href),
+            api.googleStartURL(googleReturnURL()),
           )
         }
       >
