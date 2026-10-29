@@ -171,3 +171,32 @@ per-member Amen reactions, and paginated comments at
 with `DELETE /api/v1/posts/{postId}/comments/{commentId}`. Comments are visible
 church-wide to signed-in members; leaders’ moderation actions remain a separate
 backend slice.
+
+## React Google sign-in and linking
+
+The main React login uses `/oauth/auth.html` as its frontend return page. Linking
+starts directly from the React profile and uses `/account/auth.html`. Both pages
+load the same React bundle and restore access through the HttpOnly refresh cookie;
+there is no token in the redirect URL. Only known error codes are forwarded into
+React routing. Existing `auth.html` and `profile.html` remain advanced test-console
+pages for recovery, MFA and staff workflows; normal React Google flows no longer
+navigate through them.
+
+An existing local account must sign in and explicitly choose **Link Google** on
+its profile. Expired confirmation can be renewed with the current password in the
+same React page. Google-only accounts use Google confirmation; accounts requiring
+MFA must confirm an authenticator code. These controls never bypass backend checks.
+
+The registered Google OAuth redirect URI remains the backend
+`/api/v1/auth/google/callback`; no Google Console change is needed for these frontend
+return pages. Deploy the frontend build to make this routing fix available live.
+The UI regression is part of frontend CI. The optional backend browser harness
+also runs `google-real.spec.mjs` with synthetic Google identities and disposable
+PostgreSQL; actual Google consent/account access still needs private live acceptance.
+
+Local verification for this fix: 38 frontend unit tests and the build passed;
+10 Google UI browser cases passed across desktop/mobile; 20 existing React/preview
+browser cases passed; four real Go/PostgreSQL Google workflows passed using the
+synthetic provider. The initial missing-link/wrong-interface cases were reproduced
+as failing tests before implementation. No real Google account was linked by these
+checks. Actual provider consent remains a live release acceptance step.

@@ -20,6 +20,8 @@ test("React release includes configured API origin and every existing connected 
     assert.doesNotMatch(html, /onrender.com|\/src\/main/);
     for (const file of [
       "auth.html",
+      "oauth/auth.html",
+      "account/auth.html",
       "profile.html",
       "word.html",
       "members.html",

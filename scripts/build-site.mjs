@@ -8,6 +8,7 @@ import {
   writeFile,
   rm,
   readdir,
+  mkdir,
 } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { createHash } from "node:crypto";
@@ -45,6 +46,11 @@ export async function buildSite({
       await readFile(join(temporary, "index.html"), "utf8")
     ).replace("__API_ORIGIN__", origin).replaceAll("__MEDIA_ORIGIN__", mediaOrigin);
     await writeFile(join(outDir, "index.html"), html);
+    // Dedicated allowlisted callback pages render the same React application.
+    for (const section of ['oauth', 'account']) {
+      await mkdir(join(outDir, section), {recursive: true});
+      await writeFile(join(outDir, section, 'auth.html'), html);
+    }
     const assets = (await readdir(join(outDir, "app-assets")))
       .sort()
       .map((name) => "app-assets/" + name);

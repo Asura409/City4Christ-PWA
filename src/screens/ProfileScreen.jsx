@@ -2,6 +2,7 @@ import { hasCapability } from "../../js/access.js";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
+import {GoogleLinkPanel} from '@/auth/GoogleLinkPanel';
 export default function ProfileScreen() {
   const { profile, setProfile, logout } = useSession(),
     navigate = useNavigate();
@@ -102,9 +103,10 @@ export default function ProfileScreen() {
           Save profile
         </button>
       </form>
+      <GoogleLinkPanel hasPassword={profile.hasPassword}/>
       <div className="wrap">
         <a className="btn soft" href="/profile.html">
-          Account security and Google linking
+          Advanced security tools (test console)
         </a>
         <a className="btn soft" href="/members.html">
           Member directory

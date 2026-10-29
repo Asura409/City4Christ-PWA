@@ -10,6 +10,7 @@ import GroupAdminScreen from "@/screens/GroupAdminScreen";
 import EventsScreen from "@/screens/EventsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import LoginScreen from "@/screens/LoginScreen";
+import GoogleReturnScreen from '@/screens/GoogleReturnScreen';
 import SignUpScreen from "@/screens/SignUpScreen";
 import NewUserScreen from "@/screens/NewUserScreen";
 import "./App.css";
@@ -26,6 +27,7 @@ import GivingScreen from "./screens/GivingScreen";
 import GivingReturnScreen from "./screens/GivingReturnScreen";
 
 const AUTH_ROUTES = [
+  '/google-return',
   "/login",
   "/signup",
   "/new-user",
@@ -43,6 +45,7 @@ export default function App() {
     return (
       <div className="app">
         <Routes>
+          <Route path="/google-return" element={<GoogleReturnScreen/>}/>
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/signup" element={<SignUpScreen />} />
           <Route
