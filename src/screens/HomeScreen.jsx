@@ -7,6 +7,7 @@ const tiles = [
   ["/profile", "users", "My profile"],
   ["/groups", "users", "Church groups"],
   ["/events", "cal", "Church events"],
+["/pastors", "users", "Book a pastor"],
 ];
 export default function HomeScreen() {
   const { profile } = useSession(),

@@ -9,6 +9,7 @@ import GroupsScreen from "@/screens/GroupsScreen";
 import GroupAdminScreen from "@/screens/GroupAdminScreen";
 import EventsScreen from "@/screens/EventsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
+import PastorsScreen from "@/screens/PastorsScreen";
 import LoginScreen from "@/screens/LoginScreen";
 import GoogleReturnScreen from '@/screens/GoogleReturnScreen';
 import SignUpScreen from "@/screens/SignUpScreen";
@@ -102,6 +103,7 @@ export default function App() {
               }
             />
             <Route path="/word" element={<WordScreen />} />
+<Route path="/pastors" element={<ProtectedRoute><PastorsScreen/></ProtectedRoute>}/>
             <Route path="/posts" element={<ProtectedRoute><PostsScreen refreshKey={postsVersion} /></ProtectedRoute>} />
             <Route path="/chat" element={<ProtectedRoute><MessagesScreen /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />

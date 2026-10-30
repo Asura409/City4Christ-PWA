@@ -105,6 +105,7 @@ export default function ProfileScreen() {
       </form>
       <GoogleLinkPanel hasPassword={profile.hasPassword}/>
       <div className="wrap">
+<a className="btn soft" href="#/pastors">Pastoral appointments</a>
         <a className="btn soft" href="/profile.html">
           Advanced security tools (test console)
         </a>
