@@ -200,3 +200,29 @@ browser cases passed; four real Go/PostgreSQL Google workflows passed using the
 synthetic provider. The initial missing-link/wrong-interface cases were reproduced
 as failing tests before implementation. No real Google account was linked by these
 checks. Actual provider consent remains a live release acceptance step.
+
+
+## Pastoral appointments
+
+`/#/pastors` is linked from Home and Profile. Members browse listed pastors and
+future available slots, request an appointment pending approval, view their own
+requests and cancel before the appointment starts. Eligible, explicitly listed
+pastors publish availability and review only their assigned queue. An unlisted
+pastor may review existing requests and withdraw unreserved slots, but cannot
+publish new slots. Super Admin directory settings require existing pastoral role
+eligibility plus fresh primary/MFA proofs on the server.
+
+The UI is split under `src/pastoral/` into directory, availability, booking list,
+protected directory form, API helpers and a bounded-list hook. The public directory
+and private queues never persist API responses or credentials in browser storage.
+Notifications link to this same React route. The first UI window is the next30days;
+calendar input times are device-local and display uses the pastor's IANA zone.
+
+There is no free-text care-purpose/note field, recurring calendar, reassignment or
+email reminder in this slice. These are separate policy/implementation steps.
+Backend migrations39–40 and the new API must be released before enabling the new
+frontend in staging; neither repository seeds an administrator or pastor.
+
+Browser coverage is in `pastoral.spec.mjs`, `pastoral-listing.spec.mjs` and the
+optional `pastoral-real.spec.mjs`. The real suite uses isolated member/pastor browser
+contexts, the global Go app and disposable PostgreSQL; no live care data is used.

@@ -1,0 +1,40 @@
+.pastoral-screen {
+  max-width: 1000px;
+  width: 100%;
+  margin-inline: auto;
+}
+.pastoral-screen > section {
+  margin-block: 1.25rem;
+}
+.pastoral-screen .auth-card {
+  margin-block: 1rem;
+}
+.pastoral-screen .auth-card h2,
+.pastoral-screen .auth-card h3 {
+  margin-bottom: 0.7rem;
+}
+.pastoral-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 1rem;
+}
+.pastoral-slot {
+  padding-block: 1rem;
+  border-top: 1px solid var(--line, #ddd);
+}
+.pastoral-screen input,
+.pastoral-screen textarea {
+  max-width: 100%;
+}
+.pastoral-screen textarea {
+  width: 100%;
+  min-height: 7rem;
+}
+.pastoral-screen [role="alert"] {
+  color: var(--rose, #b01c59);
+}
+.pastoral-screen .wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
