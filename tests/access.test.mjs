@@ -113,3 +113,22 @@ test("a late old-account response cannot overwrite a new account snapshot", asyn
   await oldRequest;
   assert.deepEqual(state.current(), empty);
 });
+
+test("devotional authority uses the explicit global capability and supports refreshed snapshots", async () => {
+  const snapshot = {
+    roles: [{ role: "content_editor", scope: "" }],
+    capabilities: [{ permission: "devotionals.manage", scope: "" }],
+  };
+  assert.equal(hasCapability(snapshot, "devotionals.manage"), true);
+  assert.equal(
+    hasCapability(
+      snapshot,
+      "devotionals.manage",
+      "11111111-1111-4111-8111-111111111111",
+    ),
+    false,
+  );
+  const state = createAccessState(async () => ({ data: snapshot }));
+  await state.refresh();
+  assert.equal(hasCapability(state.current(), "devotionals.manage"), true);
+});
