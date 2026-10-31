@@ -29,4 +29,4 @@ jobs:
       - name: Install Chromium and system dependencies
         run: npx playwright install --with-deps chromium
       - name: Verify desktop and mobile preview workflows
-        run: npm run test:browser -- tests/browser/preview.spec.mjs tests/browser/access.spec.mjs tests/browser/react.spec.mjs tests/browser/reauthentication.spec.mjs tests/browser/mfa.spec.mjs tests/browser/church-roles.spec.mjs tests/browser/google-react.spec.mjs tests/browser/pastoral.spec.mjs tests/browser/pastoral-listing.spec.mjs
+        run: npm run test:browser -- tests/browser/preview.spec.mjs tests/browser/access.spec.mjs tests/browser/react.spec.mjs tests/browser/reauthentication.spec.mjs tests/browser/mfa.spec.mjs tests/browser/church-roles.spec.mjs tests/browser/google-react.spec.mjs tests/browser/pastoral.spec.mjs tests/browser/pastoral-listing.spec.mjs tests/browser/devotionals.spec.mjs

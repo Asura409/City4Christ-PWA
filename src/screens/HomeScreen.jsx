@@ -4,6 +4,7 @@ import { Icon } from "@/lib/icons";
 import { useSession } from "@/auth/session";
 const tiles = [
   ["/word", "mic", "Sermons"],
+ ["/devotionals", "sun", "Devotionals"],
   ["/profile", "users", "My profile"],
   ["/groups", "users", "Church groups"],
   ["/events", "cal", "Church events"],
