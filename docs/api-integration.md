@@ -226,3 +226,24 @@ frontend in staging; neither repository seeds an administrator or pastor.
 Browser coverage is in `pastoral.spec.mjs`, `pastoral-listing.spec.mjs` and the
 optional `pastoral-real.spec.mjs`. The real suite uses isolated member/pastor browser
 contexts, the global Go app and disposable PostgreSQL; no live care data is used.
+
+
+### Devotionals
+
+The member screen is `/#/devotionals`, linked from Home and Word. Its published
+catalog/detail calls use `/api/v1/devotionals`; editorial create/list/detail/PATCH
+calls use `/api/v1/admin/devotionals`. The existing authenticated client sends
+Authorization and handles session refresh. Editorial rendering requires the global
+`devotionals.manage` capability, independently checked again by the server.
+
+Ship the permission-parser compatibility for this capability before the backend
+advertises it; older strict permission parsers reject unknown capability names.
+Then apply backend migration 42/routes, and release the reader/editor interface.
+The backend contract and publication limits are in `docs/devotional-publishing.md`
+in the backend repository and OpenAPI 1.18.0.
+
+Content is plain text, escaped by React. Drafts are never fetched by member views
+or persisted in localStorage. Publication is immediate; scheduled devotionals and
+a managed daily-verse card are deferred. Save as draft withdraws a publication.
+Stale versions keep the unsaved form intact and require an explicit latest-version
+reload. Source components and transport/list helpers are split in `src/devotionals`.

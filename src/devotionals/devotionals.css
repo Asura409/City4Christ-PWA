@@ -1,0 +1,64 @@
+.devotionals-screen {
+  display: grid;
+  gap: 20px;
+}
+.devotional-list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.devotional-list li {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.devotional-list button {
+  white-space: normal;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.devotional-list span {
+  color: var(--muted);
+}
+.devotional-reading {
+  border-top: 1px solid var(--line);
+  padding-top: 20px;
+  overflow-wrap: anywhere;
+}
+.devotional-body {
+  white-space: pre-wrap;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+}
+.devotional-reference {
+  font-weight: 600;
+}
+.devotional-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+.devotional-form label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+.devotional-form input,
+.devotional-form textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--bg);
+  color: var(--text);
+}
+.devotional-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}

@@ -156,6 +156,7 @@ export default function WordScreen() {
     <section className="screen active" aria-label="Sermons and media">
       <div className="sh">
         <h1>Word Hub</h1>
+<a className="btn soft" href="#/devotionals">Read devotionals</a>
       </div>
       <SermonComposer onPublished={() => { setSelected(null); void load(); }} />
       {error && <p role="alert">{error}</p>}
