@@ -1,9 +1,20 @@
+import { NotificationSettings } from "@/notifications/NotificationSettings";
+import { BroadcastPanel } from "@/notifications/BroadcastPanel";
 import React, { useCallback, useEffect, useState } from "react";
-import { listNotifications, markNotificationRead } from "@/notifications/api";
+import {
+  listNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+} from "@/notifications/api";
 
 function createdLabel(value) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Recently" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return Number.isNaN(date.getTime())
+    ? "Recently"
+    : new Intl.DateTimeFormat(undefined, {
+        dateStyle: "medium",
+        timeStyle: "short",
+      }).format(date);
 }
 
 export default function NotificationsScreen() {
@@ -20,10 +31,11 @@ export default function NotificationsScreen() {
     setError("");
     try {
       const page = await listNotifications({ cursor: next, signal });
-      setItems((current) => next ? [...current, ...page.items] : page.items);
+      setItems((current) => (next ? [...current, ...page.items] : page.items));
       setCursor(page.nextCursor);
     } catch (err) {
-      if (err.name !== "AbortError") setError(err.message || "Could not load notifications.");
+      if (err.name !== "AbortError")
+        setError(err.message || "Could not load notifications.");
     } finally {
       setLoading(false);
       setLoadingMore(false);
@@ -42,7 +54,13 @@ export default function NotificationsScreen() {
     setError("");
     try {
       await markNotificationRead(item.id);
-      setItems((current) => current.map((entry) => entry.id === item.id ? { ...entry, readAt: new Date().toISOString() } : entry));
+      setItems((current) =>
+        current.map((entry) =>
+          entry.id === item.id
+            ? { ...entry, readAt: new Date().toISOString() }
+            : entry,
+        ),
+      );
       window.dispatchEvent(new Event("notifications:refresh"));
     } catch (err) {
       setError(err.message || "Could not update this notification.");
@@ -52,31 +70,97 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <section className="screen active notifications-screen" aria-label="Notifications">
+    <section
+      className="screen active notifications-screen"
+      aria-label="Notifications"
+    >
       <header className="notifications-heading">
         <p className="eyebrow">YOUR UPDATES</p>
         <h1>Notifications</h1>
         <p className="lead">Church updates for your account.</p>
       </header>
-      {error && <p className="notification-error" role="alert">{error} <button className="link" onClick={() => void load()}>Try again</button></p>}
-      {loading ? <p role="status">Loading notifications…</p> : items.length === 0 ? <p className="notification-empty">You’re all caught up.</p> : (
+      <div className="devotional-actions">
+        <button
+          className="btn soft"
+          disabled={loading || Boolean(busyId)}
+          onClick={async () => {
+            setBusyId("all");
+            setError("");
+            try {
+              await markAllNotificationsRead();
+              await load();
+              window.dispatchEvent(new Event("notifications:refresh"));
+            } catch (e) {
+              setError(e.message);
+            } finally {
+              setBusyId("");
+            }
+          }}
+        >
+          Mark all read
+        </button>
+      </div>
+      {error && (
+        <p className="notification-error" role="alert">
+          {error}{" "}
+          <button className="link" onClick={() => void load()}>
+            Try again
+          </button>
+        </p>
+      )}
+      {loading ? (
+        <p role="status">Loading notifications…</p>
+      ) : items.length === 0 ? (
+        <p className="notification-empty">You’re all caught up.</p>
+      ) : (
         <div className="notification-list" role="list">
           {items.map((item) => (
-            <article className={`notification-card${item.readAt ? " is-read" : " is-unread"}`} role="listitem" key={item.id}>
+            <article
+              className={`notification-card${item.readAt ? " is-read" : " is-unread"}`}
+              role="listitem"
+              key={item.id}
+            >
               <div className="notification-card-copy">
                 <h2>{item.title}</h2>
                 {item.body && <p>{item.body}</p>}
-                {typeof item.resourcePath === "string" && item.resourcePath.startsWith("/#/") && !/[?#\\]/.test(item.resourcePath.slice(3)) && (
-                  <a className="link notification-link" href={item.resourcePath}>View details</a>
-                )}
-                <time dateTime={item.createdAt}>{createdLabel(item.createdAt)}</time>
+                {typeof item.resourcePath === "string" &&
+                  item.resourcePath.startsWith("/#/") &&
+                  !/[?#\\]/.test(item.resourcePath.slice(3)) && (
+                    <a
+                      className="link notification-link"
+                      href={item.resourcePath}
+                    >
+                      View details
+                    </a>
+                  )}
+                <time dateTime={item.createdAt}>
+                  {createdLabel(item.createdAt)}
+                </time>
               </div>
-              {!item.readAt && <button className="btn notification-read" disabled={busyId === item.id} onClick={() => void markRead(item)}>{busyId === item.id ? "Saving…" : "Mark read"}</button>}
+              {!item.readAt && (
+                <button
+                  className="btn notification-read"
+                  disabled={busyId === item.id}
+                  onClick={() => void markRead(item)}
+                >
+                  {busyId === item.id ? "Saving…" : "Mark read"}
+                </button>
+              )}
             </article>
           ))}
         </div>
       )}
-      {cursor && !loading && <button className="btn notification-more" disabled={loadingMore} onClick={() => void load(cursor)}>{loadingMore ? "Loading…" : "Load more"}</button>}
+      <NotificationSettings />
+      <BroadcastPanel />
+      {cursor && !loading && (
+        <button
+          className="btn notification-more"
+          disabled={loadingMore}
+          onClick={() => void load(cursor)}
+        >
+          {loadingMore ? "Loading…" : "Load more"}
+        </button>
+      )}
     </section>
   );
 }

@@ -69,7 +69,7 @@ export function createClient({
   };
   async function send(
     path,
-    { method = "GET", body, signal, authorized = false } = {},
+    { method = "GET", body, signal, authorized = false,responseType="json" } = {},
   ) {
     if (
       typeof path !== "string" ||
@@ -97,6 +97,7 @@ export function createClient({
         "Could not reach the service. Check your connection and try again.",
       );
     }
+    if(response.ok && responseType === "text")return response.text();
     let result;
     if (response.status === 204) return { data: null };
     try {

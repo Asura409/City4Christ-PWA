@@ -1,0 +1,48 @@
+.notification-settings,
+.broadcast-panel {
+  margin-top: 1.25rem;
+  padding: 1rem;
+}
+.notification-settings form,
+.broadcast-panel form {
+  display: grid;
+  gap: 0.8rem;
+}
+.notification-settings label {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.notification-settings input[type="checkbox"],
+.broadcast-panel input[type="checkbox"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  flex: 0 0 auto;
+}
+.broadcast-panel form label {
+  display: grid;
+  gap: 0.4rem;
+}
+.broadcast-panel input:not([type="checkbox"]),
+.broadcast-panel textarea {
+  width: 100%;
+  box-sizing: border-box;
+  font: inherit;
+  padding: 0.6rem;
+  border: 1px solid #b9a3d6;
+  border-radius: 0.6rem;
+}
+.broadcast-panel textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+.broadcast-panel article {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid #d8c6ed;
+  border-radius: 0.8rem;
+  overflow-wrap: anywhere;
+}
+.broadcast-panel article p {
+  white-space: pre-wrap;
+}

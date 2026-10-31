@@ -92,3 +92,21 @@ self.addEventListener("fetch", (event) => {
     })(),
   );
 });
+
+// Generic previews deliberately ignore provider payload text and target URLs.
+self.addEventListener("push", (event) => {
+  event.waitUntil(self.registration.showNotification("City4Christ", {
+    body: "You have a new update. Open the app to view it.",
+    tag: "city4christ-updates",
+  }));
+});
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const target = new URL("./#/notifications", ROOT).href;
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    const app = windows.find((client) => { const u = new URL(client.url); return u.origin === ROOT.origin && u.pathname.startsWith(ROOT.pathname); });
+    if (app) { await app.navigate(target); await app.focus(); }
+    else await self.clients.openWindow(target);
+  })());
+});

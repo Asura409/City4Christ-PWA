@@ -294,3 +294,14 @@ test("MFA requests keep setup and recovery data out of URLs and use existing ses
     recoveryCode: "synthetic-recovery-code",
   });
 });
+
+test('authenticated calendar downloads preserve the session header and return text', async () => {
+ const requests=[];
+ const client=createClient({apiURL:'https://api.example',fetchImpl:async(url,options)=>{
+ requests.push({url,options});
+ if(url.endsWith('/api/v1/auth/refresh'))return json({data:{accessToken:'synthetic-calendar-token',expiresIn:600}});
+ return new Response('BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n',{headers:{'Content-Type':'text/calendar'}});
+ }});
+ assert.equal(await client.request('/api/v1/events/test/calendar.ics',{responseType:'text'}),'BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n');
+ assert.equal(requests.at(-1).options.headers.Authorization,'Bearer synthetic-calendar-token');
+});

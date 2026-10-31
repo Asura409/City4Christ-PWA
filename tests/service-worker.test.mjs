@@ -90,3 +90,12 @@ test("service worker can install every shell asset after a module refactor", asy
   await completion;
   assert.equal(activated, true);
 });
+
+test('push previews are generic and notification clicks stay inside the PWA',async()=>{
+ const listeners={},shown=[];let completion,opened;
+ const source=await readFile(new URL('../service-worker.js',import.meta.url),'utf8');
+ vm.runInNewContext(source,{URL,self:{location:{origin:'https://preview.example',href:'https://preview.example/service-worker.js'},addEventListener:(name,fn)=>listeners[name]=fn,registration:{showNotification:async(...args)=>shown.push(args)},clients:{matchAll:async()=>[],openWindow:async url=>opened=url}}});
+ assert.equal(typeof listeners.push,'function');
+ listeners.push({data:{json:()=>({title:'Private message',body:'Secret',url:'https://evil.example'})},waitUntil:p=>completion=p});await completion;assert.equal(shown[0][0],'City4Christ');assert.equal(shown[0][1].body,'You have a new update. Open the app to view it.');
+ listeners.notificationclick({notification:{close(){},data:{url:'https://evil.example'}},waitUntil:p=>completion=p});await completion;assert.equal(opened,'https://preview.example/#/notifications');
+});
