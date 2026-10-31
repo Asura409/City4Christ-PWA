@@ -4,6 +4,7 @@ import { ToastProvider } from "@/components/Toast";
 import { Nav } from "@/components/Nav";
 import HomeScreen from "@/screens/HomeScreen";
 import DevotionalsScreen from "@/screens/DevotionalsScreen";
+import BibleScreen from "@/screens/BibleScreen";
 import WordScreen from "@/screens/WordScreen";
 import PrayerScreen from "@/screens/PrayerScreen";
 import GroupsScreen from "@/screens/GroupsScreen";
@@ -104,6 +105,7 @@ export default function App() {
               }
             />
             <Route path="/word" element={<WordScreen />} />
+<Route path="/bible" element={<BibleScreen/>}/>
 <Route path="/devotionals" element={<ProtectedRoute><DevotionalsScreen/></ProtectedRoute>}/>
 <Route path="/pastors" element={<ProtectedRoute><PastorsScreen/></ProtectedRoute>}/>
             <Route path="/posts" element={<ProtectedRoute><PostsScreen refreshKey={postsVersion} /></ProtectedRoute>} />

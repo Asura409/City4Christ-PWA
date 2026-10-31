@@ -243,7 +243,35 @@ The backend contract and publication limits are in `docs/devotional-publishing.m
 in the backend repository and OpenAPI 1.18.0.
 
 Content is plain text, escaped by React. Drafts are never fetched by member views
-or persisted in localStorage. Publication is immediate; scheduled devotionals and
-a managed daily-verse card are deferred. Save as draft withdraws a publication.
+or persisted in localStorage. Publication is immediate; scheduled long-form
+devotionals remain deferred. The managed Daily Verse card is described below. Save as draft withdraws a publication.
 Stale versions keep the unsaved form intact and require an explicit latest-version
 reload. Source components and transport/list helpers are split in `src/devotionals`.
+
+
+### Daily Verse (fixed GMT+1)
+
+Home reads `GET /api/v1/daily-verse`. The server chooses the church date in fixed
+UTC+01:00 and returns date, timeZone, serverTime, nextDayAt and a nullable verse.
+Use the server timestamps for rollover timing; do not select a verse from the
+phone date or carry yesterday into an empty day. Home clears old data before a
+refresh and distinguishes empty, loading and unavailable states.
+
+The editorial workflow under Devotionals uses `/api/v1/admin/daily-verses` and its
+ID detail/PATCH route, with the existing global devotionals.manage capability.
+Create a draft, then publish for its displayDate. One published verse per date is
+enforced by PostgreSQL; date conflicts require choosing another date or explicitly
+withdrawing the current publication. Stale versions retain unsaved form fields and
+require a latest-version reload. Text remains escaped, not rendered as HTML.
+
+Backend migration 43/routes must be released before this Home/editor UI. No new
+API_URL, secrets, permissions or worker configuration are required. Details are
+in the backend's docs/daily-verse.md and OpenAPI 1.19.0. Daily-verse components are
+separate under src/dailyverse; shared paginated-list state is in src/content.
+
+Bible lookup uses public `/api/v1/bible/translations` and `/api/v1/bible/passages`.
+The `/#/bible` route supports reference, translation ID, or original translation
+name query parameters. Daily Bread editors can copy a passage into a dated draft;
+saving and publishing remain explicit actions. Initial versions are WEB, WEB
+British Edition and ASV 1901. Use the existing `API_URL` setting; no provider key
+is exposed to the browser.

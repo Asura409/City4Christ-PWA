@@ -521,6 +521,15 @@ export async function mocked(
         },
       });
     if (path === "/api/v1/sermons/series") return ok([]);
+    if (path === "/api/v1/bible/translations") return ok([
+      {id:'web',name:'World English Bible',language:'English',license:'Public domain',canImport:true},
+      {id:'webbe',name:'World English Bible, British Edition',language:'English (UK)',license:'Public domain',canImport:true},
+      {id:'asv',name:'American Standard Version (1901)',language:'English',license:'Public domain',canImport:true}
+    ]);
+    if (path === "/api/v1/daily-verse") {
+      const now=new Date(), date=new Date(now.getTime()+3600000).toISOString().slice(0,10);
+      return ok({date,timeZone:'UTC+01:00',serverTime:now.toISOString(),nextDayAt:date+'T23:00:00Z',verse:null});
+    }
     if (path === "/api/v1/sermons")
       return route.fulfill({
         json: {
