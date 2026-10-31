@@ -1,3 +1,7 @@
+import {
+  GroupPostsScreen,
+  GroupEventsScreen,
+} from "./groups/GroupContentScreens";
 import React, { useState } from "react";
 import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { ToastProvider } from "@/components/Toast";
@@ -13,7 +17,7 @@ import EventsScreen from "@/screens/EventsScreen";
 import ProfileScreen from "@/screens/ProfileScreen";
 import PastorsScreen from "@/screens/PastorsScreen";
 import LoginScreen from "@/screens/LoginScreen";
-import GoogleReturnScreen from '@/screens/GoogleReturnScreen';
+import GoogleReturnScreen from "@/screens/GoogleReturnScreen";
 import SignUpScreen from "@/screens/SignUpScreen";
 import NewUserScreen from "@/screens/NewUserScreen";
 import "./App.css";
@@ -30,7 +34,7 @@ import GivingScreen from "./screens/GivingScreen";
 import GivingReturnScreen from "./screens/GivingReturnScreen";
 
 const AUTH_ROUTES = [
-  '/google-return',
+  "/google-return",
   "/login",
   "/signup",
   "/new-user",
@@ -40,6 +44,7 @@ const AUTH_ROUTES = [
 
 export default function App() {
   const [createOpen, setCreateOpen] = useState(false);
+  const [createAudienceGroup, setCreateAudienceGroup] = useState("");
   const [postsVersion, setPostsVersion] = useState(0);
   const { pathname } = useLocation();
   const isAuth = AUTH_ROUTES.some((r) => pathname.startsWith(r));
@@ -48,7 +53,7 @@ export default function App() {
     return (
       <div className="app">
         <Routes>
-          <Route path="/google-return" element={<GoogleReturnScreen/>}/>
+          <Route path="/google-return" element={<GoogleReturnScreen />} />
           <Route path="/login" element={<LoginScreen />} />
           <Route path="/signup" element={<SignUpScreen />} />
           <Route
@@ -105,14 +110,72 @@ export default function App() {
               }
             />
             <Route path="/word" element={<WordScreen />} />
-<Route path="/bible" element={<BibleScreen/>}/>
-<Route path="/devotionals" element={<ProtectedRoute><DevotionalsScreen/></ProtectedRoute>}/>
-<Route path="/pastors" element={<ProtectedRoute><PastorsScreen/></ProtectedRoute>}/>
-            <Route path="/posts" element={<ProtectedRoute><PostsScreen refreshKey={postsVersion} /></ProtectedRoute>} />
-            <Route path="/chat" element={<ProtectedRoute><MessagesScreen /></ProtectedRoute>} />
-            <Route path="/notifications" element={<ProtectedRoute><NotificationsScreen /></ProtectedRoute>} />
+            <Route path="/bible" element={<BibleScreen />} />
+            <Route
+              path="/devotionals"
+              element={
+                <ProtectedRoute>
+                  <DevotionalsScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/pastors"
+              element={
+                <ProtectedRoute>
+                  <PastorsScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups/:groupId/posts"
+              element={
+                <ProtectedRoute>
+                  <GroupPostsScreen refreshKey={postsVersion} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/groups/:groupId/events"
+              element={
+                <ProtectedRoute>
+                  <GroupEventsScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/posts"
+              element={
+                <ProtectedRoute>
+                  <PostsScreen refreshKey={postsVersion} />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <ProtectedRoute>
+                  <MessagesScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications"
+              element={
+                <ProtectedRoute>
+                  <NotificationsScreen />
+                </ProtectedRoute>
+              }
+            />
             <Route path="/giving/return" element={<GivingReturnScreen />} />
-            <Route path="/giving" element={<ProtectedRoute><GivingScreen /></ProtectedRoute>} />
+            <Route
+              path="/giving"
+              element={
+                <ProtectedRoute>
+                  <GivingScreen />
+                </ProtectedRoute>
+              }
+            />
             <Route
               path="/prayer"
               element={
@@ -131,11 +194,19 @@ export default function App() {
             />
             <Route
               path="/groups/manage"
-              element={<ProtectedRoute><GroupAdminScreen /></ProtectedRoute>}
+              element={
+                <ProtectedRoute>
+                  <GroupAdminScreen />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/groups/manage/:groupId"
-              element={<ProtectedRoute><GroupAdminScreen /></ProtectedRoute>}
+              element={
+                <ProtectedRoute>
+                  <GroupAdminScreen />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/groups/:groupId"
@@ -145,10 +216,7 @@ export default function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/events"
-              element={<EventsScreen />}
-            />
+            <Route path="/events" element={<EventsScreen />} />
             <Route
               path="/profile"
               element={
@@ -161,15 +229,37 @@ export default function App() {
           </Routes>
         </main>
 
-        <Nav onFab={() => setCreateOpen(true)} />
+        <Nav
+          onFab={() => {
+            setCreateAudienceGroup(
+              pathname.match(/^\/groups\/[^/]+\/posts$/)
+                ? pathname.split("/")[2]
+                : "",
+            );
+            setCreateOpen(true);
+          }}
+        />
 
         <CreateSheet
+          key={createAudienceGroup}
           open={createOpen}
+          audienceLabel={
+            createAudienceGroup
+              ? "Sharing with this group"
+              : "Sharing with the church"
+          }
           onClose={() => setCreateOpen(false)}
           onPost={async ({ body, files, setUploadStatus }) => {
             const attachmentIds = [];
-            for (const file of files) attachmentIds.push(await uploadPostMedia(file, { onStatus: setUploadStatus }));
-            await createPost({ body, ...(attachmentIds.length ? { attachmentIds } : {}) });
+            for (const file of files)
+              attachmentIds.push(
+                await uploadPostMedia(file, { onStatus: setUploadStatus }),
+              );
+            await createPost({
+              body,
+              ...(createAudienceGroup ? { groupId: createAudienceGroup } : {}),
+              ...(attachmentIds.length ? { attachmentIds } : {}),
+            });
             setPostsVersion((value) => value + 1);
           }}
         />

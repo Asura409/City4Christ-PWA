@@ -231,6 +231,8 @@ export async function mocked(
       return authenticated
         ? ok(assignedAccess)
         : error(401, "invalid_session", "Sign in again.");
+    if(path === '/api/v1/notifications/preferences') return route.fulfill({json:{data:{pushEnabled:false,groups:true,events:true,pastoral:true,messages:true,announcements:true}}});
+    if(path === '/api/v1/notifications/push/config') return route.fulfill({json:{data:{enabled:false,publicKey:''}}});
     if (path === "/api/v1/notifications/unread-count") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
       return ok({ unreadCount: notifications.filter((item) => !item.readAt).length });
