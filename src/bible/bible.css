@@ -1,0 +1,49 @@
+.screen.active.bible-screen {
+  display: grid;
+  gap: 20px;
+}
+.bible-lookup {
+  display: grid;
+  gap: 14px;
+  margin-block: 16px;
+}
+.bible-lookup form {
+  display: grid;
+  gap: 14px;
+}
+.bible-lookup label {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+.bible-lookup input,
+.bible-lookup select {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font: inherit;
+  background: var(--bg);
+  color: var(--text);
+}
+.bible-passage {
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.bible-verses {
+  padding-left: 28px;
+}
+.bible-verses li {
+  padding: 8px 0;
+  line-height: 1.8;
+}
+.bible-verses p {
+  white-space: pre-wrap;
+}
+.bible-credit {
+  color: var(--muted);
+  font-size: 0.9rem;
+}

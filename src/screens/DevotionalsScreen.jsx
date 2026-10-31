@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { hasCapability } from "../../js/access.js";
+import { DailyVerseEditor } from "@/dailyverse/DailyVerseEditor";
 import { DevotionalReader } from "@/devotionals/DevotionalReader";
 import { DevotionalEditor } from "@/devotionals/DevotionalEditor";
 import "@/devotionals/devotionals.css";
@@ -41,7 +42,7 @@ export default function DevotionalsScreen() {
       </button>
       {error && <p role="alert">{error}</p>}
       <DevotionalReader revision={revision} />
-      {editor && <DevotionalEditor revision={revision} onChange={reload} />}
+      {editor && <><DailyVerseEditor revision={revision} onChange={reload}/><DevotionalEditor revision={revision} onChange={reload} /></>}
     </section>
   );
 }
