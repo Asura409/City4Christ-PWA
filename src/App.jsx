@@ -1,3 +1,5 @@
+import WelcomeScreen from "./screens/WelcomeScreen";
+import VisitorsScreen from "./screens/VisitorsScreen";
 import {
   GroupPostsScreen,
   GroupEventsScreen,
@@ -34,6 +36,7 @@ import GivingScreen from "./screens/GivingScreen";
 import GivingReturnScreen from "./screens/GivingReturnScreen";
 
 const AUTH_ROUTES = [
+ "/welcome",
   "/google-return",
   "/login",
   "/signup",
@@ -54,7 +57,8 @@ export default function App() {
       <div className="app">
         <Routes>
           <Route path="/google-return" element={<GoogleReturnScreen />} />
-          <Route path="/login" element={<LoginScreen />} />
+          <Route path="/welcome" element={<WelcomeScreen/>}/>
+ <Route path="/login" element={<LoginScreen />} />
           <Route path="/signup" element={<SignUpScreen />} />
           <Route
             path="/new-user"
@@ -100,7 +104,8 @@ export default function App() {
 
         <main className="screens">
           <Routes>
-            <Route path="/" element={<Navigate to="/login" replace />} />
+            <Route path="/visitors" element={<ProtectedRoute><VisitorsScreen/></ProtectedRoute>}/>
+ <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"
               element={

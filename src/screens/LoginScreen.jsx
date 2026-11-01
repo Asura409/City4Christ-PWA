@@ -142,6 +142,7 @@ export default function LoginScreen() {
           Create one
         </Link>
       </p>
+<p className="auth-foot"><Link to="/welcome" className="auth-link">New to City4Christ? Welcome form</Link></p>
     </AuthLayout>
   );
 }

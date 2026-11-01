@@ -282,3 +282,9 @@ The Notifications page includes push preferences, mark-all-read, explicit device
 opt-in and authorized broadcast draft/review/send. Browser subscription generation
 uses native APIs; VAPID private keys are never frontend settings. Missing provider
 configuration leaves the in-app inbox usable.
+
+Visitor welcome: public `/#/welcome` fetches `/api/v1/visitors/config` and posts
+consented forms to `/api/v1/visitors`. Private `/#/visitors` uses the audited staff
+API and is linked from Profile for `visitors.follow_up`. Intake is disabled until
+the API has its dedicated visitor key; the frontend uses only API_URL. Contact
+values stay in memory and are cleared on successful submission or access denial.
