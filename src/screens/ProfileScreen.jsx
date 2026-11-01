@@ -12,12 +12,14 @@ export default function ProfileScreen() {
     [message, setMessage] = useState(""),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
-    [staff, setStaff] = useState(false);
+    [staff, setStaff] = useState(false),
+ [canFollowUp,setCanFollowUp]=useState(false);
   useEffect(() => {
     let live = true;
     api
       .request("/api/v1/me/access")
       .then(({ data }) => {
+ if(live)setCanFollowUp(hasCapability(data,"visitors.follow_up"));
         if (live)
           setStaff(
             ["sermons.manage", "roles.manage", "roles.read"].some(
@@ -68,6 +70,7 @@ export default function ProfileScreen() {
         {profile.firstName} {profile.lastName}
       </h1>
       <p>{profile.email}</p>
+{canFollowUp&&<button className="btn soft" onClick={()=>navigate("/visitors")}>Visitor follow-up</button>}
       {message && <p role="status">{message}</p>}
       {error && <p role="alert">{error}</p>}
       <form className="auth-card" aria-label="Edit profile" onSubmit={save}>

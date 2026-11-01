@@ -1,0 +1,61 @@
+.visitor-form {
+  display: grid;
+  gap: 1rem;
+}
+.visitor-form input:not([type="checkbox"]) {
+  width: 100%;
+  box-sizing: border-box;
+}
+.visitor-consent,
+.visitor-withdraw label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+.visitor-consent input,
+.visitor-withdraw input {
+  width: 1.2rem;
+  height: 1.2rem;
+  flex: 0 0 auto;
+}
+.visitor-privacy {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+.visitor-queue > label,
+.visitor-detail > label {
+  display: grid;
+  gap: 0.5rem;
+  margin: 1rem 0;
+}
+.visitor-queue select,
+.visitor-detail select {
+  font: inherit;
+  padding: 0.6rem;
+  border-radius: 0.5rem;
+  border: 1px solid #baa2d5;
+}
+.visitor-list {
+  display: grid;
+  gap: 1rem;
+  margin: 1rem 0;
+}
+.visitor-list article,
+.visitor-detail {
+  padding: 1rem;
+  overflow-wrap: anywhere;
+}
+.visitor-detail dd {
+  margin: 0 0 1rem;
+}
+.visitor-detail dt {
+  font-weight: 600;
+}
+.visitor-withdraw {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid #d8c6ed;
+}
+.visitor-withdraw button {
+  margin-top: 0.7rem;
+}
