@@ -3,6 +3,10 @@
 .admin-members-search label { color: var(--muted); font-size: 14px; font-weight: 650; }
 .admin-members-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
 .admin-members-search input { min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(20,16,36,.76); color: var(--text); }
+.admin-member-edit { display: grid; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.admin-member-edit label { color: var(--muted); font-size: 14px; font-weight: 650; }
+.admin-member-edit input { min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(20,16,36,.76); color: var(--text); }
+.admin-member-edit p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
 .admin-member-list { display: grid; gap: 10px; }
 .admin-member-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .admin-member-card h2 { margin: 0 0 6px; font-family: var(--serif); font-size: 20px; }
