@@ -6,7 +6,7 @@ import {
   reviewBroadcast,
   sendBroadcast,
 } from "./broadcastApi";
-function BroadcastAudience({ groupId, label }) {
+function BroadcastAudience({ audience, groupId, label }) {
   const [items, setItems] = useState([]),
     [draft, setDraft] = useState(null),
     [reviewed, setReviewed] = useState(false),
@@ -16,13 +16,13 @@ function BroadcastAudience({ groupId, label }) {
     [notice, setNotice] = useState("");
   useEffect(() => {
     const c = new AbortController();
-    listBroadcasts(groupId, c.signal)
+    listBroadcasts(audience, groupId, c.signal)
       .then(setItems)
       .catch((e) => {
         if (!c.signal.aborted) setError(e.message);
       });
     return () => c.abort();
-  }, [groupId]);
+  }, [audience, groupId]);
   async function action(fn) {
     setBusy(true);
     setError("");
@@ -39,7 +39,7 @@ function BroadcastAudience({ groupId, label }) {
       className="auth-card broadcast-panel"
       aria-label="Broadcast management"
     >
-      <h2>Church announcements</h2>
+      <h2>{audience === "staff" ? "Staff announcements" : "Church announcements"}</h2>
       <p>
         Audience: {label}. Drafts are reviewed before sending. In-app delivery
         does not mean a push was received.
@@ -56,7 +56,7 @@ function BroadcastAudience({ groupId, label }) {
             const b = await createBroadcast({
               title: data.get("title"),
               body: data.get("body"),
-              audience: groupId ? "group" : "church",
+              audience,
               ...(groupId ? { groupId } : {}),
             });
             setDraft(b);
@@ -162,7 +162,7 @@ function BroadcastAudience({ groupId, label }) {
 }
 export function BroadcastPanel() {
   const [audiences, setAudiences] = useState([]),
-    [selected, setSelected] = useState("");
+    [selected, setSelected] = useState("church");
   useEffect(() => {
     let live = true;
     getAccess()
@@ -179,14 +179,17 @@ export function BroadcastPanel() {
         if (!global && !scopes.length) return;
         const { groups } = await listGroups();
         const options = [
-          ...(global ? [{ id: "", name: "All verified church accounts" }] : []),
+          ...(global ? [
+            { value: "church", audience: "church", groupId: "", name: "All verified church accounts" },
+            { value: "staff", audience: "staff", groupId: "", name: "Staff only" },
+          ] : []),
           ...groups
             .filter((g) => global || scopes.includes(g.id))
-            .map((g) => ({ id: g.id, name: g.name })),
+            .map((g) => ({ value: g.id, audience: "group", groupId: g.id, name: g.name })),
         ];
         if (live) {
           setAudiences(options);
-          setSelected(options[0]?.id || "");
+          setSelected(options[0]?.value || "");
         }
       })
       .catch(() => {
@@ -203,7 +206,7 @@ export function BroadcastPanel() {
         Broadcast audience
         <select value={selected} onChange={(e) => setSelected(e.target.value)}>
           {audiences.map((a) => (
-            <option key={a.id} value={a.id}>
+            <option key={a.value} value={a.value}>
               {a.name}
             </option>
           ))}
@@ -211,8 +214,9 @@ export function BroadcastPanel() {
       </label>
       <BroadcastAudience
         key={selected}
-        groupId={selected}
-        label={audiences.find((a) => a.id === selected)?.name}
+        audience={audiences.find((a) => a.value === selected)?.audience || "church"}
+        groupId={audiences.find((a) => a.value === selected)?.groupId || ""}
+        label={audiences.find((a) => a.value === selected)?.name}
       />
     </>
   );

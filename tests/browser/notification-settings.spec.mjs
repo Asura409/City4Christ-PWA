@@ -101,6 +101,39 @@ test("staff reviews a draft audience and explicitly confirms sending a broadcast
   ).toBeVisible();
 });
 
+test("staff can create a draft for the staff-only audience", async ({ page }) => {
+  await settings(page, { staff: true });
+  let payload, staffListQuery;
+  const draft = {
+    id: "99999999-9999-4999-8999-999999999998",
+    title: "Staff briefing",
+    body: "Internal coordination update",
+    audience: "staff",
+    status: "draft",
+    version: 1,
+    recipientCount: 0,
+  };
+  await page.route("**/api/v1/admin/broadcasts**", (route) => {
+    if (route.request().method() === "POST") {
+      payload = route.request().postDataJSON();
+      return route.fulfill({ status: 201, json: { data: draft } });
+    }
+    staffListQuery = new URL(route.request().url()).searchParams.get("audience");
+    return route.fulfill({ json: { data: [] } });
+  });
+  await page.goto("/#/notifications");
+  await page.getByLabel("Broadcast audience").selectOption("staff");
+  const form = page.getByRole("form", { name: "Broadcast draft" });
+  await form.getByLabel("Announcement title").fill(draft.title);
+  await form.getByLabel("Announcement message").fill(draft.body);
+  await form.getByRole("button", { name: "Create broadcast draft" }).click();
+
+  await expect(page.getByRole("heading", { name: draft.title })).toBeVisible();
+  expect(payload?.audience).toBe("staff");
+  expect(payload?.groupId).toBeUndefined();
+  expect(staffListQuery).toBe("staff");
+});
+
 test("device opt-in requests permission after a click and registers through the API", async ({
   page,
 }) => {
