@@ -579,6 +579,8 @@ export async function mocked(
       });
     if (path === "/api/v1/sermons/" + SERMON)
       return ok({ ...sermon, status: "published" });
+    if (path === "/api/v1/admin/sermons" && method === "GET")
+      return route.fulfill({ json: { data: [], meta: { nextCursor: "" } } });
     if (path === "/api/v1/admin/sermons" && method === "POST") {
       sermon = { ...sermon, ...body, attachments: body.attachmentIds?.map((id) => ({ id, contentType: "image/png", size: 16, url: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/available/sermon.png?signature=fixture", expiresAt: new Date(Date.now() + 60000).toISOString() })) || [] };
       return route.fulfill({ status: 201, json: { data: sermon } });

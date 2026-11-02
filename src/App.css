@@ -793,3 +793,23 @@
 .prayer-report-form textarea, .prayer-report-form select, .prayer-moderation textarea { width: 100%; min-width: 0; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; padding: 11px 12px; background: var(--surface-2); color: var(--text); font: inherit; }
 .prayer-report-form textarea, .prayer-moderation textarea { min-height: 72px; resize: vertical; }
 .prayer-moderation h2 { font-family: var(--serif); }
+
+.editorial-sermon-list { display: grid; gap: 13px; margin: 18px 0 26px; padding: 18px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.editorial-sermon-list h2 { margin: 0; font-family: var(--serif); }
+.editorial-sermon-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, .45fr) auto; align-items: end; gap: 10px; }
+.editorial-sermon-filters label { display: grid; gap: 6px; color: var(--muted); font-size: 13px; font-weight: 700; }
+.editorial-sermon-filters input, .editorial-sermon-filters select { width: 100%; min-height: 42px; border: 1px solid var(--line); border-radius: 11px; padding: 9px 11px; background: var(--surface-2); color: var(--text); font: inherit; }
+.editorial-sermon-items { display: grid; gap: 9px; }
+.editorial-sermon-item { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-2); }
+.editorial-sermon-item h3 { margin: 0; font-size: 16px; }
+.editorial-sermon-item p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+.editorial-sermon-item small { color: var(--muted); white-space: nowrap; }
+.editorial-sermon-status { border-radius: 99px; padding: 5px 9px; background: rgba(226,183,89,.13); color: var(--gold-2); font-size: 12px; font-weight: 800; }
+.editorial-sermon-status.status-published { color: #bfe8d2; background: rgba(45,147,93,.16); }
+@media (max-width: 600px) {
+  .editorial-sermon-list { padding: 14px; }
+  .editorial-sermon-filters { grid-template-columns: 1fr; }
+  .editorial-sermon-filters .btn { width: 100%; }
+  .editorial-sermon-item { grid-template-columns: minmax(0, 1fr) auto; }
+  .editorial-sermon-item small { grid-column: 1 / -1; }
+}
