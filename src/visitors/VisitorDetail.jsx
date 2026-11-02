@@ -1,17 +1,25 @@
 import React, { useEffect, useState } from "react";
+import { api } from "@/auth/session";
+import { hasCapability } from "../../js/access.js";
 import { visitorDetail, updateVisitor } from "./api";
+import { VisitorAssignmentPanel } from "./VisitorAssignmentPanel";
 export function VisitorDetail({ id, onChange, onDenied }) {
   const [data, setData] = useState(null),
     [status, setStatus] = useState("new"),
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0),
-    [confirmed, setConfirmed] = useState(false);
+    [confirmed, setConfirmed] = useState(false),
+    [canManage, setCanManage] = useState(false);
   useEffect(() => {
     const c = new AbortController();
     setData(null);
     setError("");
     setConfirmed(false);
+    setCanManage(false);
+    api.request("/api/v1/me/access").then(({ data: access }) => {
+      setCanManage(hasCapability(access, "visitors.follow_up"));
+    }).catch(() => setCanManage(false));
     visitorDetail(id, c.signal)
       .then((d) => {
         setData(d);
@@ -79,6 +87,7 @@ export function VisitorDetail({ id, onChange, onDenied }) {
             <dd>{new Date(data.expiresAt).toLocaleString()}</dd>
           </dl>
           <p>{data.consentText}</p>
+          {canManage && <VisitorAssignmentPanel visitor={data} onAssigned={onChange} onError={setError} />}
           <label>
             Follow-up status
             <select
@@ -98,7 +107,7 @@ export function VisitorDetail({ id, onChange, onDenied }) {
           >
             Save follow-up status
           </button>
-          <div className="visitor-withdraw">
+          {canManage && <div className="visitor-withdraw">
             <label>
               <input
                 type="checkbox"
@@ -116,7 +125,7 @@ export function VisitorDetail({ id, onChange, onDenied }) {
             >
               Remove contact details
             </button>
-          </div>
+          </div>}
         </>
       )}
     </section>

@@ -38,3 +38,9 @@ export async function updateVisitor(id, body) {
     })
   ).data;
 }
+export async function assignVisitor(id, body) {
+  return (await api.request(`/api/v1/admin/visitors/${encodeURIComponent(id)}/assignment`, {
+    method: "POST",
+    body,
+  })).data;
+}

@@ -87,7 +87,7 @@ export function VisitorQueue() {
           <article className="auth-card" key={v.id}>
             <h2>{v.fullName}</h2>
             <p>
-              {v.status} · Received {new Date(v.createdAt).toLocaleDateString()}
+              {v.status} · Received {new Date(v.createdAt).toLocaleDateString()}{v.assignedTo ? " · Assigned to a volunteer" : " · Unassigned"}
             </p>
             <button
               className="btn soft"
