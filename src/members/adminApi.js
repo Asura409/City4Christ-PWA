@@ -20,3 +20,11 @@ export async function getAdminMemberAccessAudit(id, { cursor = "", limit = 20, s
   );
   return { events: Array.isArray(data) ? data : [], nextCursor: meta?.nextCursor || "" };
 }
+
+export async function updateAdminMemberName(id, input, { signal } = {}) {
+  return (await api.request(`/api/v1/admin/members/${encodeURIComponent(id)}`, {
+    method: "PATCH",
+    body: input,
+    signal,
+  })).data;
+}
