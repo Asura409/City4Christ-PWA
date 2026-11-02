@@ -132,3 +132,10 @@ test("devotional authority uses the explicit global capability and supports refr
   await state.refresh();
   assert.equal(hasCapability(state.current(), "devotionals.manage"), true);
 });
+
+test("member record lookup is a known global capability without implicit staff escalation", () => {
+  const access = { roles: [{ role: "staff", scope: "" }], capabilities: [{ permission: "members.records.read", scope: "" }] };
+  assert.equal(hasCapability(access, "members.records.read"), true);
+  assert.equal(hasCapability({ roles: access.roles, capabilities: [] }, "members.records.read"), false);
+  assert.equal(hasCapability({ roles: access.roles, capabilities: [{ permission: "members.records.read", scope: "11111111-1111-4111-8111-111111111111" }] }, "members.records.read"), false);
+});
