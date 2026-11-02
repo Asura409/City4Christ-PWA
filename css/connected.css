@@ -216,6 +216,13 @@ html[data-theme="dark"] {
   border-radius: 14px;
   overflow-wrap: anywhere;
 }
+.member-result-avatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 12px;
+}
 .result-card h2 {
   margin: 0 0 10px;
 }

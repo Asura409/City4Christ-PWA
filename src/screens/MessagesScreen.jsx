@@ -318,7 +318,7 @@ export default function MessagesScreen() {
           {contactsLoading && <p role="status">Searching members…</p>}
           {contactsError && <p className="messages-error" role="alert">{contactsError}</p>}
           {!contactsLoading && search.trim().length >= 2 && !contactsError && contacts.length === 0 && <p className="messages-muted">No directory-visible members found.</p>}
-          <ul className="message-contact-list">{contacts.map((member) => <li key={member.id}><button type="button" className="message-contact" onClick={() => void startConversation(member)}><Avatar name={nameOf(member)} size={38} /><span>Message {nameOf(member)}</span></button></li>)}</ul>
+          <ul className="message-contact-list">{contacts.map((member) => <li key={member.id}><button type="button" className="message-contact" onClick={() => void startConversation(member)}><Avatar name={nameOf(member)} src={member.avatar?.url} size={38} /><span>Message {nameOf(member)}</span></button></li>)}</ul>
         </div>}
         {conversationError && <div className="messages-error" role="alert"><span>{conversationError}</span><button className="btn soft" type="button" onClick={() => void refreshConversations()}>Try again</button></div>}
         {loading ? <p className="messages-state" role="status">Loading conversations…</p> : !conversationError && conversations.length === 0 && !searchOpen ? <p className="messages-empty">No conversations yet. Start one with a church member.</p> : null}
