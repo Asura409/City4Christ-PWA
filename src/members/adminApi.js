@@ -6,3 +6,7 @@ export async function searchAdminMembers(query, { cursor = "", limit = 20, signa
   const { data, meta } = await api.request(`/api/v1/admin/members?${params}`, { signal });
   return { members: Array.isArray(data) ? data : [], nextCursor: meta?.nextCursor || "" };
 }
+
+export async function getAdminMember(id, { signal } = {}) {
+  return (await api.request(`/api/v1/admin/members/${encodeURIComponent(id)}`, { signal })).data;
+}
