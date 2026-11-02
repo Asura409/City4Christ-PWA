@@ -3,9 +3,9 @@ import { mocked } from "./fixtures/api.mjs";
 const POLICY = {
   enabled: true,
   retentionDays: 90,
-  policyVersion: "visitor-welcome-v1",
+  policyVersion: "visitor-welcome-v2",
   consentText:
-    "I agree that City4Christ may keep these details for up to 90 days and contact me about my visit.",
+    "I agree that City4Christ may store these details for up to 90 days and contact me about my visit. My contact details may be shared with a volunteer assigned by the church to follow up about my visit. This is not consent to marketing or a mailing list.",
 };
 test("visitor consents, retries safely and gets no account linkage", async ({
   page,

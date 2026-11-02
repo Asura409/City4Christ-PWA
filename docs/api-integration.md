@@ -295,10 +295,16 @@ uses native APIs; VAPID private keys are never frontend settings. Missing provid
 configuration leaves the in-app inbox usable.
 
 Visitor welcome: public `/#/welcome` fetches `/api/v1/visitors/config` and posts
-consented forms to `/api/v1/visitors`. Private `/#/visitors` uses the audited staff
-API and is linked from Profile for `visitors.follow_up`. Intake is disabled until
-the API has its dedicated visitor key; the frontend uses only API_URL. Contact
-values stay in memory and are cleared on successful submission or access denial.
+consented forms to `/api/v1/visitors`; the current notice is `visitor-welcome-v2`
+and explicitly permits sharing contact details with a designated volunteer for
+that follow-up. Private `/#/visitors` uses the audited API and is linked from
+Profile for staff with `visitors.follow_up`. Staff can assign a record through
+`POST /api/v1/admin/visitors/{visitorId}/assignment`, selecting a verified active
+member through the read-only member search. Volunteers can access only assigned
+records, update follow-up status, and cannot reassign or withdraw contact data.
+Legacy v1 submissions remain staff-only. Intake is disabled until the API has
+its dedicated visitor key; the frontend uses only API_URL. Contact values stay
+in memory and are cleared on successful submission or access denial.
 
 
 Signed-in local-password changes are available in Profile through the modular

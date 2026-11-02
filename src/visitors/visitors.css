@@ -59,3 +59,8 @@
 .visitor-withdraw button {
   margin-top: 0.7rem;
 }
+.visitor-assignment { display: grid; gap: 9px; margin: 18px 0; padding: 14px; border: 1px solid var(--line); border-radius: 15px; background: rgba(35,28,63,.55); }
+.visitor-assignment h3, .visitor-assignment p { margin: 0; }
+.visitor-assignment-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.visitor-assignment input, .visitor-assignment select { min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(20,16,36,.76); color: var(--text); }
+@media (max-width: 560px) { .visitor-assignment-row { grid-template-columns: minmax(0, 1fr); } .visitor-assignment-row .btn { width: 100%; } }
