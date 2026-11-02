@@ -37,7 +37,7 @@ test("React signup requires OTP, signs in, edits real profile and logs out", asy
   ).toBeVisible();
   await page.getByRole("button", { name: "My profile", exact: true }).click();
   await page.getByLabel("First name", { exact: true }).fill("Hope");
-  await page.getByRole("checkbox").check();
+  await page.getByRole("checkbox", { name: "Show my name in the member directory" }).check();
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "saved" }),

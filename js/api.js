@@ -185,6 +185,31 @@ export function createClient({
         clear();
         return result;
       }),
+    changePassword: async (currentPassword, newPassword) => {
+      // Refresh before entering the cookie-changing queue to avoid nested locks.
+      if (!access || expires <= now() + 15000) await refresh();
+      return sessionOperation(async () => {
+        const result = await send("/api/v1/auth/password/change", {
+          method: "POST",
+          body: { currentPassword, newPassword },
+          authorized: true,
+        });
+        clear();
+        return result;
+      });
+    },
+    requestAccountDeletion: async (body) => {
+      if (!access || expires <= now() + 15000) await refresh();
+      return sessionOperation(async () => {
+        const result = await send("/api/v1/me", {
+          method: "DELETE",
+          body,
+          authorized: true,
+        });
+        clear();
+        return result;
+      });
+    },
     mfaStatus: () => request("/api/v1/auth/mfa"),
     beginMFA: () =>
       request("/api/v1/auth/mfa/enroll", { method: "POST", body: {} }),

@@ -13,7 +13,8 @@ const Context = createContext(null);
 export function SessionProvider({ children }) {
   const [profile, setProfile] = useState(null),
     [loading, setLoading] = useState(true),
-    [error, setError] = useState("");
+    [error, setError] = useState(""),
+    [sessionNotice, setSessionNotice] = useState("");
   const generation = useRef(0);
   async function restore() {
     const current = ++generation.current;
@@ -45,6 +46,7 @@ export function SessionProvider({ children }) {
   async function login(email, password) {
     const current = ++generation.current;
     setError("");
+    setSessionNotice("");
     setProfile(null);
     try {
       await api.login(email, password);
@@ -59,9 +61,14 @@ export function SessionProvider({ children }) {
     await api.logout();
     setProfile(null);
   }
+  function clearSession(notice = "") {
+    ++generation.current;
+    setSessionNotice(notice);
+    setProfile(null);
+  }
   return (
     <Context.Provider
-      value={{ profile, setProfile, loading, error, restore, login, logout }}
+      value={{ profile, setProfile, loading, error, restore, login, logout, clearSession, sessionNotice }}
     >
       {children}
     </Context.Provider>

@@ -1,5 +1,6 @@
 import WelcomeScreen from "./screens/WelcomeScreen";
 import VisitorsScreen from "./screens/VisitorsScreen";
+import DeletionRequestsScreen from "./screens/DeletionRequestsScreen";
 import {
   GroupPostsScreen,
   GroupEventsScreen,
@@ -105,6 +106,7 @@ export default function App() {
         <main className="screens">
           <Routes>
             <Route path="/visitors" element={<ProtectedRoute><VisitorsScreen/></ProtectedRoute>}/>
+            <Route path="/account-deletion-requests" element={<ProtectedRoute><DeletionRequestsScreen /></ProtectedRoute>} />
  <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"

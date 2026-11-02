@@ -5,18 +5,19 @@ export async function listGroupConversations({ signal } = {}) {
   return Array.isArray(data) ? data : [];
 }
 
-export async function listGroupMessages(groupId, { beforeSequence, signal } = {}) {
+export async function listGroupMessages(groupId, { beforeSequence, query: searchQuery = "", signal } = {}) {
   const query = new URLSearchParams();
   if (beforeSequence) query.set("beforeSequence", String(beforeSequence));
+  if (searchQuery.trim()) query.set("query", searchQuery.trim());
   const suffix = query.size ? `?${query}` : "";
   const { data, meta = {} } = await api.request(`/api/v1/groups/${encodeURIComponent(groupId)}/messages${suffix}`, { signal });
   return { messages: Array.isArray(data) ? data : [], nextBeforeSequence: meta.nextBeforeSequence || 0 };
 }
 
-export async function sendGroupMessage(groupId, body, clientMessageId) {
+export async function sendGroupMessage(groupId, body, clientMessageId, attachmentIds = []) {
   return (await api.request(`/api/v1/groups/${encodeURIComponent(groupId)}/messages`, {
     method: "POST",
-    body: { body, clientMessageId },
+    body: { body, clientMessageId, ...(attachmentIds.length ? { attachmentIds } : {}) },
   })).data;
 }
 

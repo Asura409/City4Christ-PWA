@@ -59,18 +59,50 @@ test("uses a single-use ticket in the first frame and delivers validated metadat
     messageId: "message-id",
     sequence: 4,
   });
+  socket.receive({ type: "message.updated", scope: "direct", conversationId: "conversation-id", messageId: "message-id", sequence: 4 });
+  socket.receive({ type: "message.deleted", scope: "direct", conversationId: "conversation-id", messageId: "message-id" });
   socket.receive({ type: "message.created", scope: "direct", body: "must be ignored" });
 
   assert.equal(ticketRequests, 1);
   assert.equal(readyCount.value, 1);
-  assert.deepEqual(events, [{
-    type: "message.created",
-    scope: "direct",
-    conversationId: "conversation-id",
-    messageId: "message-id",
-    sequence: 4,
-  }]);
+  assert.deepEqual(events, [
+    { type: "message.created", scope: "direct", conversationId: "conversation-id", messageId: "message-id", sequence: 4 },
+    { type: "message.updated", scope: "direct", conversationId: "conversation-id", messageId: "message-id", sequence: 4 },
+    { type: "message.deleted", scope: "direct", conversationId: "conversation-id", messageId: "message-id" },
+  ]);
   assert.ok(statuses.includes("connected"));
+  client.stop();
+});
+
+test("sends client control frames and accepts scoped typing signals without message bodies", async () => {
+  const { client, events } = setup();
+  await client.start();
+  const socket = FakeWebSocket.instances[0];
+  socket.open();
+  socket.receive({ type: "ready" });
+  assert.equal(client.send({ type: "typing.start", scope: "direct", conversationId: "conversation-id" }), true);
+  socket.receive({ type: "typing.start", scope: "direct", conversationId: "conversation-id", senderId: "member-id" });
+  socket.receive({ type: "typing.start", scope: "direct", conversationId: "conversation-id", body: "private text" });
+  assert.deepEqual(JSON.parse(socket.sent.at(-1)), { type: "typing.start", scope: "direct", conversationId: "conversation-id" });
+  assert.deepEqual(events, [{ type: "typing.start", scope: "direct", conversationId: "conversation-id", senderId: "member-id" }]);
+  client.stop();
+  assert.equal(client.send({ type: "typing.stop" }), false);
+});
+
+test("subscribes to an authorized chat and normalizes live presence without body fields", async () => {
+  const { client, events } = setup();
+  await client.start();
+  const socket = FakeWebSocket.instances[0];
+  socket.open();
+  socket.receive({ type: "ready" });
+  assert.equal(client.send({ type: "presence.subscribe", scope: "direct", conversationId: "conversation-id" }), true);
+  socket.receive({ type: "presence.snapshot", scope: "direct", conversationId: "conversation-id", senderId: "member-id", online: false });
+  socket.receive({ type: "presence.online", scope: "direct", conversationId: "conversation-id", senderId: "member-id", online: true, body: "must be ignored" });
+  assert.deepEqual(JSON.parse(socket.sent.at(-1)), { type: "presence.subscribe", scope: "direct", conversationId: "conversation-id" });
+  assert.deepEqual(events, [
+    { type: "presence.snapshot", scope: "direct", conversationId: "conversation-id", senderId: "member-id", online: false },
+    { type: "presence.online", scope: "direct", conversationId: "conversation-id", senderId: "member-id", online: true },
+  ]);
   client.stop();
 });
 

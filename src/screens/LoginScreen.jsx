@@ -7,7 +7,7 @@ import {googleReturnURL} from '@/auth/google';
 
 export default function LoginScreen() {
   const navigate = useNavigate();
-  const { login } = useSession();
+  const { login, sessionNotice } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPw, setShowPw] = useState(false);
@@ -51,6 +51,7 @@ export default function LoginScreen() {
 
   return (
     <AuthLayout title="Welcome back" subtitle="Sign in to your church account">
+      {sessionNotice && <p role="status">{sessionNotice}</p>}
       <form onSubmit={handleSubmit} noValidate autoComplete="on">
         {error && (
           <div

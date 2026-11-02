@@ -288,3 +288,35 @@ consented forms to `/api/v1/visitors`. Private `/#/visitors` uses the audited st
 API and is linked from Profile for `visitors.follow_up`. Intake is disabled until
 the API has its dedicated visitor key; the frontend uses only API_URL. Contact
 values stay in memory and are cleared on successful submission or access denial.
+
+
+Signed-in local-password changes are available in Profile through the modular
+`src/auth/ChangePasswordPanel.jsx`. The form requires the current password and a
+locally confirmed new password, then posts `currentPassword` and `newPassword` to
+`/api/v1/auth/password/change`. Success revokes every session, clears the in-memory
+access credential/profile and returns to sign-in with a confirmation. Incorrect
+current-password errors (`422 current_password_invalid`) preserve the active
+session; other failures never display success. Password inputs are not stored in
+browser storage or URLs and are reset on success/unmount. Google-only accounts
+see an explanation rather than a local-password form. Deploy the matching backend
+route before releasing this interface. No new frontend environment variables.
+
+
+Account-deletion requests are available in Profile. The panel loads the current
+policy from `GET /api/v1/me/deletion-request`, requires explicit consent and
+server-verified fresh primary authentication, plus authenticator confirmation when
+enrolled. Password/Google confirmation and MFA use existing endpoints; confirmation
+never automatically submits the action. `DELETE /api/v1/me` sends `confirm: true`
+and the current `policyVersion`. A `202` receipt disables sign-in, revokes sessions
+and hides directory visibility on the server; the browser clears its in-memory
+credentials/profile and returns to sign-in. This is a reviewed request, not proof
+of permanent data erasure. Errors retain the signed-in UI and display server guidance.
+
+Super Admin review is linked from Profile only for global `accounts.deletion.review`.
+The protected `/#/account-deletion-requests` screen uses the admin collection/detail
+routes, fresh primary confirmation and mandatory MFA. Names-only summaries and
+audited email details are separate reads; a versioned PATCH may only mark a request
+as `reviewing`. There is no permanent-erasure, approval or reactivation control.
+Permission/session loss clears displayed names and contact details. Browser tests
+use synthetic identities; the optional real API deletion case requires the disposable
+loopback harness. No new frontend configuration or secrets are required.

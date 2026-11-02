@@ -1,5 +1,6 @@
 // This is display state only. Protected API actions authorize in PostgreSQL.
 const globalPermissions = new Set([
+  "accounts.deletion.review",
   "sermons.manage",
   "devotionals.manage",
   "roles.manage",
