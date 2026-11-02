@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/Toast";
+import { useSession } from "@/auth/session";
 import { GroupCard } from "@/groups/GroupCard";
 import { canManageChurchGroups, canManageGroup } from "@/groups/access";
 import {
@@ -11,6 +12,7 @@ import {
   listGroupMembers,
   listGroups,
   listPendingRequests,
+  removeGroupMember,
 } from "@/groups/api";
 
 export default function GroupsScreen() {
@@ -182,6 +184,7 @@ function GroupDirectory() {
 function GroupDetailScreen({ groupId }) {
   const navigate = useNavigate();
   const toast = useToast();
+  const { profile } = useSession();
   const [group, setGroup] = useState(null);
   const [members, setMembers] = useState([]);
   const [requests, setRequests] = useState([]);
@@ -189,6 +192,8 @@ function GroupDetailScreen({ groupId }) {
   const [showRoster, setShowRoster] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyAccount, setBusyAccount] = useState("");
+  const [removingAccount, setRemovingAccount] = useState("");
+  const [removalReason, setRemovalReason] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -259,6 +264,26 @@ function GroupDetailScreen({ groupId }) {
         setMembers(roster);
       }
       toast(`Request ${decision === "approve" ? "approved" : "declined"}`);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusyAccount("");
+    }
+  }
+
+  async function removeMember(member, event) {
+    event.preventDefault();
+    const reason = removalReason.trim();
+    if (!reason) return;
+    setBusyAccount(member.accountId);
+    setError("");
+    try {
+      await removeGroupMember(groupId, member.accountId, reason);
+      setMembers((items) => items.filter((item) => item.accountId !== member.accountId));
+      setGroup((item) => ({ ...item, memberCount: Math.max(0, item.memberCount - 1) }));
+      setRemovingAccount("");
+      setRemovalReason("");
+      toast("Member removed");
     } catch (e) {
       setError(e.message);
     } finally {
@@ -379,6 +404,38 @@ function GroupDetailScreen({ groupId }) {
                     </b>
                     <span>Group member</span>
                   </div>
+                  {contentManager && member.accountId !== profile?.id && (
+                    removingAccount === member.accountId ? (
+                      <form className="group-member-removal" onSubmit={(event) => void removeMember(member, event)}>
+                        <label className="auth-field">
+                          Removal reason
+                          <input
+                            required
+                            minLength={1}
+                            maxLength={500}
+                            value={removalReason}
+                            onChange={(event) => setRemovalReason(event.target.value)}
+                          />
+                        </label>
+                        <button className="btn danger" type="submit" disabled={busyAccount === member.accountId || !removalReason.trim()}>
+                          {busyAccount === member.accountId ? "Removing…" : "Confirm removal"}
+                        </button>
+                        <button className="btn soft" type="button" disabled={busyAccount === member.accountId} onClick={() => { setRemovingAccount(""); setRemovalReason(""); }}>
+                          Cancel
+                        </button>
+                      </form>
+                    ) : (
+                      <button
+                        className="btn soft"
+                        type="button"
+                        aria-label={`Remove ${member.firstName} ${member.lastName}`}
+                        disabled={busyAccount === member.accountId}
+                        onClick={() => { setRemovingAccount(member.accountId); setRemovalReason(""); }}
+                      >
+                        Remove
+                      </button>
+                    )
+                  )}
                 </article>
               ))}
             </div>
