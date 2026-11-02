@@ -5,6 +5,7 @@ import { api, useSession } from "@/auth/session";
 import {GoogleLinkPanel} from '@/auth/GoogleLinkPanel';
 import { ChangePasswordPanel } from "@/auth/ChangePasswordPanel";
 import { AccountDeletionPanel } from "@/account/AccountDeletionPanel";
+import ProfilePhotoPanel from "@/profiles/ProfilePhotoPanel";
 export default function ProfileScreen() {
   const { profile, setProfile, logout } = useSession(),
     navigate = useNavigate();
@@ -74,6 +75,7 @@ export default function ProfileScreen() {
   return (
     <section className="screen active" aria-label="Your profile">
       <div className="banner" />
+      <ProfilePhotoPanel profile={profile} setProfile={setProfile} />
       <h1 className="p-name">
         {profile.firstName} {profile.lastName}
       </h1>
