@@ -10,6 +10,7 @@ export function DeletionReviewQueue() {
     [selected, setSelected] = useState("");
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
+  const [notice, setNotice] = useState("");
   const [revision, setRevision] = useState(0),
     [proofRevision, setProofRevision] = useState(0);
   function denied(e) {
@@ -81,6 +82,7 @@ export function DeletionReviewQueue() {
         Refresh requests
       </button>
       {error && <p role="alert">{error}</p>}
+      {notice && <p role="status">{notice}</p>}
       {busy && !items.length && <p role="status">Loading deletion requests…</p>}
       {!busy && !error && !items.length && <p>No requests in this queue.</p>}
       {items.map((item) => (
@@ -111,7 +113,8 @@ export function DeletionReviewQueue() {
           key={selected}
           id={selected}
           onDenied={denied}
-          onChanged={() => {
+          onChanged={(message) => {
+            setNotice(message || "Deletion request updated.");
             setSelected("");
             setRevision((x) => x + 1);
           }}
