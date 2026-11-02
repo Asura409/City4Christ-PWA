@@ -19,6 +19,7 @@ export default function ProfileScreen() {
     [staff, setStaff] = useState(false),
  [canFollowUp,setCanFollowUp]=useState(false),
  [canReviewDeletion,setCanReviewDeletion]=useState(false);
+  const [canSearchMembers, setCanSearchMembers] = useState(false);
   useEffect(() => {
     mounted.current = true;
     let live = true;
@@ -27,6 +28,7 @@ export default function ProfileScreen() {
       .then(({ data }) => {
  if(live)setCanFollowUp(hasCapability(data,"visitors.follow_up"));
  if(live)setCanReviewDeletion(hasCapability(data,"accounts.deletion.review"));
+        if(live)setCanSearchMembers(hasCapability(data,"members.records.read"));
         if (live)
           setStaff(
             ["sermons.manage", "roles.manage", "roles.read"].some(
@@ -120,6 +122,7 @@ export default function ProfileScreen() {
       <ChangePasswordPanel hasPassword={profile.hasPassword} />
       <AccountDeletionPanel />
       {canReviewDeletion && <button className="btn soft" onClick={() => navigate("/account-deletion-requests")}>Account deletion requests</button>}
+      {canSearchMembers && <button className="btn soft" onClick={() => navigate("/admin/members")}>Member lookup</button>}
       <div className="wrap">
 <a className="btn soft" href="#/pastors">Pastoral appointments</a>
         <a className="btn soft" href="/profile.html">

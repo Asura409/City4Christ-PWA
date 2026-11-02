@@ -1,0 +1,10 @@
+.admin-members { max-width: 880px !important; }
+.admin-members-search { display: grid; gap: 8px; margin: 18px 0; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: var(--surface); }
+.admin-members-search label { color: var(--muted); font-size: 14px; font-weight: 650; }
+.admin-members-search-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }
+.admin-members-search input { min-width: 0; min-height: 46px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 12px; background: rgba(20,16,36,.76); color: var(--text); }
+.admin-member-list { display: grid; gap: 10px; }
+.admin-member-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.admin-member-card h2 { margin: 0 0 6px; font-family: var(--serif); font-size: 20px; }
+.admin-member-card p { margin: 4px 0; color: var(--muted); overflow-wrap: anywhere; }
+@media (max-width: 560px) { .admin-members-search-row { grid-template-columns: minmax(0, 1fr); } .admin-members-search-row .btn { width: 100%; } }

@@ -130,6 +130,17 @@ Writes require both fresh primary identity and authenticator confirmation. A `re
 
 Deploy the backend church-role contract before releasing this frontend. `API_URL` remains the only frontend environment setting. This feature documentation is not evidence of a staging deployment or privileged appointment.
 
+## Staff member lookup
+
+Staff can open the read-only member lookup from their profile or at
+`/#/admin/members`. The frontend checks the current `members.records.read`
+capability for display; the API independently checks it on every request.
+Search uses `GET /api/v1/admin/members?query=...&limit=20&cursor=...`, with a
+minimum three-character query and cursor pagination. Results contain a member's
+name, email and join date. This screen does not edit accounts or display
+password, MFA, role, session, phone, address, or other private profile fields.
+Full member detail and sensitive-read audit workflows are still future work.
+
 ## Connected member features
 
 - Events use public published church-wide reads and verified member RSVP. Each

@@ -35,6 +35,7 @@ import { CreateSheet } from "./components/CreateSheet";
 import { createPost, uploadPostMedia } from "./posts/api";
 import GivingScreen from "./screens/GivingScreen";
 import GivingReturnScreen from "./screens/GivingReturnScreen";
+import { AdminMemberSearch } from "@/members/AdminMemberSearch";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -107,6 +108,7 @@ export default function App() {
           <Routes>
             <Route path="/visitors" element={<ProtectedRoute><VisitorsScreen/></ProtectedRoute>}/>
             <Route path="/account-deletion-requests" element={<ProtectedRoute><DeletionRequestsScreen /></ProtectedRoute>} />
+            <Route path="/admin/members" element={<ProtectedRoute><AdminMemberSearch /></ProtectedRoute>} />
  <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"
