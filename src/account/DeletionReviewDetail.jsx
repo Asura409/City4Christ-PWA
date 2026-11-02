@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from "react";
-import { deletionDetail, markDeletionReviewing } from "./api";
+import {
+  deletionDetail,
+  markDeletionReviewing,
+  restoreDeletionRequest,
+} from "./api";
 
 export function DeletionReviewDetail({ id, onChanged, onDenied }) {
   const [data, setData] = useState(null),
     [error, setError] = useState("");
+  const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0);
   useEffect(() => {
@@ -37,6 +42,21 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
       setBusy(false);
     }
   }
+  async function restore() {
+    setBusy(true);
+    setError("");
+    try {
+      await restoreDeletionRequest(id, data.version, reason);
+      onChanged("Account sign-in restored. The member must sign in again; their directory profile remains hidden.");
+    } catch (e) {
+      if ([401, 403, 404].includes(e.status)) {
+        setData(null);
+        onDenied(e);
+      } else setError(e.message);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section className="auth-card" aria-label="Deletion request details">
       <h2>Deletion request details</h2>
@@ -60,8 +80,9 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
             <dd>{data.policyVersion}</dd>
           </dl>
           <p>
-            The account is disabled. Review status does not permanently erase
-            records or reactivate the account.
+            {data.status === "restored"
+              ? "Access has been restored. The member must sign in again, and their directory profile remains hidden."
+              : "The account is disabled. Review status does not permanently erase records or restore access."}
           </p>
           <button
             className="btn soft"
@@ -70,6 +91,39 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
           >
             Mark as reviewing
           </button>
+          {data.status !== "restored" && (
+            <>
+              <p>
+                Restoring access clears the deletion hold. It does not show the
+                member in the directory or restore old sign-in sessions. They
+                must sign in again. Existing role assignments remain, while
+                directory visibility can be chosen separately.
+              </p>
+              <label htmlFor="restore-reason">
+                Reason for restoring account access
+              </label>
+              <textarea
+                id="restore-reason"
+                rows={3}
+                minLength={3}
+                maxLength={500}
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+              <button
+                className="btn soft"
+                disabled={
+                  busy ||
+                  reason.trim().length < 3 ||
+                  reason.trim().length > 500 ||
+                  Boolean(error)
+                }
+                onClick={restore}
+              >
+                Restore account access
+              </button>
+            </>
+          )}
         </>
       )}
       <button

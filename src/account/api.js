@@ -31,6 +31,14 @@ export async function markDeletionReviewing(id, version) {
     )
   ).data;
 }
+export async function restoreDeletionRequest(id, version, reason) {
+  return (
+    await api.request(
+      `/api/v1/admin/account-deletion-requests/${encodeURIComponent(id)}/restore`,
+      { method: "POST", body: { version, reason } },
+    )
+  ).data;
+}
 export function isConfirmationError(error) {
   return ["reauthentication_required", "mfa_required"].includes(error.code);
 }

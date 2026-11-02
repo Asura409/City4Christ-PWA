@@ -343,6 +343,48 @@ test("reviewer opens separate sensitive detail and records reviewing with the cu
     }),
   ).toHaveCount(0);
 });
+test("reviewer restores a mistaken request with a reason and the current version", async ({
+  page,
+}) => {
+  await setup(page, { admin: true });
+  let saved;
+  await page.route("**/api/v1/admin/account-deletion-requests?**", (r) =>
+    r.fulfill({ json: { data: [entry], meta: {} } }),
+  );
+  await page.route("**/api/v1/admin/account-deletion-requests/" + id, (r) =>
+    r.fulfill({
+      json: { data: { ...entry, email: "private-review@example.invalid" } },
+    }),
+  );
+  await page.route(
+    "**/api/v1/admin/account-deletion-requests/" + id + "/restore",
+    (r) => {
+      saved = r.request().postDataJSON();
+      return r.fulfill({
+        json: { data: { ...entry, version: 2, status: "restored" } },
+      });
+    },
+  );
+  await page.goto("/#/account-deletion-requests");
+  await page
+    .getByRole("button", { name: "Open Synthetic Member", exact: true })
+    .click();
+  const detail = page.getByRole("region", { name: "Deletion request details" });
+  await expect(detail).toContainText("does not show the member in the directory");
+  await detail
+    .getByLabel("Reason for restoring account access", { exact: true })
+    .fill("Member confirmed the request was accidental");
+  await detail
+    .getByRole("button", { name: "Restore account access", exact: true })
+    .click();
+  await expect.poll(() => saved).toEqual({
+    version: 1,
+    reason: "Member confirmed the request was accidental",
+  });
+  await expect(
+    page.getByRole("status").filter({ hasText: "Account sign-in restored" }),
+  ).toBeVisible();
+});
 test("reviewer permission loss clears disclosed contact and queue data", async ({
   page,
 }) => {
