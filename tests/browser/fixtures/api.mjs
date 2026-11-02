@@ -515,6 +515,17 @@ export async function mocked(
     }
     if (path === `/api/v1/groups/${GROUP}/members`)
       return authenticated ? ok(groupMembers) : error(401, "invalid_session", "Sign in again.");
+    const groupRemoval = path.match(/^\/api\/v1\/groups\/([^/]+)\/members\/([^/]+)\/remove$/);
+    if (groupRemoval && method === "POST") {
+      const canManage = (assignedAccess.capabilities || []).some((capability) =>
+        (capability.permission === "groups.members.manage" && capability.scope === "") ||
+        (capability.permission === "ministry.members.manage" && capability.scope === groupRemoval[1]),
+      );
+      if (!canManage) return error(403, "forbidden", "Group member management is not permitted.");
+      groupMembers = groupMembers.filter((item) => item.accountId !== groupRemoval[2]);
+      group = { ...group, memberCount: Math.max(0, group.memberCount - 1) };
+      return ok({ changed: true });
+    }
     if (
       path.startsWith("/api/v1/admin/sermons") &&
       !assignedAccess.capabilities.some(

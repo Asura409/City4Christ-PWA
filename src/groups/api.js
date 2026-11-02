@@ -22,6 +22,13 @@ export async function listGroupMembers(groupId) {
   return (await api.request(`/api/v1/groups/${groupId}/members`)).data || [];
 }
 
+export async function removeGroupMember(groupId, accountId, reason) {
+  return (await api.request(`/api/v1/groups/${groupId}/members/${accountId}/remove`, {
+    method: "POST",
+    body: { reason },
+  })).data;
+}
+
 export async function listPendingRequests(groupId) {
   return (await api.request(`/api/v1/groups/${groupId}/membership-requests`)).data || [];
 }
