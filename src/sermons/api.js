@@ -8,6 +8,15 @@ export async function createSermonDraft(input) {
   return (await api.request("/api/v1/admin/sermons", { method: "POST", body: input })).data;
 }
 
+export async function listEditorialSermons({ query = "", status = "", limit = 20, cursor = "", signal } = {}) {
+  const params = new URLSearchParams({ limit: String(limit) });
+  if (query.trim()) params.set("query", query.trim());
+  if (status) params.set("status", status);
+  if (cursor) params.set("cursor", cursor);
+  const result = await api.request(`/api/v1/admin/sermons?${params}`, { signal });
+  return { items: result.data || [], nextCursor: result.meta?.nextCursor || "" };
+}
+
 export async function publishSermon(id, version) {
   return (await api.request(`/api/v1/admin/sermons/${encodeURIComponent(id)}`, {
     method: "PATCH", body: { version, status: "published" },

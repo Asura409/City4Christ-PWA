@@ -3,6 +3,7 @@ import { api } from "@/auth/session";
 import { useSession } from "@/auth/session";
 import { safeImageUrl, safeUrl, youtubeEmbedUrl } from "@/lib/sanitize";
 import { SermonComposer } from "@/sermons/SermonComposer";
+import { EditorialSermonList } from "@/sermons/EditorialSermonList";
 import { deleteSermonNote, getSermonNote, getSermonProgress, listPublishedSermonSeries, saveSermonNote, saveSermonProgress } from "@/sermons/api";
 
 function formatPlaybackTime(seconds) {
@@ -43,7 +44,8 @@ export default function WordScreen() {
     [noteExists, setNoteExists] = useState(false),
     [memberBusy, setMemberBusy] = useState(false),
     [memberError, setMemberError] = useState(""),
-    [memberStatus, setMemberStatus] = useState("");
+    [memberStatus, setMemberStatus] = useState(""),
+    [editorialRefresh, setEditorialRefresh] = useState(0);
   const lastProgressWrite = useRef({ seconds: 0, at: 0 });
   async function load(next = "") {
     setBusy(true);
@@ -159,7 +161,8 @@ export default function WordScreen() {
 <a className="btn soft" href="#/devotionals">Read devotionals</a>
 <a className="btn soft" href="#/bible">Open Bible</a>
       </div>
-      <SermonComposer onPublished={() => { setSelected(null); void load(); }} />
+      <SermonComposer onPublished={() => { setSelected(null); void load(); }} onChanged={() => setEditorialRefresh((value) => value + 1)} />
+      <EditorialSermonList refreshKey={editorialRefresh} />
       {error && <p role="alert">{error}</p>}
       {selected ? (
         <article className="card sermon">

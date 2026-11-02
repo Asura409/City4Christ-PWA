@@ -4,7 +4,7 @@ import { api } from "@/auth/session";
 import { uploadMedia } from "@/posts/api";
 import { createSermonDraft, publishSermon } from "@/sermons/api";
 
-export function SermonComposer({ onPublished }) {
+export function SermonComposer({ onPublished, onChanged }) {
   const [allowed, setAllowed] = useState(false);
   const [title, setTitle] = useState("");
   const [speaker, setSpeaker] = useState("");
@@ -37,6 +37,7 @@ export function SermonComposer({ onPublished }) {
       for (const file of files) attachmentIds.push(await uploadMedia(file, "sermon_attachment", { onStatus: setStatus }));
       const created = await createSermonDraft({ title: title.trim(), speaker: speaker.trim(), summary: summary.trim(), preachedAt: new Date(preachedAt).toISOString(), ...(attachmentIds.length ? { attachmentIds } : {}) });
       setDraft(created); setStatus("Draft created. Publish it when you are ready.");
+      onChanged?.();
     } catch (e) { setError(e.message || "Could not create the sermon draft."); }
     finally { setBusy(false); }
   }
@@ -46,6 +47,7 @@ export function SermonComposer({ onPublished }) {
     try {
       await publishSermon(draft.id, draft.version);
       setStatus("Sermon published."); setDraft(null); setFiles([]); setTitle(""); setSpeaker(""); setSummary("");
+      onChanged?.();
       onPublished?.();
     } catch (e) { setError(e.message || "Could not publish the sermon."); }
     finally { setBusy(false); }
