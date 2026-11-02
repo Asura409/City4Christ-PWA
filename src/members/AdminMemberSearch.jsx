@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { hasCapability } from "../../js/access.js";
-import { searchAdminMembers } from "./adminApi";
+import { getAdminMember, searchAdminMembers } from "./adminApi";
 import "./admin-members.css";
 
 export function AdminMemberSearch() {
@@ -11,6 +11,9 @@ export function AdminMemberSearch() {
   const [cursor, setCursor] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [selected, setSelected] = useState(null);
+  const [detailBusy, setDetailBusy] = useState(false);
+  const [detailError, setDetailError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -23,7 +26,7 @@ export function AdminMemberSearch() {
   async function search(e) {
     e.preventDefault();
     if (query.trim().length < 3) return;
-    setBusy(true); setError(""); setMembers([]); setCursor("");
+    setBusy(true); setError(""); setMembers([]); setCursor(""); setSelected(null); setDetailError("");
     try {
       const page = await searchAdminMembers(query);
       setMembers(page.members); setCursor(page.nextCursor);
@@ -38,6 +41,13 @@ export function AdminMemberSearch() {
       setMembers((current) => [...current, ...page.members]); setCursor(page.nextCursor);
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
+  }
+
+  async function showDetails(id) {
+    setDetailBusy(true); setDetailError(""); setSelected(null);
+    try { setSelected(await getAdminMember(id)); }
+    catch (e) { setDetailError(e.message); }
+    finally { setDetailBusy(false); }
   }
 
   return (
@@ -60,10 +70,21 @@ export function AdminMemberSearch() {
         <div className="admin-member-list" aria-label="Search results">
           {members.map((member) => <article className="admin-member-card" key={member.id}>
             <h2>{member.firstName} {member.lastName}</h2>
-            <p>{member.email}</p>
             <p>Joined {new Date(member.joinedAt).toLocaleDateString()}</p>
+            <button className="btn soft" disabled={detailBusy} onClick={() => showDetails(member.id)}>View member details</button>
           </article>)}
         </div>
+        {detailBusy && <p role="status">Loading member details…</p>}
+        {detailError && <p role="alert">{detailError}</p>}
+        {selected && <section className="auth-card" aria-label="Member details">
+          <h2>{selected.firstName} {selected.lastName}</h2>
+          <dl>
+            <dt>Email</dt>
+            <dd>{selected.email}</dd>
+            <dt>Joined</dt>
+            <dd>{new Date(selected.joinedAt).toLocaleDateString()}</dd>
+          </dl>
+        </section>}
         {cursor && <button className="btn soft" disabled={busy} onClick={more}>Load more members</button>}
       </>}
     </section>
