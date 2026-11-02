@@ -18,9 +18,10 @@ export async function searchDirectoryMembers(query, { signal } = {}) {
   return Array.isArray(data) ? data : [];
 }
 
-export async function listMessages(conversationId, { beforeSequence = 0, limit = 50, signal } = {}) {
+export async function listMessages(conversationId, { beforeSequence = 0, limit = 50, query = "", signal } = {}) {
   const params = new URLSearchParams({ limit: String(limit) });
   if (beforeSequence > 0) params.set("beforeSequence", String(beforeSequence));
+  if (query.trim()) params.set("query", query.trim());
   const { data, meta } = await api.request(
     `/api/v1/conversations/${encodeURIComponent(conversationId)}/messages?${params}`,
     { signal },
@@ -31,11 +32,22 @@ export async function listMessages(conversationId, { beforeSequence = 0, limit =
   };
 }
 
-export async function sendMessage(conversationId, body, clientMessageId) {
+export async function sendMessage(conversationId, body, clientMessageId, attachmentIds = []) {
   return (await api.request(
     `/api/v1/conversations/${encodeURIComponent(conversationId)}/messages`,
-    { method: "POST", body: { clientMessageId, body } },
+    { method: "POST", body: { clientMessageId, body, ...(attachmentIds.length ? { attachmentIds } : {}) } },
   )).data;
+}
+
+export async function editMessage(conversationId, messageId, body) {
+  return (await api.request(`/api/v1/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`, {
+    method: "PATCH",
+    body: { body },
+  })).data;
+}
+
+export function deleteMessage(conversationId, messageId) {
+  return api.request(`/api/v1/conversations/${encodeURIComponent(conversationId)}/messages/${encodeURIComponent(messageId)}`, { method: "DELETE" });
 }
 
 export async function markConversationRead(conversationId, throughMessageId = "") {

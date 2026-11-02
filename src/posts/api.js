@@ -201,3 +201,7 @@ export async function uploadMedia(
 export function uploadPostMedia(file, options) {
   return uploadMedia(file, "post_attachment", options);
 }
+
+export function uploadMessageMedia(file, options) {
+  return uploadMedia(file, "message_attachment", options);
+}

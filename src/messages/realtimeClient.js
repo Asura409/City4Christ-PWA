@@ -11,11 +11,8 @@ export function websocketURL(baseURL) {
 
 export function normalizeRealtimeEvent(value) {
   if (!value || typeof value !== "object") return null;
-  if (value.type !== "message.created" && value.type !== "message.deleted") return null;
   if (value.scope !== "direct" && value.scope !== "group") return null;
-  if (typeof value.messageId !== "string" || !value.messageId) return null;
-
-  const event = { type: value.type, scope: value.scope, messageId: value.messageId };
+  const event = { type: value.type, scope: value.scope };
   if (value.scope === "direct") {
     if (typeof value.conversationId !== "string" || !value.conversationId) return null;
     event.conversationId = value.conversationId;
@@ -23,8 +20,31 @@ export function normalizeRealtimeEvent(value) {
     if (typeof value.groupId !== "string" || !value.groupId) return null;
     event.groupId = value.groupId;
   }
+  if (value.type === "presence.snapshot" || value.type === "presence.online" || value.type === "presence.offline") {
+    if (value.scope === "direct") {
+      if (typeof value.senderId !== "string" || !value.senderId || typeof value.online !== "boolean") return null;
+      event.senderId = value.senderId;
+      event.online = value.online;
+    } else {
+      if (!Number.isSafeInteger(value.onlineCount) || value.onlineCount < 0) return null;
+      event.onlineCount = value.onlineCount;
+      if (value.senderId !== undefined) {
+        if (typeof value.senderId !== "string" || !value.senderId) return null;
+        event.senderId = value.senderId;
+      }
+    }
+    return event;
+  }
+  if (value.type === "typing.start" || value.type === "typing.stop") {
+    if (typeof value.senderId !== "string" || !value.senderId) return null;
+    event.senderId = value.senderId;
+    return event;
+  }
+  if (value.type !== "message.created" && value.type !== "message.updated" && value.type !== "message.deleted") return null;
+  if (typeof value.messageId !== "string" || !value.messageId) return null;
+  event.messageId = value.messageId;
   if (Number.isSafeInteger(value.sequence) && value.sequence > 0) event.sequence = value.sequence;
-  if (value.type === "message.created" && !event.sequence) return null;
+  if ((value.type === "message.created" || value.type === "message.updated") && !event.sequence) return null;
   return event;
 }
 
@@ -55,6 +75,7 @@ export function createRealtimeClient({
   let connecting = false;
   let attempts = 0;
   let status = "idle";
+  let authenticatedSocket = null;
 
   function setStatus(next) {
     if (status === next) return;
@@ -113,6 +134,7 @@ export function createRealtimeClient({
         if (parsed?.type === "ready") {
           if (authenticated) return;
           authenticated = true;
+          authenticatedSocket = next;
           attempts = 0;
           setStatus("connected");
           onReady();
@@ -124,6 +146,7 @@ export function createRealtimeClient({
       next.onclose = (event) => {
         if (socket !== next) return;
         socket = null;
+        if (authenticatedSocket === next) authenticatedSocket = null;
         if (stopped) return;
         if (event?.code === 1008) {
           stop("auth_required");
@@ -165,11 +188,25 @@ export function createRealtimeClient({
     ticketController?.abort();
     const current = socket;
     socket = null;
+    authenticatedSocket = null;
     if (current && current.readyState < 2) current.close(1000, "client stopped");
     setStatus(finalStatus);
   }
 
-  return { start, stop, reconnectNow, getStatus: () => status };
+  function send(frame) {
+    const allowedType = frame?.type === "typing.start" || frame?.type === "typing.stop" || frame?.type === "presence.subscribe" || frame?.type === "presence.unsubscribe";
+    if (!allowedType || authenticatedSocket !== socket || socket?.readyState !== 1) return false;
+    const target = frame.scope === "direct" && typeof frame.conversationId === "string"
+      ? { scope: "direct", conversationId: frame.conversationId }
+      : frame.scope === "group" && typeof frame.groupId === "string"
+        ? { scope: "group", groupId: frame.groupId }
+        : null;
+    if (!target) return false;
+    try { socket.send(JSON.stringify({ type: frame.type, ...target })); return true; }
+    catch { return false; }
+  }
+
+  return { start, stop, reconnectNow, send, getStatus: () => status };
 }
 
 export { TICKET_PATH };

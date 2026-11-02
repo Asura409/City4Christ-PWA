@@ -17,6 +17,36 @@ export const MODERATOR_ACCESS = {
   roles: [{ role: "staff", scope: "" }],
   capabilities: [{ permission: "groups.content.moderate", scope: "" }],
 };
+
+export async function mockScannedUpload(page) {
+  const calls = [];
+  const uploadId = "abababab-abab-4bab-8bab-abababababab";
+  const mediaURL = "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com";
+  await page.route(`${mediaURL}/**`, (route) => route.fulfill({
+    status: 200,
+    headers: {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "PUT, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  }));
+  await page.route("**/api/v1/uploads/**", async (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    let body;
+    try { body = request.postDataJSON(); } catch {}
+    calls.push({ method: request.method(), path, body });
+    if (path === "/api/v1/uploads/presign")
+      return route.fulfill({ status: 201, json: { data: { uploadId, url: `${mediaURL}/upload`, method: "PUT", headers: { "Content-Type": "image/png" } } } });
+    if (path === `/api/v1/uploads/${uploadId}/complete`)
+      return route.fulfill({ json: { data: { status: "scan_queued" } } });
+    if (path === `/api/v1/uploads/${uploadId}`)
+      return route.fulfill({ json: { data: { status: "available" } } });
+    return route.fulfill({ status: 404 });
+  });
+  return { calls, uploadId };
+}
+
 export async function mocked(
   page,
   { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false, includePendingReport = false } = {},
@@ -231,6 +261,8 @@ export async function mocked(
       return authenticated
         ? ok(assignedAccess)
         : error(401, "invalid_session", "Sign in again.");
+    if (path === "/api/v1/me/deletion-request")
+      return ok({ requested: false, request: null, policyVersion: "account-deletion-request-v1", notice: "Requesting deletion disables your account and signs out every session while staff review it. Permanent deletion has not happened." });
     if(path === '/api/v1/notifications/preferences') return route.fulfill({json:{data:{pushEnabled:false,groups:true,events:true,pastoral:true,messages:true,announcements:true}}});
     if(path === '/api/v1/notifications/push/config') return route.fulfill({json:{data:{enabled:false,publicKey:''}}});
     if (path === "/api/v1/notifications/unread-count") {

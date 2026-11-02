@@ -83,6 +83,7 @@ test("React Google linking lets an expired confirmation be renewed without leavi
   await page.getByRole("button", { name: "Link Google", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Confirm your identity");
   await page
+    .getByRole("region", { name: "Google account linking" })
     .getByLabel("Current password", { exact: true })
     .fill("synthetic linking confirmation");
   await page

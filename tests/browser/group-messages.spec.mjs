@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { mocked, ID } from "./fixtures/api.mjs";
+import { mocked, ID, mockScannedUpload } from "./fixtures/api.mjs";
 
 const GROUP = "33333333-3333-4333-8333-333333333333";
 const MESSAGE = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -18,10 +18,10 @@ async function groupMocks(page) {
     const path = new URL(request.url()).pathname;
     let body;
     try { body = request.postDataJSON(); } catch {}
-    calls.push({ method: request.method(), path, body });
+    calls.push({ method: request.method(), path, body, query: new URL(request.url()).searchParams.toString() });
     if (request.method() === "GET") return route.fulfill({ json: { data: messages, meta: { nextBeforeSequence: 0 } } });
     if (request.method() === "POST") {
-      const created = { id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", groupId: GROUP, senderId: ID, clientMessageId: body.clientMessageId, body: body.body, sequence: 2, createdAt: new Date().toISOString(), deleted: false };
+      const created = { id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", groupId: GROUP, senderId: ID, clientMessageId: body.clientMessageId, body: body.body, attachmentCount: body.attachmentIds?.length || 0, attachments: body.attachmentIds?.map((id) => ({ id, contentType: "image/png", size: 128, url: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/clean/photo.png?signature=test", expiresAt: new Date(Date.now() + 60_000).toISOString() })) || [], sequence: 2, createdAt: new Date().toISOString(), deleted: false };
       messages = [...messages, created];
       return route.fulfill({ status: 201, json: { data: created } });
     }
@@ -84,6 +84,60 @@ test("active group members read, send, and mark messages read", async ({ page })
   const sent = fixture.calls.find((call) => call.method === "POST" && call.path === `/api/v1/groups/${GROUP}/messages`);
   expect(sent?.body.body).toBe("I will be there.");
   expect(sent?.body.clientMessageId).toMatch(/^[0-9a-f-]{36}$/);
+});
+
+test("group messages upload, scan, send, and render private image attachments", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  const fixture = await groupMocks(page);
+  const upload = await mockScannedUpload(page);
+  await page.goto("/#/chat");
+  await page.getByRole("button", { name: "Group chats", exact: true }).click();
+  await page.getByRole("button", { name: "Open group conversation Choir" }).click();
+  const thread = page.getByRole("region", { name: "Group conversation" });
+  const composer = page.getByRole("form", { name: "Send a group message" });
+  await composer.getByLabel("Group message").fill("Please see the photo");
+  await composer.getByLabel("Attach images, audio, or video").setInputFiles({ name: "photo.png", mimeType: "image/png", buffer: Buffer.from("test image") });
+  await composer.getByRole("button", { name: "Send" }).click();
+  await expect(thread.getByText("Please see the photo")).toBeVisible();
+  await expect(thread.locator("img[alt='Message attachment']")).toHaveCount(1);
+  const sent = fixture.calls.find((call) => call.method === "POST" && call.path === `/api/v1/groups/${GROUP}/messages`);
+  expect(sent?.body.attachmentIds).toEqual([upload.uploadId]);
+  expect(upload.calls[0].body.purpose).toBe("message_attachment");
+});
+
+test("group chat sends scoped typing signals and displays other member activity", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  await groupMocks(page);
+  await mockRealtime(page);
+  await page.goto("/#/chat");
+  await page.getByRole("button", { name: "Group chats", exact: true }).click();
+  await page.getByRole("button", { name: "Open group conversation Choir" }).click();
+  await page.waitForFunction(() => window.__realtimeSockets?.some((socket) => socket.readyState === 0));
+  await page.evaluate(() => { const socket = window.__realtimeSockets.find((item) => item.readyState === 0); socket.open(); socket.receive({ type: "ready" }); window.__activeRealtimeSocket = socket; });
+  await expect.poll(() => page.evaluate(() => window.__activeRealtimeSocket.sent.map((frame) => JSON.parse(frame)))).toContainEqual({
+    type: "presence.subscribe", scope: "group", groupId: GROUP,
+  });
+  await page.evaluate(() => window.__activeRealtimeSocket.receive({ type: "presence.snapshot", scope: "group", groupId: "33333333-3333-4333-8333-333333333333", onlineCount: 2 }));
+  await expect(page.getByRole("region", { name: "Group conversation" }).getByText("2 members online")).toBeVisible();
+  const input = page.getByRole("textbox", { name: "Group message" });
+  await input.fill("Prayer request");
+  await expect.poll(() => page.evaluate(() => window.__activeRealtimeSocket.sent.map((frame) => JSON.parse(frame)))).toContainEqual({
+    type: "typing.start", scope: "group", groupId: GROUP,
+  });
+  await page.evaluate((senderId) => window.__activeRealtimeSocket.receive({ type: "typing.start", scope: "group", groupId: "33333333-3333-4333-8333-333333333333", senderId }), "cccccccc-cccc-4ccc-8ccc-cccccccccccc");
+  await expect(page.getByRole("status").filter({ hasText: "A group member is typing" })).toBeVisible();
+});
+
+test("current group members can search messages in their group chat", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  const fixture = await groupMocks(page);
+  await page.goto("/#/chat");
+  await page.getByRole("button", { name: "Group chats", exact: true }).click();
+  await page.getByRole("button", { name: "Open group conversation Choir" }).click();
+  await page.getByRole("searchbox", { name: "Search group messages" }).fill("choir");
+  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await expect(page.getByText("Search results for “choir”")).toBeVisible();
+  expect(fixture.calls.some((call) => call.method === "GET" && call.path === `/api/v1/groups/${GROUP}/messages` && call.query.includes("query=choir"))).toBe(true);
 });
 
 test("authorized group moderators can remove content and the body is redacted", async ({ page }) => {

@@ -1,9 +1,10 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/auth/session";
 import { createRealtimeClient, TICKET_PATH } from "@/messages/realtimeClient";
 
 export function useRealtimeMessages({ enabled, onEvent, onReady } = {}) {
   const callbacks = useRef({ onEvent, onReady });
+  const clientRef = useRef(null);
   callbacks.current = { onEvent, onReady };
   const [status, setStatus] = useState(enabled ? "connecting" : "idle");
 
@@ -23,15 +24,18 @@ export function useRealtimeMessages({ enabled, onEvent, onReady } = {}) {
       onEvent: (event) => callbacks.current.onEvent?.(event),
       onReady: () => callbacks.current.onReady?.(),
     });
+    clientRef.current = client;
     const reconnectWhenOnline = () => { void client.reconnectNow(); };
     globalThis.addEventListener?.("online", reconnectWhenOnline);
     void client.start();
     return () => {
       active = false;
+      if (clientRef.current === client) clientRef.current = null;
       globalThis.removeEventListener?.("online", reconnectWhenOnline);
       client.stop();
     };
   }, [enabled]);
 
-  return status;
+  const send = useCallback((frame) => clientRef.current?.send(frame) ?? false, []);
+  return { status, send };
 }

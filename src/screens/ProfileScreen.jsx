@@ -1,11 +1,14 @@
 import { hasCapability } from "../../js/access.js";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
 import {GoogleLinkPanel} from '@/auth/GoogleLinkPanel';
+import { ChangePasswordPanel } from "@/auth/ChangePasswordPanel";
+import { AccountDeletionPanel } from "@/account/AccountDeletionPanel";
 export default function ProfileScreen() {
   const { profile, setProfile, logout } = useSession(),
     navigate = useNavigate();
+  const mounted = useRef(false);
   const [firstName, setFirst] = useState(profile.firstName),
     [lastName, setLast] = useState(profile.lastName),
     [visible, setVisible] = useState(profile.directoryVisible),
@@ -13,13 +16,16 @@ export default function ProfileScreen() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [staff, setStaff] = useState(false),
- [canFollowUp,setCanFollowUp]=useState(false);
+ [canFollowUp,setCanFollowUp]=useState(false),
+ [canReviewDeletion,setCanReviewDeletion]=useState(false);
   useEffect(() => {
+    mounted.current = true;
     let live = true;
     api
       .request("/api/v1/me/access")
       .then(({ data }) => {
  if(live)setCanFollowUp(hasCapability(data,"visitors.follow_up"));
+ if(live)setCanReviewDeletion(hasCapability(data,"accounts.deletion.review"));
         if (live)
           setStaff(
             ["sermons.manage", "roles.manage", "roles.read"].some(
@@ -29,6 +35,7 @@ export default function ProfileScreen() {
       })
       .catch(() => {});
     return () => {
+      mounted.current = false;
       live = false;
     };
   }, []);
@@ -43,12 +50,13 @@ export default function ProfileScreen() {
       if (visible !== profile.directoryVisible)
         patch.directoryVisible = visible;
       const { data } = await api.updateProfile(patch);
+      if (!mounted.current) return;
       setProfile(data);
       setMessage("Your profile has been saved.");
     } catch (e) {
-      setError(e.message);
+      if (mounted.current) setError(e.message);
     } finally {
-      setBusy(false);
+      if (mounted.current) setBusy(false);
     }
   }
   async function signOut() {
@@ -107,6 +115,9 @@ export default function ProfileScreen() {
         </button>
       </form>
       <GoogleLinkPanel hasPassword={profile.hasPassword}/>
+      <ChangePasswordPanel hasPassword={profile.hasPassword} />
+      <AccountDeletionPanel />
+      {canReviewDeletion && <button className="btn soft" onClick={() => navigate("/account-deletion-requests")}>Account deletion requests</button>}
       <div className="wrap">
 <a className="btn soft" href="#/pastors">Pastoral appointments</a>
         <a className="btn soft" href="/profile.html">
