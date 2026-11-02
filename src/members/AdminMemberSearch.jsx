@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { hasCapability } from "../../js/access.js";
-import { getAdminMember, searchAdminMembers } from "./adminApi";
+import { getAdminMember, getAdminMemberAccessAudit, searchAdminMembers } from "./adminApi";
 import "./admin-members.css";
 
 export function AdminMemberSearch() {
   const [allowed, setAllowed] = useState(null);
+  const [auditAllowed, setAuditAllowed] = useState(false);
   const [query, setQuery] = useState("");
   const [members, setMembers] = useState([]);
   const [cursor, setCursor] = useState("");
@@ -14,11 +15,20 @@ export function AdminMemberSearch() {
   const [selected, setSelected] = useState(null);
   const [detailBusy, setDetailBusy] = useState(false);
   const [detailError, setDetailError] = useState("");
+  const [auditEvents, setAuditEvents] = useState([]);
+  const [auditCursor, setAuditCursor] = useState("");
+  const [auditBusy, setAuditBusy] = useState(false);
+  const [auditError, setAuditError] = useState("");
 
   useEffect(() => {
     let active = true;
     api.request("/api/v1/me/access")
-      .then(({ data }) => { if (active) setAllowed(hasCapability(data, "members.records.read")); })
+      .then(({ data }) => {
+        if (active) {
+          setAllowed(hasCapability(data, "members.records.read"));
+          setAuditAllowed(hasCapability(data, "members.records.audit.read"));
+        }
+      })
       .catch((e) => { if (active) { setAllowed(false); setError(e.message); } });
     return () => { active = false; };
   }, []);
@@ -45,9 +55,21 @@ export function AdminMemberSearch() {
 
   async function showDetails(id) {
     setDetailBusy(true); setDetailError(""); setSelected(null);
+    setAuditEvents([]); setAuditCursor(""); setAuditError("");
     try { setSelected(await getAdminMember(id)); }
     catch (e) { setDetailError(e.message); }
     finally { setDetailBusy(false); }
+  }
+
+  async function showAudit(id, cursor = "") {
+    setAuditBusy(true); setAuditError("");
+    if (!cursor) setAuditEvents([]);
+    try {
+      const page = await getAdminMemberAccessAudit(id, { cursor });
+      setAuditEvents((current) => cursor ? [...current, ...page.events] : page.events);
+      setAuditCursor(page.nextCursor);
+    } catch (e) { setAuditError(e.message); }
+    finally { setAuditBusy(false); }
   }
 
   return (
@@ -84,6 +106,20 @@ export function AdminMemberSearch() {
             <dt>Joined</dt>
             <dd>{new Date(selected.joinedAt).toLocaleDateString()}</dd>
           </dl>
+          {auditAllowed && <>
+            <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id)}>Review email access history</button>
+            {auditBusy && <p role="status">Loading access history…</p>}
+            {auditError && <p role="alert">{auditError}</p>}
+            {auditEvents.length > 0 && <section aria-label="Member email access history">
+              <h3>Email access history</h3>
+              <ul>
+                {auditEvents.map((event) => <li key={event.id}>
+                  <strong>{event.action}</strong> by staff account {event.actorId}; fields: {event.sensitiveFields.join(", ")}; {new Date(event.occurredAt).toLocaleString()}
+                </li>)}
+              </ul>
+              {auditCursor && <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id, auditCursor)}>Load more access history</button>}
+            </section>}
+          </>}
         </section>}
         {cursor && <button className="btn soft" disabled={busy} onClick={more}>Load more members</button>}
       </>}

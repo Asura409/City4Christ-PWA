@@ -140,6 +140,13 @@ test("member record lookup is a known global capability without implicit staff e
   assert.equal(hasCapability({ roles: access.roles, capabilities: [{ permission: "members.records.read", scope: "11111111-1111-4111-8111-111111111111" }] }, "members.records.read"), false);
 });
 
+test("member access-audit review remains an explicit global capability", () => {
+  const superAdmin = { roles: [{ role: "super_administrator", scope: "" }], capabilities: [{ permission: "members.records.audit.read", scope: "" }] };
+  assert.equal(hasCapability(superAdmin, "members.records.audit.read"), true);
+  assert.equal(hasCapability({ ...superAdmin, capabilities: [] }, "members.records.audit.read"), false);
+  assert.equal(hasCapability({ ...superAdmin, capabilities: [{ permission: "members.records.audit.read", scope: "11111111-1111-4111-8111-111111111111" }] }, "members.records.audit.read"), false);
+});
+
 test("visitor follow-up is recognized as a global capability for the staff link", () => {
   const access = { roles: [{ role: "staff", scope: "" }], capabilities: [{ permission: "visitors.follow_up", scope: "" }] };
   assert.equal(hasCapability(access, "visitors.follow_up"), true);
