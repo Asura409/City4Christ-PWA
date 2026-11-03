@@ -120,7 +120,6 @@ function GroupLifecycle() {
             <div className="group-admin-summary"><div><h3>{group.name}</h3><p>{group.audience === "leadership" ? "Leadership group" : "Church group"} · {group.memberCount} active {group.memberCount === 1 ? "member" : "members"}</p></div><span className={`group-status ${group.archived ? "archived" : "active"}`}>{group.archived ? "Archived" : "Active"}</span></div>
             <div className="group-admin-actions">
               {!group.archived && <Link className="btn dark" to={`/groups/manage/${group.id}`}>Manage leaders</Link>}
-              <label className="auth-field">Reason<input required minLength={1} maxLength={500} value={reasons[group.id] || ""} onChange={(e) => setReasons((old) => ({ ...old, [group.id]: e.target.value }))} /></label>
               <button className={`btn ${group.archived ? "soft" : "danger"}`} disabled={busy} onClick={() => { setLifecycleTarget({ group, status: group.archived ? "active" : "archived" }); setLifecycleReason(""); }}>{group.archived ? "Restore group" : "Archive group"}</button>
             </div>
           </article>)}
