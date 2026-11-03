@@ -1,5 +1,5 @@
 import React, { useState, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
 import { Icon } from "@/lib/icons";
 import { api, useSession } from "@/auth/session";
@@ -7,6 +7,7 @@ import {googleReturnURL} from '@/auth/google';
 
 export default function LoginScreen() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, sessionNotice } = useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,7 +39,8 @@ export default function LoginScreen() {
     setLoading(true);
     try {
       await login(email.trim(), password);
-      navigate("/home", { replace: true });
+      const destination = location.state?.from?.pathname || "/home";
+      navigate(destination, { replace: true });
     } catch (error) {
       setError(
         error.status === 401 ? "Invalid email or password." : error.message,
@@ -50,7 +52,10 @@ export default function LoginScreen() {
   }
 
   return (
-    <AuthLayout title="Welcome back" subtitle="Sign in to your church account">
+    <AuthLayout
+      title="Welcome back"
+      subtitle={location.state?.from?.pathname === "/admin" ? "Sign in to open church administration" : "Sign in to your church account"}
+    >
       {sessionNotice && <p role="status">{sessionNotice}</p>}
       <form onSubmit={handleSubmit} noValidate autoComplete="on">
         {error && (
@@ -128,9 +133,10 @@ export default function LoginScreen() {
       </form>
 
       <button
+        type="button"
         className="btn soft block"
         onClick={() =>
-          location.assign(
+          window.location.assign(
             api.googleStartURL(googleReturnURL()),
           )
         }

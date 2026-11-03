@@ -33,7 +33,6 @@ test("authorized staff can search the read-only member roster", async ({ page })
   const roster = page.getByRole("region", { name: "Member administration" });
   await expect(roster).toBeVisible();
   await roster.getByLabel("Search by name or email").fill("grace@example.invalid");
-  await roster.getByRole("button", { name: "Search members" }).click();
   await expect(roster.getByText("Grace Member")).toBeVisible();
   await expect(roster.getByText("grace@example.invalid", { exact: true })).toHaveCount(0);
   await expect(roster.getByText(/Joined/)).toBeVisible();
@@ -60,7 +59,6 @@ test("staff open an explicitly audited member detail only when selected", async 
   await page.goto("/#/admin/members");
   const roster = page.getByRole("region", { name: "Member administration" });
   await roster.getByLabel("Search by name or email").fill("Grace");
-  await roster.getByRole("button", { name: "Search members" }).click();
   await expect(roster.getByText("Grace Member")).toBeVisible();
   await expect(roster.getByText("grace@example.invalid", { exact: true })).toHaveCount(0);
   await roster.getByRole("button", { name: "View member details" }).click();
@@ -88,7 +86,6 @@ test("Super Admin can open the redacted member email access history", async ({ p
   await page.goto("/#/admin/members");
   const roster = page.getByRole("region", { name: "Member administration" });
   await roster.getByLabel("Search by name or email").fill("Grace");
-  await roster.getByRole("button", { name: "Search members" }).click();
   await roster.getByRole("button", { name: "View member details" }).click();
   await expect(roster.getByRole("button", { name: "Review email access history" })).toBeVisible();
   await roster.getByRole("button", { name: "Review email access history" }).click();

@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { api } from "@/auth/session";
+import { api, useSession } from "@/auth/session";
 import { hasCapability } from "../../js/access.js";
 import { Icon } from "@/lib/icons";
 import "./admin.css";
@@ -20,6 +20,7 @@ function readableRole(role) {
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { profile } = useSession();
   const [access, setAccess] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -38,6 +39,8 @@ export default function AdminDashboard() {
     [access],
   );
   const roles = access?.roles || [];
+  const globalRoles = roles.filter((role) => !role.scope).length;
+  const scopedRoles = roles.filter((role) => role.scope).length;
   const hasAdminAccess = availableModules.length > 0;
 
   if (loading) return <section className="screen active admin-dashboard-state"><p role="status">Checking administration access…</p></section>;
@@ -68,6 +71,10 @@ export default function AdminDashboard() {
           ))}
         </nav>
         <button className="admin-side-link admin-side-home" onClick={() => navigate("/home")}><Icon name="back" /> Return to app</button>
+        <div className="admin-sidebar-account">
+          <span className="admin-sidebar-avatar">{profile?.firstName?.[0]}{profile?.lastName?.[0]}</span>
+          <span><strong>{profile?.firstName} {profile?.lastName}</strong><small>{roles[0] ? readableRole(roles[0].role) : "Member"}</small></span>
+        </div>
       </aside>
 
       <div className="admin-main">
@@ -77,7 +84,7 @@ export default function AdminDashboard() {
             <h1>Dashboard</h1>
             <p>Welcome back. Here’s what’s available in your City4Christ workspace.</p>
           </div>
-          <button className="admin-date-chip" type="button" onClick={() => navigate("/admin")}><Icon name="cal" /> Access overview</button>
+          <div className="admin-header-actions"><span className="admin-live-chip"><i /> Live access</span><button className="admin-date-chip" type="button" onClick={() => navigate("/admin")}><Icon name="shield" /> Access overview</button></div>
         </header>
 
         <div className="admin-stat-grid" aria-label="Administration overview">
@@ -85,6 +92,8 @@ export default function AdminDashboard() {
           <article className="admin-stat-card gold"><span>Active roles</span><strong>{roles.length}</strong><small>Assigned to your account</small><Icon name="users" /></article>
           <article className="admin-stat-card lavender"><span>Member access</span><strong>{hasCapability(access, "members.records.read") ? "On" : "Off"}</strong><small>Verified records lookup</small><Icon name="shield" /></article>
           <article className="admin-stat-card lavender"><span>Audit access</span><strong>{hasCapability(access, "members.records.audit.read") ? "On" : "Off"}</strong><small>Access history visibility</small><Icon name="lock" /></article>
+          <article className="admin-stat-card lavender"><span>Global roles</span><strong>{globalRoles}</strong><small>Church-wide assignments</small><Icon name="globe" /></article>
+          <article className="admin-stat-card lavender"><span>Scoped roles</span><strong>{scopedRoles}</strong><small>Ministry-specific assignments</small><Icon name="users" /></article>
         </div>
 
         <div className="admin-panel-grid">

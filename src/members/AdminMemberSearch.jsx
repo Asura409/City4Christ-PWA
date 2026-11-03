@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
+import { Avatar } from "@/components/Avatar";
 import { hasCapability } from "../../js/access.js";
 import { getAdminMember, getAdminMemberAccessAudit, searchAdminMembers } from "./adminApi";
 import "./admin-members.css";
@@ -33,16 +34,30 @@ export function AdminMemberSearch() {
     return () => { active = false; };
   }, []);
 
-  async function search(e) {
-    e.preventDefault();
-    if (query.trim().length < 3) return;
-    setBusy(true); setError(""); setMembers([]); setCursor(""); setSelected(null); setDetailError("");
-    try {
-      const page = await searchAdminMembers(query);
-      setMembers(page.members); setCursor(page.nextCursor);
-    } catch (e) { setError(e.message); }
-    finally { setBusy(false); }
-  }
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (allowed !== true || trimmed.length < 3) {
+      setMembers([]);
+      setCursor("");
+      setSelected(null);
+      setError("");
+      setBusy(false);
+      return undefined;
+    }
+    const controller = new AbortController();
+    const timer = setTimeout(async () => {
+      setBusy(true); setError(""); setMembers([]); setCursor(""); setSelected(null); setDetailError("");
+      try {
+        const page = await searchAdminMembers(trimmed, { signal: controller.signal });
+        setMembers(page.members); setCursor(page.nextCursor);
+      } catch (e) {
+        if (e.name !== "AbortError") setError(e.message);
+      } finally {
+        if (!controller.signal.aborted) setBusy(false);
+      }
+    }, 300);
+    return () => { clearTimeout(timer); controller.abort(); };
+  }, [allowed, query]);
 
   async function more() {
     setBusy(true); setError("");
@@ -79,20 +94,22 @@ export function AdminMemberSearch() {
       {allowed === null && <p role="status">Checking member lookup access…</p>}
       {allowed === false && <p role="alert">{error || "You do not have permission to search member records."}</p>}
       {allowed && <>
-        <form className="admin-members-search" onSubmit={search}>
+        <form className="admin-members-search" onSubmit={(event) => event.preventDefault()}>
           <label htmlFor="member-search">Search by name or email</label>
           <div className="admin-members-search-row">
-            <input id="member-search" minLength={3} maxLength={100} required value={query} onChange={(e) => setQuery(e.target.value)} />
-            <button className="btn dark" disabled={busy || query.trim().length < 3}>Search members</button>
+            <input id="member-search" type="search" minLength={3} maxLength={100} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Start typing a name or email…" autoComplete="off" />
           </div>
+          <small className="admin-members-search-hint">Results load automatically after 3 characters.</small>
         </form>
         {error && <p role="alert">{error}</p>}
         {busy && <p role="status">Searching members…</p>}
         {!busy && !error && members.length === 0 && query && <p>No matching members were found.</p>}
         <div className="admin-member-list" aria-label="Search results">
           {members.map((member) => <article className="admin-member-card" key={member.id}>
-            <h2>{member.firstName} {member.lastName}</h2>
-            <p>Joined {new Date(member.joinedAt).toLocaleDateString()}</p>
+            <div className="admin-member-card-heading">
+              <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatar?.url || member.avatarUrl} size={48} />
+              <div><h2>{member.firstName} {member.lastName}</h2><p>Joined {new Date(member.joinedAt).toLocaleDateString()}</p></div>
+            </div>
             <button className="btn soft" disabled={detailBusy} onClick={() => showDetails(member.id)}>View member details</button>
           </article>)}
         </div>

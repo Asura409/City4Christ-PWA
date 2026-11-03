@@ -7,6 +7,8 @@ export default defineConfig(({ mode }) => {
   const environment = loadEnv(mode, import.meta.dirname, "");
   const apiURL = process.env.API_URL || environment.API_URL || "/";
   const apiOrigin = apiURL === "/" ? "" : validateAPIURL(apiURL);
+  const allowedHost = process.env.VITE_ALLOWED_HOST || environment.VITE_ALLOWED_HOST;
+  const mediaOrigin = process.env.MEDIA_ORIGIN || environment.MEDIA_ORIGIN || "https:";
   return {
     plugins: [
       react(),
@@ -25,11 +27,14 @@ export default defineConfig(({ mode }) => {
           });
         },
         transformIndexHtml(html) {
-          return html.replace("__API_ORIGIN__", apiOrigin + " ws: wss:");
+          return html
+            .replace("__API_ORIGIN__", apiOrigin + " ws: wss:")
+            .replaceAll("__MEDIA_ORIGIN__", mediaOrigin);
         },
       },
     ],
     resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
+    server: { allowedHosts: allowedHost ? [allowedHost] : [] },
     build: { outDir: "dist", emptyOutDir: true },
   };
 });

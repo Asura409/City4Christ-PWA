@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { Icon } from "@/lib/icons";
 import { useSession } from "@/auth/session";
 import RealtimeStatus from "@/messages/RealtimeStatus";
 import MessageComposer from "@/messages/MessageComposer";
@@ -317,7 +318,7 @@ export default function MessagesScreen() {
           <input id="message-member-search" type="search" role="searchbox" aria-label="Search members" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search the member directory" />
           {contactsLoading && <p role="status">Searching members…</p>}
           {contactsError && <p className="messages-error" role="alert">{contactsError}</p>}
-          {!contactsLoading && search.trim().length >= 2 && !contactsError && contacts.length === 0 && <p className="messages-muted">No directory-visible members found.</p>}
+          {!contactsLoading && search.trim().length >= 2 && !contactsError && contacts.length === 0 && <p className="messages-muted">No members found.</p>}
           <ul className="message-contact-list">{contacts.map((member) => <li key={member.id}><button type="button" className="message-contact" onClick={() => void startConversation(member)}><Avatar name={nameOf(member)} src={member.avatar?.url} size={38} /><span>Message {nameOf(member)}</span></button></li>)}</ul>
         </div>}
         {conversationError && <div className="messages-error" role="alert"><span>{conversationError}</span><button className="btn soft" type="button" onClick={() => void refreshConversations()}>Try again</button></div>}
@@ -333,7 +334,7 @@ export default function MessagesScreen() {
         </ul>
       </aside>
       <section className="message-thread" aria-label="Conversation">
-        {!selected ? <div className="message-thread-placeholder"><p>Choose a conversation or start a new one.</p></div> : <>
+        {!selected ? <div className="message-thread-placeholder"><span className="message-empty-icon"><Icon name="chat" /></span><h2>Your messages</h2><p>Choose a conversation or start a new one.</p><button className="btn dark" type="button" onClick={() => { setSearchOpen(true); setSearch(""); }}>Start a new message</button></div> : <>
           <header className="message-thread-header">
             <button type="button" className="messages-back" onClick={() => { selectedIdRef.current = ""; setSelectedId(""); }} aria-label="Back to conversations">Back</button>
             <Avatar name={nameOf(selected)} size={40} />
