@@ -524,7 +524,7 @@ export default function PostsScreen({
           return (
             <article className="card community-post" key={post.id}>
               <div className="who">
-                <Avatar name={author} size={42} />
+                <Avatar name={author} src={post.avatar?.url} size={42} />
                 <div>
                   <b>{author}</b>
                   <span>{dateLabel(post.createdAt)} · Church</span>
@@ -773,6 +773,7 @@ export default function PostsScreen({
                       return (
                         <article className="post-comment" key={item.id}>
                           <div className="post-comment-header">
+                            <Avatar name={commenter} src={item.avatar?.url} size={32} />
                             <div>
                               <b>{commenter}</b>
                               <span>{dateLabel(item.createdAt)}</span>

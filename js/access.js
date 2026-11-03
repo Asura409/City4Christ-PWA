@@ -3,6 +3,7 @@ const globalPermissions = new Set([
   "accounts.deletion.review",
   "members.records.read",
   "members.records.audit.read",
+  "members.records.manage",
   "visitors.follow_up",
   "sermons.manage",
   "devotionals.manage",

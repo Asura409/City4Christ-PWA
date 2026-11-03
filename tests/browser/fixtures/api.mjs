@@ -49,7 +49,7 @@ export async function mockScannedUpload(page) {
 
 export async function mocked(
   page,
-  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false, includePendingReport = false } = {},
+  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false, includePendingReport = false, profilePhotos = false } = {},
 ) {
   let assignedAccess = access;
   const calls = [];
@@ -62,6 +62,7 @@ export async function mocked(
     emailVerified: true,
     hasPassword: true,
   };
+  if (profilePhotos) profile.avatar = { id: "photo-grace", url: "https://cdn.example.invalid/grace.png" };
   let authenticated = signedIn;
   let sermon = {
     id: SERMON,
@@ -153,6 +154,7 @@ export async function mocked(
     reacted: false,
     commentCount: 0,
   }];
+  if (profilePhotos) posts[0].avatar = { id: "photo-grace", url: "https://cdn.example.invalid/grace.png" };
   if (includeOtherPost) posts.push({
     id: "99999999-9999-4999-8999-111111111111",
     authorId: "22222222-2222-4222-8222-222222222222",
@@ -165,6 +167,7 @@ export async function mocked(
     reacted: false,
     commentCount: 0,
   });
+  if (profilePhotos && includeOtherPost) posts[1].avatar = { id: "photo-author", url: "https://cdn.example.invalid/author.png" };
   let postComments = includeOtherPost ? [{
     id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaab",
     postId: "99999999-9999-4999-8999-111111111111",
@@ -174,6 +177,7 @@ export async function mocked(
     body: "A comment for the church to review.",
     createdAt: "2026-10-19T10:30:00Z",
   }] : [];
+  if (profilePhotos && postComments[0]) postComments[0].avatar = { id: "photo-commenter", url: "https://cdn.example.invalid/commenter.png" };
   if (includeOtherPost) posts[1].commentCount = postComments.length;
   let communityReports = includePendingReport && includeOtherPost ? [{
     id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaac",

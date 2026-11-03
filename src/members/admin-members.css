@@ -7,6 +7,10 @@
 .admin-members-search input:focus { border-color: var(--purple); box-shadow: 0 0 0 4px rgba(123,70,201,.14); }
 .admin-members-search input::-webkit-search-cancel-button { cursor: pointer; }
 .admin-members-search-hint { color: #806d8d; font-size: 11px; }
+.admin-member-edit { display: grid; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.admin-member-edit label { color: var(--muted); font-size: 14px; font-weight: 650; }
+.admin-member-edit input { min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(20,16,36,.76); color: var(--text); }
+.admin-member-edit p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
 .admin-member-list { display: grid; gap: 10px; }
 .admin-member-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .admin-member-card-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }

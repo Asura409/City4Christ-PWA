@@ -328,7 +328,7 @@ export default function MessagesScreen() {
             const partnerName = nameOf(conversation);
             const preview = conversation.lastMessage?.deleted ? "Message deleted" : conversation.lastMessage?.body || (conversation.lastMessage?.attachmentCount ? "Attachment" : "Start a conversation");
             return <li key={conversation.id}><button type="button" className={`conversation-row${conversation.id === selectedId ? " active" : ""}`} aria-label={`Open conversation with ${partnerName}`} aria-pressed={conversation.id === selectedId} onClick={() => void openConversation(conversation)}>
-              <Avatar name={partnerName} size={44} /><span className="conversation-row-main"><span className="conversation-row-top"><strong>{partnerName}</strong><time>{timeLabel(conversation.lastMessage?.createdAt)}</time></span><span className="conversation-row-preview">{preview}</span></span>{conversation.unreadCount > 0 && <span className="conversation-unread" aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</span>}
+              <Avatar name={partnerName} src={conversation.partnerAvatar?.url} size={44} /><span className="conversation-row-main"><span className="conversation-row-top"><strong>{partnerName}</strong><time>{timeLabel(conversation.lastMessage?.createdAt)}</time></span><span className="conversation-row-preview">{preview}</span></span>{conversation.unreadCount > 0 && <span className="conversation-unread" aria-label={`${conversation.unreadCount} unread messages`}>{conversation.unreadCount}</span>}
             </button></li>;
           })}
         </ul>
@@ -337,7 +337,7 @@ export default function MessagesScreen() {
         {!selected ? <div className="message-thread-placeholder"><span className="message-empty-icon"><Icon name="chat" /></span><h2>Your messages</h2><p>Choose a conversation or start a new one.</p><button className="btn dark" type="button" onClick={() => { setSearchOpen(true); setSearch(""); }}>Start a new message</button></div> : <>
           <header className="message-thread-header">
             <button type="button" className="messages-back" onClick={() => { selectedIdRef.current = ""; setSelectedId(""); }} aria-label="Back to conversations">Back</button>
-            <Avatar name={nameOf(selected)} size={40} />
+            <Avatar name={nameOf(selected)} src={selected.partnerAvatar?.url} size={40} />
             <div><h2>{nameOf(selected)}</h2><p>{presenceKnown ? partnerOnline ? "Online" : "Not online" : "Private direct conversation"}</p></div>
           </header>
           <form className="message-search-form" onSubmit={searchCurrentConversation} role="search" aria-label="Search this conversation">
@@ -351,7 +351,9 @@ export default function MessagesScreen() {
           {threadLoading && <p role="status" className="messages-state">Loading messages…</p>}
           <div className="message-history" aria-live="polite">
             {messages.length === 0 && !threadLoading && <p className="messages-empty thread-empty">Start the conversation with a message.</p>}
-            {messages.map((message) => <article key={message.id} className={`message-bubble${message.senderId !== profile?.id ? " received" : " sent"}${message.deleted ? " removed" : ""}`}>
+            {messages.map((message) => { const sent = message.senderId === profile?.id; const authorName = sent ? nameOf(profile) : nameOf(selected); const authorAvatar = sent ? profile?.avatar?.url : selected.partnerAvatar?.url; return <div key={message.id} className={`message-row ${sent ? "sent" : "received"}`}>
+              {!sent && <Avatar name={authorName} src={authorAvatar} size={30} />}
+              <article className={`message-bubble${sent ? " sent" : " received"}${message.deleted ? " removed" : ""}`}>
               {message.deleted ? <p>This message was deleted.</p> : editingMessageId === message.id ? <form className="message-edit-form" onSubmit={(event) => { event.preventDefault(); void saveMessageEdit(message); }}>
                 <label className="sr-only" htmlFor={`edit-${message.id}`}>Edit message</label>
                 <textarea id={`edit-${message.id}`} aria-label="Edit message" rows={3} maxLength={4000} value={editBody} onChange={(event) => setEditBody(event.target.value)} />
@@ -364,7 +366,9 @@ export default function MessagesScreen() {
                 <button type="button" className="btn soft" aria-label="Delete message" onClick={() => void removeOwnMessage(message)}>Delete</button>
               </div>}
               {message.senderId === profile?.id && message.sequence <= selected.partnerReadSequence && <span className="message-read-receipt">Seen</span>}
-            </article>)}
+              </article>
+              {sent && <Avatar name={authorName} src={authorAvatar} size={30} />}
+            </div>; })}
           </div>
           {partnerTyping && <p className="message-typing-indicator" role="status">{nameOf(selected)} is typing…</p>}
           {hasOlder && <button className="btn soft older-messages" type="button" onClick={() => void loadOlderMessages()} disabled={threadLoading}>Load older messages</button>}

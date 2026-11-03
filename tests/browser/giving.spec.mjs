@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { mocked } from "./fixtures/api.mjs";
 
-test("members are forwarded to Give A Little without a City4Christ payment payload", async ({ page }) => {
-  await mocked(page, { signedIn: true });
+test("members are sent to Give A Little to choose their own donation without app-supplied amount data", async ({ page }) => {
+  const fixture = await mocked(page, { signedIn: true });
   await page.goto("/#/home");
   await page.getByRole("button", { name: "Give to City4Christ" }).click();
 

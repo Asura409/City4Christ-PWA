@@ -41,6 +41,7 @@ import AdminDashboard from "@/admin/AdminDashboard";
 import { NotificationToast } from "@/notifications/NotificationToast";
 import { Avatar } from "@/components/Avatar";
 import { useSession } from "@/auth/session";
+import SermonPublishingScreen from "@/sermons/SermonPublishingScreen";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -120,6 +121,7 @@ export default function App() {
             <Route path="/account-deletion-requests" element={<ProtectedRoute><DeletionRequestsScreen /></ProtectedRoute>} />
             <Route path="/admin/members" element={<ProtectedRoute><AdminMemberSearch /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/sermons" element={<ProtectedRoute><SermonPublishingScreen /></ProtectedRoute>} />
  <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"

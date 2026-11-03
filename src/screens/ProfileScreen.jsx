@@ -21,6 +21,7 @@ export default function ProfileScreen() {
     [error, setError] = useState(""),
     [busy, setBusy] = useState(false),
     [staff, setStaff] = useState(false),
+ [canManageSermons,setCanManageSermons]=useState(false),
  [canFollowUp,setCanFollowUp]=useState(false),
  [canReviewDeletion,setCanReviewDeletion]=useState(false);
   const [canSearchMembers, setCanSearchMembers] = useState(false);
@@ -51,6 +52,7 @@ export default function ProfileScreen() {
  if(live)setCanFollowUp(hasCapability(data,"visitors.follow_up"));
  if(live)setCanReviewDeletion(hasCapability(data,"accounts.deletion.review"));
         if(live)setCanSearchMembers(hasCapability(data,"members.records.read"));
+        if(live)setCanManageSermons(hasCapability(data,"sermons.manage"));
         if (live)
           setStaff(
             ["sermons.manage", "roles.manage", "roles.read"].some(
@@ -177,6 +179,7 @@ export default function ProfileScreen() {
       {canReviewDeletion && <button className="btn soft" onClick={() => navigate("/account-deletion-requests")}>Account deletion requests</button>}
       {canSearchMembers && <button className="btn soft" onClick={() => navigate("/admin/members")}>Member lookup</button>}
       {staff && <button className="btn soft" onClick={() => navigate("/admin")}>Church administration</button>}
+      {canManageSermons && <button className="btn gold" onClick={() => navigate("/admin/sermons")}>Sermon publishing</button>}
       <div className="wrap">
 <a className="btn soft" href="#/pastors">Pastoral appointments</a>
         <button className="btn gold" disabled={busy} onClick={signOut}>

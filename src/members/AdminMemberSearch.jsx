@@ -2,12 +2,13 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
 import { hasCapability } from "../../js/access.js";
-import { getAdminMember, getAdminMemberAccessAudit, searchAdminMembers } from "./adminApi";
+import { getAdminMember, getAdminMemberAccessAudit, searchAdminMembers, updateAdminMemberName } from "./adminApi";
 import "./admin-members.css";
 
 export function AdminMemberSearch() {
   const [allowed, setAllowed] = useState(null);
   const [auditAllowed, setAuditAllowed] = useState(false);
+  const [manageAllowed, setManageAllowed] = useState(false);
   const [query, setQuery] = useState("");
   const [members, setMembers] = useState([]);
   const [cursor, setCursor] = useState("");
@@ -20,6 +21,11 @@ export function AdminMemberSearch() {
   const [auditCursor, setAuditCursor] = useState("");
   const [auditBusy, setAuditBusy] = useState(false);
   const [auditError, setAuditError] = useState("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
+  const [editReason, setEditReason] = useState("");
+  const [editBusy, setEditBusy] = useState(false);
+  const [editError, setEditError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -28,6 +34,7 @@ export function AdminMemberSearch() {
         if (active) {
           setAllowed(hasCapability(data, "members.records.read"));
           setAuditAllowed(hasCapability(data, "members.records.audit.read"));
+          setManageAllowed(hasCapability(data, "members.records.manage"));
         }
       })
       .catch((e) => { if (active) { setAllowed(false); setError(e.message); } });
@@ -71,7 +78,14 @@ export function AdminMemberSearch() {
   async function showDetails(id) {
     setDetailBusy(true); setDetailError(""); setSelected(null);
     setAuditEvents([]); setAuditCursor(""); setAuditError("");
-    try { setSelected(await getAdminMember(id)); }
+    try {
+      const detail = await getAdminMember(id);
+      setSelected(detail);
+      setEditFirstName(detail.firstName);
+      setEditLastName(detail.lastName);
+      setEditReason("");
+      setEditError("");
+    }
     catch (e) { setDetailError(e.message); }
     finally { setDetailBusy(false); }
   }
@@ -85,6 +99,29 @@ export function AdminMemberSearch() {
       setAuditCursor(page.nextCursor);
     } catch (e) { setAuditError(e.message); }
     finally { setAuditBusy(false); }
+  }
+
+  async function correctName(e) {
+    e.preventDefault();
+    if (!selected) return;
+    setEditBusy(true); setEditError("");
+    const input = { expectedVersion: selected.version, reason: editReason.trim() };
+    if (editFirstName.trim() !== selected.firstName) input.firstName = editFirstName;
+    if (editLastName.trim() !== selected.lastName) input.lastName = editLastName;
+    if (!input.firstName && !input.lastName) {
+      setEditError("Change a first or last name before saving.");
+      setEditBusy(false);
+      return;
+    }
+    try {
+      const updated = await updateAdminMemberName(selected.id, input);
+      setSelected((current) => ({ ...current, ...updated }));
+      setEditFirstName(updated.firstName);
+      setEditLastName(updated.lastName);
+      setEditReason("");
+      if (auditAllowed) await showAudit(selected.id);
+    } catch (e) { setEditError(e.message); }
+    finally { setEditBusy(false); }
   }
 
   return (
@@ -123,15 +160,27 @@ export function AdminMemberSearch() {
             <dt>Joined</dt>
             <dd>{new Date(selected.joinedAt).toLocaleDateString()}</dd>
           </dl>
+          {manageAllowed && <form className="admin-member-edit" onSubmit={correctName}>
+            <h3>Correct member name</h3>
+            <label htmlFor="admin-member-first-name">First name</label>
+            <input id="admin-member-first-name" maxLength={100} required value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
+            <label htmlFor="admin-member-last-name">Last name</label>
+            <input id="admin-member-last-name" maxLength={100} required value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
+            <label htmlFor="admin-member-edit-reason">Reason for correction</label>
+            <input id="admin-member-edit-reason" maxLength={500} required value={editReason} onChange={(e) => setEditReason(e.target.value)} />
+            <p>Only names can be changed here. Do not include private care information in the reason.</p>
+            <button className="btn dark" disabled={editBusy || !editReason.trim()}>{editBusy ? "Saving…" : "Save name correction"}</button>
+            {editError && <p role="alert">{editError}</p>}
+          </form>}
           {auditAllowed && <>
-            <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id)}>Review email access history</button>
+            <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id)}>Review member record history</button>
             {auditBusy && <p role="status">Loading access history…</p>}
             {auditError && <p role="alert">{auditError}</p>}
             {auditEvents.length > 0 && <section aria-label="Member email access history">
-              <h3>Email access history</h3>
+              <h3>Member record history</h3>
               <ul>
                 {auditEvents.map((event) => <li key={event.id}>
-                  <strong>{event.action}</strong> by staff account {event.actorId}; fields: {event.sensitiveFields.join(", ")}; {new Date(event.occurredAt).toLocaleString()}
+                  <strong>{event.action}</strong> by staff account {event.actorId}; fields: {event.sensitiveFields.join(", ")}{event.reason ? `; reason: ${event.reason}` : ""}; {new Date(event.occurredAt).toLocaleString()}
                 </li>)}
               </ul>
               {auditCursor && <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id, auditCursor)}>Load more access history</button>}
