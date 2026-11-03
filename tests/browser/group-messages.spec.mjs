@@ -86,6 +86,18 @@ test("active group members read, send, and mark messages read", async ({ page })
   expect(sent?.body.clientMessageId).toMatch(/^[0-9a-f-]{36}$/);
 });
 
+test("group messages show the sender's profile photo beside their message", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  const fixture = await groupMocks(page);
+  fixture.addMessage({ id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", groupId: GROUP, senderId: "cccccccc-cccc-4ccc-8ccc-cccccccccccc", senderFirstName: "Daniel", senderLastName: "James", senderAvatar: { url: "https://cdn.example.invalid/daniel.png" }, clientMessageId: CLIENT, body: "A message with my profile photo.", sequence: 2, createdAt: new Date().toISOString(), deleted: false });
+  await page.goto("/#/chat");
+  await page.getByRole("button", { name: "Group chats", exact: true }).click();
+  await page.getByRole("button", { name: "Open group conversation Choir" }).click();
+  const thread = page.getByRole("region", { name: "Group conversation" });
+  const message = thread.locator(".message-bubble").filter({ hasText: "A message with my profile photo." });
+  await expect(message.locator(".group-message-author img.avatar-photo")).toHaveAttribute("src", "https://cdn.example.invalid/daniel.png");
+});
+
 test("group messages upload, scan, send, and render private image attachments", async ({ page }) => {
   await mocked(page, { signedIn: true });
   const fixture = await groupMocks(page);
