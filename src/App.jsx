@@ -38,10 +38,12 @@ import GivingReturnScreen from "./screens/GivingReturnScreen";
 import { AdminMemberSearch } from "@/members/AdminMemberSearch";
 import { Icon } from "@/lib/icons";
 import AdminDashboard from "@/admin/AdminDashboard";
+import AdminShell from "@/admin/AdminShell";
 import { NotificationToast } from "@/notifications/NotificationToast";
 import { Avatar } from "@/components/Avatar";
 import { useSession } from "@/auth/session";
 import SermonPublishingScreen from "@/sermons/SermonPublishingScreen";
+import MemberDirectoryScreen from "@/screens/MemberDirectoryScreen";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -109,19 +111,24 @@ export default function App() {
               <Icon name="search" />
             </button>
             <NotificationButton />
-            <a className="header-profile-btn" href="#/profile" aria-label="My profile">
+            <button
+              className="header-profile-btn"
+              type="button"
+              aria-label="My profile"
+              onClick={() => navigate("/profile")}
+            >
               <Avatar name={accountName} src={profile?.avatar?.url} size={38} />
-            </a>
+            </button>
           </div>
         </header>
 
         <main className="screens">
           <Routes>
-            <Route path="/visitors" element={<ProtectedRoute><VisitorsScreen/></ProtectedRoute>}/>
-            <Route path="/account-deletion-requests" element={<ProtectedRoute><DeletionRequestsScreen /></ProtectedRoute>} />
-            <Route path="/admin/members" element={<ProtectedRoute><AdminMemberSearch /></ProtectedRoute>} />
+            <Route path="/visitors" element={<ProtectedRoute><AdminShell><VisitorsScreen/></AdminShell></ProtectedRoute>}/>
+            <Route path="/account-deletion-requests" element={<ProtectedRoute><AdminShell><DeletionRequestsScreen /></AdminShell></ProtectedRoute>} />
+            <Route path="/admin/members" element={<ProtectedRoute><AdminShell><AdminMemberSearch /></AdminShell></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/sermons" element={<ProtectedRoute><SermonPublishingScreen /></ProtectedRoute>} />
+            <Route path="/admin/sermons" element={<ProtectedRoute><AdminShell><SermonPublishingScreen /></AdminShell></ProtectedRoute>} />
  <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"
@@ -182,6 +189,14 @@ export default function App() {
               }
             />
             <Route
+              path="/members"
+              element={
+                <ProtectedRoute>
+                  <MemberDirectoryScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/notifications"
               element={
                 <ProtectedRoute>
@@ -218,7 +233,7 @@ export default function App() {
               path="/groups/manage"
               element={
                 <ProtectedRoute>
-                  <GroupAdminScreen />
+                  <AdminShell><GroupAdminScreen /></AdminShell>
                 </ProtectedRoute>
               }
             />
@@ -226,7 +241,7 @@ export default function App() {
               path="/groups/manage/:groupId"
               element={
                 <ProtectedRoute>
-                  <GroupAdminScreen />
+                  <AdminShell><GroupAdminScreen /></AdminShell>
                 </ProtectedRoute>
               }
             />

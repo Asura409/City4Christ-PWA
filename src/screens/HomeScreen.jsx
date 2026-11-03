@@ -10,7 +10,7 @@ export default function HomeScreen() {
   return (
     <section className="screen active" aria-label="Home">
       <section className="welcome-card fade-up">
-        <h1>Welcome {profile.firstName} 🙏</h1>
+        <h1>Welcome, {profile.firstName} 🙏</h1>
         <p>Welcome back to your faith community</p>
       </section>
       <section className="banner-card fade-up">
@@ -32,6 +32,7 @@ export default function HomeScreen() {
           ["/bible", "book", "Bible", "Read the Word together"],
           ["/posts", "chat", "Community", "Share your faith"],
           ["/chat", "chat", "Messages", "Stay connected with members"],
+          ["/members", "users", "Members", "Find people in the church"],
         ].map(([path, icon, label, description]) => (
           <button key={path} className="reference-quick-card" type="button" onClick={() => navigate(path)}>
             <span className="reference-quick-icon"><Icon name={icon} /></span>

@@ -18,4 +18,25 @@
 .admin-member-card h2 { margin: 0 0 6px; font-family: var(--serif); font-size: 20px; }
 .admin-member-card p { margin: 4px 0; color: var(--muted); overflow-wrap: anywhere; }
 .admin-member-card > .btn { margin-top: 12px; }
+.admin-member-card > .btn + .btn { margin-left: 8px; }
+.admin-member-roles { display: grid; gap: 10px; margin-top: 18px; padding-top: 16px; border-top: 1px solid #eadff0; }
+.admin-member-roles h3 { margin: 0; color: var(--lav-ink); font-size: 17px; }
+.admin-member-roles > p, .admin-member-roles > small { margin: 0; color: #806d8d; }
+.admin-member-roles ul { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.admin-member-roles li { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 9px 11px; border: 1px solid #eadff0; border-radius: 10px; background: #faf6fd; color: #4f3560; font-size: 13px; font-weight: 700; text-transform: capitalize; }
+.admin-member-roles li .btn { height: 34px; padding-inline: 12px; font-size: 12px; }
+.admin-member-roles form { display: grid; gap: 8px; }
+.admin-member-roles form label { display: grid; gap: 6px; color: #634b70; font-size: 13px; font-weight: 700; }
+.admin-member-roles form input, .admin-member-roles form select { min-height: 42px; padding: 9px 11px; border: 1px solid #d8bfe8; border-radius: 10px; background: #fff; color: #2d1c37; font: inherit; }
+.admin-member-roles form input:focus, .admin-member-roles form select:focus { border-color: var(--purple); outline: none; box-shadow: 0 0 0 3px rgba(123,70,201,.14); }
+.admin-audit-table-wrap { width: 100%; margin-top: 10px; overflow-x: auto; border: 1px solid #eadff0; border-radius: 13px; background: #fff; }
+.admin-audit-table { width: 100%; min-width: 700px; border-collapse: collapse; color: var(--lav-ink); font-size: 12px; }
+.admin-audit-table th { padding: 11px 12px; color: #806d8d; background: #f8f2fb; font-size: 10px; font-weight: 850; letter-spacing: .06em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.admin-audit-table td { padding: 12px; border-top: 1px solid #eee6f2; vertical-align: top; }
+.admin-audit-table tr:hover td { background: #fdfaff; }
+.admin-audit-table code { display: block; max-width: 160px; color: #806d8d; font-size: 10px; overflow-wrap: anywhere; }
+.admin-audit-action { display: inline-flex; padding: 5px 8px; border-radius: 7px; color: #5b2c83; background: #eee3f5; font-weight: 800; text-transform: capitalize; white-space: nowrap; }
+.admin-audit-fields { display: flex; flex-wrap: wrap; gap: 5px; }
+.admin-audit-fields span { padding: 4px 7px; border-radius: 99px; color: #24784b; background: #e5f6eb; font-size: 10px; font-weight: 750; white-space: nowrap; }
+.admin-audit-table time { color: #806d8d; white-space: nowrap; }
 @media (max-width: 560px) { .admin-members-search-row { grid-template-columns: minmax(0, 1fr); } .admin-members-search-row .btn { width: 100%; } }

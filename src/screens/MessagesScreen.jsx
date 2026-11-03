@@ -315,7 +315,7 @@ export default function MessagesScreen() {
         </div>
         {searchOpen && <div className="message-member-search">
           <label htmlFor="message-member-search">Search members</label>
-          <input id="message-member-search" type="search" role="searchbox" aria-label="Search members" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search the member directory" />
+          <input id="message-member-search" type="search" role="searchbox" aria-label="Search members" autoComplete="off" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search all church members" />
           {contactsLoading && <p role="status">Searching members…</p>}
           {contactsError && <p className="messages-error" role="alert">{contactsError}</p>}
           {!contactsLoading && search.trim().length >= 2 && !contactsError && contacts.length === 0 && <p className="messages-muted">No members found.</p>}

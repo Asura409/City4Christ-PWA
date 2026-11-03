@@ -28,3 +28,16 @@ export async function updateAdminMemberName(id, input, { signal } = {}) {
     signal,
   })).data;
 }
+
+export async function getChurchRoles(id, { signal } = {}) {
+  return (await api.request(`/api/v1/admin/accounts/${encodeURIComponent(id)}/church-roles`, { signal })).data || [];
+}
+
+export async function changeChurchRole(id, { role, scope = "", reason, revoke = false }, { signal } = {}) {
+  const suffix = revoke ? "/revoke" : "";
+  return (await api.request(`/api/v1/admin/accounts/${encodeURIComponent(id)}/church-roles${suffix}`, {
+    method: "POST",
+    body: { role, scope, reason },
+    signal,
+  })).data;
+}

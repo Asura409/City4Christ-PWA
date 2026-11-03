@@ -2,13 +2,23 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
 import { hasCapability } from "../../js/access.js";
-import { getAdminMember, getAdminMemberAccessAudit, searchAdminMembers, updateAdminMemberName } from "./adminApi";
+import { changeChurchRole, getAdminMember, getAdminMemberAccessAudit, getChurchRoles, searchAdminMembers, updateAdminMemberName } from "./adminApi";
 import "./admin-members.css";
+
+const PRIVILEGED_ROLE_OPTIONS = [
+  ["staff", "Staff"],
+  ["assistant_pastor", "Assistant pastor"],
+  ["finance_officer", "Finance officer"],
+  ["super_administrator", "Super administrator"],
+];
+const OPERATIONAL_ROLE_OPTIONS = [["content_editor", "Content editor"]];
 
 export function AdminMemberSearch() {
   const [allowed, setAllowed] = useState(null);
   const [auditAllowed, setAuditAllowed] = useState(false);
   const [manageAllowed, setManageAllowed] = useState(false);
+  const [roleManageAllowed, setRoleManageAllowed] = useState(false);
+  const [privilegedRoleAllowed, setPrivilegedRoleAllowed] = useState(false);
   const [query, setQuery] = useState("");
   const [members, setMembers] = useState([]);
   const [cursor, setCursor] = useState("");
@@ -26,6 +36,12 @@ export function AdminMemberSearch() {
   const [editReason, setEditReason] = useState("");
   const [editBusy, setEditBusy] = useState(false);
   const [editError, setEditError] = useState("");
+  const [roles, setRoles] = useState([]);
+  const [roleBusy, setRoleBusy] = useState(false);
+  const [roleError, setRoleError] = useState("");
+  const [roleNotice, setRoleNotice] = useState("");
+  const [roleToAssign, setRoleToAssign] = useState("staff");
+  const [roleReason, setRoleReason] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -33,8 +49,12 @@ export function AdminMemberSearch() {
       .then(({ data }) => {
         if (active) {
           setAllowed(hasCapability(data, "members.records.read"));
-          setAuditAllowed(hasCapability(data, "members.records.audit.read"));
+          const systemAuditRole = (data.roles || []).some(({ role, scope }) => ["super_administrator", "system_administrator"].includes(role) && scope === "");
+          setAuditAllowed(systemAuditRole && hasCapability(data, "members.records.audit.read"));
           setManageAllowed(hasCapability(data, "members.records.manage"));
+          const privileged = hasCapability(data, "roles.privileged.manage");
+          setPrivilegedRoleAllowed(privileged);
+          setRoleManageAllowed(privileged || hasCapability(data, "roles.operational.manage") || hasCapability(data, "roles.manage"));
         }
       })
       .catch((e) => { if (active) { setAllowed(false); setError(e.message); } });
@@ -43,7 +63,15 @@ export function AdminMemberSearch() {
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (allowed !== true || trimmed.length < 3) {
+    if (allowed !== true) {
+      setMembers([]);
+      setCursor("");
+      setSelected(null);
+      setError("");
+      setBusy(false);
+      return undefined;
+    }
+    if (trimmed.length > 0 && trimmed.length < 3) {
       setMembers([]);
       setCursor("");
       setSelected(null);
@@ -78,6 +106,7 @@ export function AdminMemberSearch() {
   async function showDetails(id) {
     setDetailBusy(true); setDetailError(""); setSelected(null);
     setAuditEvents([]); setAuditCursor(""); setAuditError("");
+    setRoles([]); setRoleError(""); setRoleNotice(""); setRoleReason("");
     try {
       const detail = await getAdminMember(id);
       setSelected(detail);
@@ -85,9 +114,38 @@ export function AdminMemberSearch() {
       setEditLastName(detail.lastName);
       setEditReason("");
       setEditError("");
+      if (roleManageAllowed) setRoles(await getChurchRoles(id));
     }
     catch (e) { setDetailError(e.message); }
     finally { setDetailBusy(false); }
+  }
+
+  async function updateRole(event, revoke = false) {
+    event.preventDefault();
+    if (!selected || !roleReason.trim()) return;
+    setRoleBusy(true); setRoleError(""); setRoleNotice("");
+    try {
+      await changeChurchRole(selected.id, { role: roleToAssign, reason: roleReason.trim(), revoke });
+      setRoles(await getChurchRoles(selected.id));
+      setRoleReason("");
+      setRoleNotice(revoke ? "Role revoked." : "Role assigned.");
+    } catch (e) { setRoleError(e.message); }
+    finally { setRoleBusy(false); }
+  }
+
+  async function revokeRole(role, scope = "") {
+    if (!selected || !roleReason.trim()) {
+      setRoleError("Enter a reason before revoking a role.");
+      return;
+    }
+    setRoleBusy(true); setRoleError(""); setRoleNotice("");
+    try {
+      await changeChurchRole(selected.id, { role, scope, reason: roleReason.trim(), revoke: true });
+      setRoles(await getChurchRoles(selected.id));
+      setRoleReason("");
+      setRoleNotice("Role revoked.");
+    } catch (e) { setRoleError(e.message); }
+    finally { setRoleBusy(false); }
   }
 
   async function showAudit(id, cursor = "") {
@@ -136,11 +194,11 @@ export function AdminMemberSearch() {
           <div className="admin-members-search-row">
             <input id="member-search" type="search" minLength={3} maxLength={100} value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Start typing a name or email…" autoComplete="off" />
           </div>
-          <small className="admin-members-search-hint">Results load automatically after 3 characters.</small>
+          <small className="admin-members-search-hint">All members load automatically. Type at least 3 characters to filter the roster.</small>
         </form>
         {error && <p role="alert">{error}</p>}
         {busy && <p role="status">Searching members…</p>}
-        {!busy && !error && members.length === 0 && query && <p>No matching members were found.</p>}
+        {!busy && !error && members.length === 0 && <p>{query ? "No matching members were found." : "No verified active members were found."}</p>}
         <div className="admin-member-list" aria-label="Search results">
           {members.map((member) => <article className="admin-member-card" key={member.id}>
             <div className="admin-member-card-heading">
@@ -148,6 +206,7 @@ export function AdminMemberSearch() {
               <div><h2>{member.firstName} {member.lastName}</h2><p>Joined {new Date(member.joinedAt).toLocaleDateString()}</p></div>
             </div>
             <button className="btn soft" disabled={detailBusy} onClick={() => showDetails(member.id)}>View member details</button>
+            {roleManageAllowed && <button className="btn gold" disabled={detailBusy} onClick={() => showDetails(member.id)}>Assign role</button>}
           </article>)}
         </div>
         {detailBusy && <p role="status">Loading member details…</p>}
@@ -172,17 +231,37 @@ export function AdminMemberSearch() {
             <button className="btn dark" disabled={editBusy || !editReason.trim()}>{editBusy ? "Saving…" : "Save name correction"}</button>
             {editError && <p role="alert">{editError}</p>}
           </form>}
+          {roleManageAllowed && <section className="admin-member-roles" aria-label="Assign church role">
+            <h3>Church roles</h3>
+            {roles.length > 0 ? <ul>{roles.map((assignment) => <li key={`${assignment.role}:${assignment.scope}`}><span>{assignment.role.replaceAll("_", " ")}{assignment.scope ? ` · ${assignment.scope}` : ""}</span><button className="btn soft" type="button" disabled={roleBusy || !roleReason.trim()} onClick={() => void revokeRole(assignment.role, assignment.scope)}>Revoke</button></li>)}</ul> : <p>No elevated roles assigned.</p>}
+            <form onSubmit={(event) => updateRole(event)}>
+              <label htmlFor="admin-member-role">Role<select id="admin-member-role" value={roleToAssign} onChange={(event) => setRoleToAssign(event.target.value)}>{(privilegedRoleAllowed ? [...PRIVILEGED_ROLE_OPTIONS, ...OPERATIONAL_ROLE_OPTIONS] : OPERATIONAL_ROLE_OPTIONS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+              <label htmlFor="admin-member-role-reason">Reason<input id="admin-member-role-reason" required maxLength={500} value={roleReason} onChange={(event) => setRoleReason(event.target.value)} placeholder="Why is this role needed?" /></label>
+              <button className="btn gold" disabled={roleBusy || !roleReason.trim()}>{roleBusy ? "Saving…" : "Assign role"}</button>
+            </form>
+            {roleNotice && <p role="status">{roleNotice}</p>}
+            {roleError && <p role="alert">{roleError}</p>}
+            <small>Role changes require a fresh administrator session. Protected roles also require the member to have verified MFA.</small>
+          </section>}
           {auditAllowed && <>
             <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id)}>Review member record history</button>
             {auditBusy && <p role="status">Loading access history…</p>}
             {auditError && <p role="alert">{auditError}</p>}
             {auditEvents.length > 0 && <section aria-label="Member email access history">
               <h3>Member record history</h3>
-              <ul>
-                {auditEvents.map((event) => <li key={event.id}>
-                  <strong>{event.action}</strong> by staff account {event.actorId}; fields: {event.sensitiveFields.join(", ")}{event.reason ? `; reason: ${event.reason}` : ""}; {new Date(event.occurredAt).toLocaleString()}
-                </li>)}
-              </ul>
+              <div className="admin-audit-table-wrap">
+                <table className="admin-audit-table">
+                  <caption className="sr-only">Member record access history</caption>
+                  <thead><tr><th scope="col">Action</th><th scope="col">Staff account</th><th scope="col">Fields accessed</th><th scope="col">Reason</th><th scope="col">Date</th></tr></thead>
+                  <tbody>{auditEvents.map((event) => <tr key={event.id}>
+                    <td><span className="admin-audit-action">{event.action.replaceAll("_", " ")}</span></td>
+                    <td><code>{event.actorId}</code></td>
+                    <td><div className="admin-audit-fields">{event.sensitiveFields.map((field) => <span key={field}>{field}</span>)}</div></td>
+                    <td>{event.reason || "—"}</td>
+                    <td><time dateTime={event.occurredAt}>{new Date(event.occurredAt).toLocaleString()}</time></td>
+                  </tr>)}</tbody>
+                </table>
+              </div>
               {auditCursor && <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id, auditCursor)}>Load more access history</button>}
             </section>}
           </>}

@@ -1,7 +1,6 @@
 import { NotificationSettings } from "@/notifications/NotificationSettings";
 import { BroadcastPanel } from "@/notifications/BroadcastPanel";
 import React, { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import {
   listNotifications,
   markNotificationRead,
@@ -136,7 +135,7 @@ export default function NotificationsScreen() {
               role="listitem"
               key={item.id}
             >
-              {route ? <Link className="notification-card-copy notification-card-link" to={route} onClick={() => { if (!item.readAt) void markRead(item); }}>{content}</Link> : <div className="notification-card-copy">{content}</div>}
+              {route ? <a className="notification-card-copy notification-card-link" href={`/#${route}`} onClick={() => { if (!item.readAt) void markRead(item); }}>{content}</a> : <div className="notification-card-copy">{content}</div>}
               {!item.readAt && (
                 <button
                   className="btn notification-read"
