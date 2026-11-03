@@ -893,7 +893,9 @@
 .post-editor-actions { width: 100%; }
 .post-delete-confirmation p { margin: 0; }
 .post-manage-error { margin: 8px 0 0; color: #ffd4d4; }
-.btn.danger { color: #ffd4d4; border: 1px solid rgba(255,120,120,.45); background: rgba(150,35,50,.2); }
+.btn.danger { color: #fff; border: 1px solid #b52635; background: #c93645; box-shadow: 0 6px 16px rgba(201,54,69,.22); }
+.btn.danger:hover { background: #ad2635; }
+.btn.danger:disabled { opacity: .55; box-shadow: none; cursor: not-allowed; }
 .post-media { display: grid; gap: 10px; margin-top: 12px; }
 .post-media img, .post-media video { display: block; width: auto; max-width: 100%; height: auto; max-height: 560px; margin-inline: auto; object-fit: contain; border-radius: 14px; background: #100d1c; }
 .post-media audio { width: 100%; min-height: 44px; }
