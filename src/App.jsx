@@ -36,6 +36,7 @@ import { createPost, uploadPostMedia } from "./posts/api";
 import GivingScreen from "./screens/GivingScreen";
 import GivingReturnScreen from "./screens/GivingReturnScreen";
 import { AdminMemberSearch } from "@/members/AdminMemberSearch";
+import SermonPublishingScreen from "@/sermons/SermonPublishingScreen";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -109,6 +110,7 @@ export default function App() {
             <Route path="/visitors" element={<ProtectedRoute><VisitorsScreen/></ProtectedRoute>}/>
             <Route path="/account-deletion-requests" element={<ProtectedRoute><DeletionRequestsScreen /></ProtectedRoute>} />
             <Route path="/admin/members" element={<ProtectedRoute><AdminMemberSearch /></ProtectedRoute>} />
+            <Route path="/admin/sermons" element={<ProtectedRoute><SermonPublishingScreen /></ProtectedRoute>} />
  <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"

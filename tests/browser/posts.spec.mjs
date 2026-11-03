@@ -121,7 +121,7 @@ test("members can read, add, and delete their own post comments", async ({ page 
 test("sermon editors attach scanned media to a draft and publish it from React", async ({ page }) => {
   const fixture = await mocked(page, { signedIn: true, access: STAFF_ACCESS });
   await page.route("https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com/**", (route) => route.fulfill({ status: 200, headers: { "Access-Control-Allow-Origin": "*", "Content-Type": "image/png" } }));
-  await page.goto("/#/word");
+  await page.goto("/#/admin/sermons");
   const editor = page.getByRole("form", { name: "Create a sermon" });
   await expect(editor).toBeVisible();
   await editor.getByLabel("Sermon title").fill("Grace for today");
@@ -132,7 +132,8 @@ test("sermon editors attach scanned media to a draft and publish it from React",
   const created = fixture.calls.find((call) => call.path === "/api/v1/admin/sermons" && call.method === "POST");
   expect(created.body.attachmentIds).toEqual(["88888888-8888-4888-8888-888888888888"]);
   await page.getByRole("button", { name: "Publish sermon" }).click();
-  await expect(page.locator(".sermon-attachments img")).toBeVisible();
+  await expect(editor.getByRole("status")).toContainText("Sermon published.");
+  await expect(editor.getByRole("button", { name: "Create draft" })).toBeVisible();
   expect(fixture.calls.some((call) => call.path === `/api/v1/admin/sermons/${created.responseId || "22222222-2222-4222-8222-222222222222"}` && call.method === "PATCH")).toBe(true);
 });
 

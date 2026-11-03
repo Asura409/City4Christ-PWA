@@ -2,8 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { api } from "@/auth/session";
 import { useSession } from "@/auth/session";
 import { safeImageUrl, safeUrl, youtubeEmbedUrl } from "@/lib/sanitize";
-import { SermonComposer } from "@/sermons/SermonComposer";
-import { EditorialSermonList } from "@/sermons/EditorialSermonList";
+import { hasCapability } from "../../js/access.js";
 import { deleteSermonNote, getSermonNote, getSermonProgress, listPublishedSermonSeries, saveSermonNote, saveSermonProgress } from "@/sermons/api";
 
 function formatPlaybackTime(seconds) {
@@ -45,7 +44,7 @@ export default function WordScreen() {
     [memberBusy, setMemberBusy] = useState(false),
     [memberError, setMemberError] = useState(""),
     [memberStatus, setMemberStatus] = useState(""),
-    [editorialRefresh, setEditorialRefresh] = useState(0);
+    [canManageSermons, setCanManageSermons] = useState(false);
   const lastProgressWrite = useRef({ seconds: 0, at: 0 });
   async function load(next = "") {
     setBusy(true);
@@ -67,6 +66,13 @@ export default function WordScreen() {
   }
   useEffect(() => {
     void load();
+  }, []);
+  useEffect(() => {
+    let live = true;
+    api.request("/api/v1/me/access")
+      .then(({ data }) => { if (live) setCanManageSermons(hasCapability(data, "sermons.manage")); })
+      .catch(() => { if (live) setCanManageSermons(false); });
+    return () => { live = false; };
   }, []);
   useEffect(() => {
     let live = true;
@@ -160,9 +166,8 @@ export default function WordScreen() {
         <h1>Word Hub</h1>
 <a className="btn soft" href="#/devotionals">Read devotionals</a>
 <a className="btn soft" href="#/bible">Open Bible</a>
+        {canManageSermons && <a className="btn gold" href="#/admin/sermons">Sermon publishing</a>}
       </div>
-      <SermonComposer onPublished={() => { setSelected(null); void load(); }} onChanged={() => setEditorialRefresh((value) => value + 1)} />
-      <EditorialSermonList refreshKey={editorialRefresh} />
       {error && <p role="alert">{error}</p>}
       {selected ? (
         <article className="card sermon">
