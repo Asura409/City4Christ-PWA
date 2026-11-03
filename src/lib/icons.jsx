@@ -35,6 +35,7 @@ const P = {
   ticket: 'M4 6h16v3.5a2.5 2.5 0 000 5V18H4v-3.5a2.5 2.5 0 000-5zM14 7.5v9',
   music: 'M9 18V6l10-2v12M7 18a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM17 16a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
   grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
+  download: 'M12 3v11m0 0l-4-4m4 4l4-4M5 17v3h14v-3',
 };
 
 export function Icon({ name, className = '', fill = false, strokeWidth = 1.9 }) {

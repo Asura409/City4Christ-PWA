@@ -6,7 +6,7 @@ import {
   googleErrorMessage,
 } from "./google";
 
-export function GoogleLinkPanel({ hasPassword }) {
+export function GoogleLinkPanel({ hasPassword, googleLinked = false }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -68,6 +68,15 @@ export function GoogleLinkPanel({ hasPassword }) {
     } finally {
       setBusy(false);
     }
+  }
+  if (googleLinked) {
+    return (
+      <section className="auth-card google-linked-status" aria-label="Google account linking">
+        <h2>Google account</h2>
+        <p>Google is already linked to this account.</p>
+        <p role="status">Account already linked to Google</p>
+      </section>
+    );
   }
   return (
     <section className="auth-card" aria-label="Google account linking">

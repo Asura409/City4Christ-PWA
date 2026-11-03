@@ -51,7 +51,7 @@ test("register, verify, sign in and sign out without storing credentials", async
   ).toBeVisible();
   expect(calls.some((c) => c.path.endsWith("/auth/logout"))).toBeTruthy();
 });
-test("profile edits and directory visibility use private authenticated requests", async ({
+test("profile edits use private authenticated requests", async ({
   page,
 }) => {
   const { calls } = await mocked(page, { signedIn: true });
@@ -60,13 +60,12 @@ test("profile edits and directory visibility use private authenticated requests"
     "Grace",
   );
   await page.getByLabel("First name", { exact: true }).fill("Hope");
-  await page.getByRole("checkbox").check();
   await page.getByRole("button", { name: "Save profile" }).click();
   await expect(page.getByRole("status")).toContainText("saved");
   const patch = calls.find(
     (c) => c.path === "/api/v1/me" && c.method === "PATCH",
   );
-  expect(patch.body).toEqual({ firstName: "Hope", directoryVisible: true });
+  expect(patch.body).toEqual({ firstName: "Hope" });
   expect(patch.headers.authorization).toBe("Bearer private-browser-token");
   await page.getByRole("button", { name: "Check session" }).click();
   await expect(page.getByRole("status")).toContainText("session is active");

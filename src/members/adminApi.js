@@ -1,6 +1,6 @@
 import { api } from "@/auth/session";
 
-export async function searchAdminMembers(query, { cursor = "", limit = 20, signal } = {}) {
+export async function searchAdminMembers(query, { cursor = "", limit = 50, signal } = {}) {
   const params = new URLSearchParams({ query: query.trim(), limit: String(limit) });
   if (cursor) params.set("cursor", cursor);
   const { data, meta } = await api.request(`/api/v1/admin/members?${params}`, { signal });

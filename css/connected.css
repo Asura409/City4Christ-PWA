@@ -184,8 +184,25 @@ html[data-theme="dark"] {
   display: none;
 }
 .status.error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
   background: #fff0f1;
   color: #912640;
+}
+.status.error::before {
+  content: "×";
+  display: inline-grid;
+  flex: none;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  background: #c93645;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
 }
 .status.success {
   background: #e4f5ed;

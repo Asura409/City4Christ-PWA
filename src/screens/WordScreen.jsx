@@ -166,6 +166,7 @@ export default function WordScreen() {
         <h1>Word Hub</h1>
 <a className="btn soft" href="#/devotionals">Read devotionals</a>
 <a className="btn soft" href="#/bible">Open Bible</a>
+<a className="btn gold" href="#/pastors">Book a pastor</a>
         {canManageSermons && <a className="btn gold" href="#/admin/sermons">Sermon publishing</a>}
       </div>
       {error && <p role="alert">{error}</p>}
@@ -234,21 +235,17 @@ export default function WordScreen() {
           {seriesError && <p role="status">{seriesError}</p>}
           {!busy && !items.length && <p>No published sermons yet.</p>}
           {items.map((s) => (
-            <article key={s.id} className="card sermon">
-              {safeImageUrl(s.imageUrl) && <img className="sermon-image" src={safeImageUrl(s.imageUrl)} alt={s.title} loading="lazy" referrerPolicy="no-referrer" />}
-              <div className="s-text">
-                <h2>{s.title}</h2>
-                <p>{s.summary}</p>
-                <small>{s.speaker}</small>
+            <article key={s.id} className="card sermon sermon-library-card">
+              <div className="sermon-card-media">
+                {safeImageUrl(s.imageUrl) ? <img className="sermon-image" src={safeImageUrl(s.imageUrl)} alt={s.title} loading="lazy" referrerPolicy="no-referrer" /> : <div className="sermon-card-fallback">WORD</div>}
+                <span className="sermon-card-type">SERMON</span>
               </div>
-              <AttachmentList items={s.attachments} />
-              <button
-                className="btn soft"
-                disabled={busy}
-                onClick={() => open(s.id)}
-              >
-                Open sermon
-              </button>
+              <div className="sermon-card-body">
+                <div className="sermon-card-meta"><span>{s.speaker || "City4Christ teaching team"}</span>{s.attachments?.length > 0 && <span>{s.attachments.some((item) => item.contentType?.startsWith("video/")) ? "Video" : "Audio"}</span>}</div>
+                <h2>{s.title}</h2>
+                <p>{s.summary || "A message to help you grow in faith and walk with Christ."}</p>
+                <div className="sermon-card-footer"><span>{s.attachments?.length || 0} media {s.attachments?.length === 1 ? "item" : "items"}</span><button className="btn gold" disabled={busy} onClick={() => open(s.id)}>Open sermon <span aria-hidden="true">→</span></button></div>
+              </div>
             </article>
           ))}
           {cursor && (

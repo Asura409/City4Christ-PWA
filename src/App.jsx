@@ -44,6 +44,11 @@ import { Avatar } from "@/components/Avatar";
 import { useSession } from "@/auth/session";
 import SermonPublishingScreen from "@/sermons/SermonPublishingScreen";
 import MemberDirectoryScreen from "@/screens/MemberDirectoryScreen";
+import CommunityScreen from "@/screens/CommunityScreen";
+import LiveScreen from "@/screens/LiveScreen";
+import GetAppScreen from "@/screens/GetAppScreen";
+import SettingsScreen from "@/screens/SettingsScreen";
+import PastorDashboardScreen from "@/screens/PastorDashboardScreen";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -129,6 +134,11 @@ export default function App() {
             <Route path="/admin/members" element={<ProtectedRoute><AdminShell><AdminMemberSearch /></AdminShell></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/sermons" element={<ProtectedRoute><AdminShell><SermonPublishingScreen /></AdminShell></ProtectedRoute>} />
+            <Route path="/pastor-dashboard" element={<ProtectedRoute><PastorDashboardScreen /></ProtectedRoute>} />
+            <Route path="/community" element={<ProtectedRoute><CommunityScreen /></ProtectedRoute>} />
+            <Route path="/live" element={<ProtectedRoute><LiveScreen /></ProtectedRoute>} />
+            <Route path="/get-app" element={<ProtectedRoute><GetAppScreen /></ProtectedRoute>} />
+            <Route path="/settings" element={<ProtectedRoute><SettingsScreen /></ProtectedRoute>} />
  <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"

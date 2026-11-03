@@ -31,7 +31,8 @@ function GroupLifecycle() {
   const [description, setDescription] = useState("");
   const [audience, setAudience] = useState("church");
   const [joinPolicy, setJoinPolicy] = useState("approval");
-  const [reasons, setReasons] = useState({});
+  const [lifecycleTarget, setLifecycleTarget] = useState(null);
+  const [lifecycleReason, setLifecycleReason] = useState("");
 
   async function load() {
     setLoading(true);
@@ -70,20 +71,26 @@ function GroupLifecycle() {
     }
   }
 
-  async function transition(group, status) {
-    const reason = (reasons[group.id] || "").trim();
-    if (!reason) return;
+  async function transition(group, status, rawReason) {
+    const reason = rawReason.trim();
     setBusy(true);
     setError("");
     try {
       await setGroupLifecycle(group.id, status, reason);
-      setReasons((old) => ({ ...old, [group.id]: "" }));
+      setLifecycleTarget(null);
+      setLifecycleReason("");
       await load();
     } catch (e) {
       setError(e.message);
     } finally {
       setBusy(false);
     }
+  }
+
+  async function confirmLifecycle(event) {
+    event.preventDefault();
+    if (!lifecycleTarget || !lifecycleReason.trim()) return;
+    await transition(lifecycleTarget.group, lifecycleTarget.status, lifecycleReason);
   }
 
   if (loading) return <section className="screen active" aria-label="Group administration"><p role="status">Loading group administration…</p></section>;
@@ -114,11 +121,22 @@ function GroupLifecycle() {
             <div className="group-admin-actions">
               {!group.archived && <Link className="btn dark" to={`/groups/manage/${group.id}`}>Manage leaders</Link>}
               <label className="auth-field">Reason<input required minLength={1} maxLength={500} value={reasons[group.id] || ""} onChange={(e) => setReasons((old) => ({ ...old, [group.id]: e.target.value }))} /></label>
-              <button className="btn soft" disabled={busy || !(reasons[group.id] || "").trim()} onClick={() => transition(group, group.archived ? "active" : "archived")}>{group.archived ? "Restore group" : "Archive group"}</button>
+              <button className={`btn ${group.archived ? "soft" : "danger"}`} disabled={busy} onClick={() => { setLifecycleTarget({ group, status: group.archived ? "active" : "archived" }); setLifecycleReason(""); }}>{group.archived ? "Restore group" : "Archive group"}</button>
             </div>
           </article>)}
         </div>}
       </section>
+      {lifecycleTarget && <div className="group-confirm-backdrop" role="presentation">
+        <section className="group-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="group-confirm-title">
+          <p className="group-eyebrow">{lifecycleTarget.status === "archived" ? "ARCHIVE GROUP" : "RESTORE GROUP"}</p>
+          <h2 id="group-confirm-title">{lifecycleTarget.status === "archived" ? `Archive ${lifecycleTarget.group.name}?` : `Restore ${lifecycleTarget.group.name}?`}</h2>
+          <p>{lifecycleTarget.status === "archived" ? "This hides the group from active listings. Existing members and records will be preserved." : "This makes the group available in active listings again."}</p>
+          <form onSubmit={confirmLifecycle}>
+            <label className="auth-field">{lifecycleTarget.status === "archived" ? "Reason for archiving" : "Reason for restoring"}<textarea autoFocus required minLength={1} maxLength={500} value={lifecycleReason} onChange={(e) => setLifecycleReason(e.target.value)} /></label>
+            <div className="group-confirm-actions"><button className="btn soft" type="button" disabled={busy} onClick={() => setLifecycleTarget(null)}>Cancel</button><button className={`btn ${lifecycleTarget.status === "archived" ? "danger" : "gold"}`} disabled={busy || !lifecycleReason.trim()}>{busy ? "Saving…" : lifecycleTarget.status === "archived" ? "Archive group" : "Restore group"}</button></div>
+          </form>
+        </section>
+      </div>}
     </section>
   );
 }

@@ -12,6 +12,7 @@ export function AccountDeletionPanel() {
   const [busy, setBusy] = useState(false),
     [revision, setRevision] = useState(0),
     [proofRevision, setProofRevision] = useState(0);
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
   const { clearSession } = useSession();
   const navigate = useNavigate();
   useEffect(() => {
@@ -38,7 +39,11 @@ export function AccountDeletionPanel() {
   }, [revision]);
   async function submit(event) {
     event.preventDefault();
-    if (!consent || !ready || !metadata || busy) return;
+    if (!consent || !metadata || busy) return;
+    if (!ready) {
+      setConfirmationOpen(true);
+      return;
+    }
     setBusy(true);
     setError("");
     try {
@@ -77,10 +82,7 @@ export function AccountDeletionPanel() {
             <p role="status">A deletion request is already pending review.</p>
           ) : (
             <>
-              <SessionConfirmation
-                revision={proofRevision}
-                onReady={setReady}
-              />
+              <SessionConfirmation modal open={confirmationOpen} onClose={() => setConfirmationOpen(false)} revision={proofRevision} onReady={(value) => { setReady(value); if (value) setConfirmationOpen(false); }} />
               <form aria-label="Request account deletion" onSubmit={submit}>
                 <label>
                   <input
@@ -94,7 +96,7 @@ export function AccountDeletionPanel() {
                 </label>
                 <button
                   className="btn soft block"
-                  disabled={busy || !consent || !ready}
+                  disabled={busy || !consent}
                 >
                   {busy ? "Submitting request…" : "Request account deletion"}
                 </button>

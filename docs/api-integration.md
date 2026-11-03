@@ -22,10 +22,10 @@ from the build. Browser setup is documented in [browser-testing.md](browser-test
 | Page            | Connected actions                                                                        |
 | --------------- | ---------------------------------------------------------------------------------------- |
 | `auth.html`     | Register, verify OTP, resend OTP, password/Google sign-in, logout                        |
-| `profile.html`  | Own profile, names, directory visibility, session check, explicit Google linking, logout |
-| `settings.html` | Profile/privacy controls, local theme, API health                                        |
+| `profile.html`  | Own profile, names, session check, explicit Google linking, logout                       |
+| `settings.html` | Profile controls, local theme, API health                                               |
 | `word.html`     | Published sermon search, filters, pagination and detail                                  |
-| `members.html`  | Authenticated opt-in directory search and pagination; names and IDs only                 |
+| `members.html`  | Authenticated member directory search and pagination; names and IDs only                 |
 | `staff.html`    | Sermon create/load/edit/publish/unpublish/schedule; role read/grant/revoke with reason   |
 | `/#/events`     | Published church event calendar, guest-count RSVP/cancellation, event management by capability |
 | `/#/prayer`     | Community, active-group and owner-only prayer requests; anonymity and acknowledgements |
@@ -94,7 +94,7 @@ Connected React routes:
 - `/#/login`: password login and Google login through the existing callback page.
 - `/#/forgot-password`: recovery email; reset links still use `auth.html`.
 - `/#/home` and `/#/profile`: restored sessions, actual member identity, profile
-  changes, directory opt-in and confirmed logout.
+  changes and confirmed logout.
 - `/#/word`: public sermon listing, search, pagination and detail.
 
 Profile links retain the existing account-security, member-directory and staff
@@ -153,7 +153,7 @@ Full member detail and sensitive-read audit workflows are still future work.
   their request answered or archived. Moderation, expiry, comments, uploads and
   notifications remain future work.
 - Direct messages are one-to-one and visible only to their participants. Any
-  verified member can start a chat using the existing opt-in directory. There is
+  verified member can start a chat using the member directory. There is
   no staff backdoor. Group chats are restricted by current group eligibility;
   direct and group chat use realtime message notifications with REST history for
   durable catch-up.
@@ -325,7 +325,7 @@ server-verified fresh primary authentication, plus authenticator confirmation wh
 enrolled. Password/Google confirmation and MFA use existing endpoints; confirmation
 never automatically submits the action. `DELETE /api/v1/me` sends `confirm: true`
 and the current `policyVersion`. A `202` receipt disables sign-in, revokes sessions
-and hides directory visibility on the server; the browser clears its in-memory
+and removes the account from active directory results; the browser clears its in-memory
 credentials/profile and returns to sign-in. This is a reviewed request, not proof
 of permanent data erasure. Errors retain the signed-in UI and display server guidance.
 

@@ -14,6 +14,14 @@
   --sans: "Plus Jakarta Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #17132b; --bg-edge: #0d0a1b;
+  --surface: #231c3f; --surface-2: #2d2551; --surface-3: #382f63;
+  --line: rgba(255,255,255,.1); --text: #f5f2ff; --muted: #a9a1cb;
+  --lav-ink: #f5f2ff;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html { height: 100%; }
 body, #root { min-height: 100%; }
@@ -29,6 +37,36 @@ button { font: inherit; color: inherit; border: 0; background: none; cursor: poi
 textarea { font: inherit; }
 a { color: inherit; }
 :focus-visible { outline: 2px solid var(--gold-2); outline-offset: 2px; }
+
+/* Consistent failure feedback: red communicates risk and the cross makes the
+   message easy to scan without relying on color alone. */
+[role="alert"] {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid #e5a9ae;
+  border-radius: 12px;
+  color: #9a2633;
+  background: #fff0f1;
+  line-height: 1.45;
+}
+[role="alert"]::before {
+  content: "×";
+  display: inline-grid;
+  flex: none;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  margin-top: 1px;
+  border-radius: 50%;
+  color: #fff;
+  background: #c93645;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+}
+[role="alert"] button { margin-left: auto; }
 
 /* Reference site visual language: City4Christ purple, gold and white. */
 :root {

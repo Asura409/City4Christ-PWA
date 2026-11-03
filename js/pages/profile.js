@@ -10,14 +10,11 @@ export async function profilePage({ api, access, session, setProfile }) {
     $("#profile-id").textContent = p.id;
     form.elements.firstName.value = p.firstName;
     form.elements.lastName.value = p.lastName;
-    form.elements.directoryVisible.checked = p.directoryVisible;
   }
   onSubmit(form, async () => {
     const patch = {};
     for (const key of ["firstName", "lastName"])
       if (value(form, key) !== current[key]) patch[key] = value(form, key);
-    if (form.elements.directoryVisible.checked !== current.directoryVisible)
-      patch.directoryVisible = form.elements.directoryVisible.checked;
     if (!Object.keys(patch).length) {
       status("No profile changes to save.");
       return;

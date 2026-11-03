@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
 import {GoogleLinkPanel} from '@/auth/GoogleLinkPanel';
 import { ChangePasswordPanel } from "@/auth/ChangePasswordPanel";
+import { MFASettings } from "@/auth/MFASettings";
 import { AccountDeletionPanel } from "@/account/AccountDeletionPanel";
 import ProfilePhotoPanel from "@/profiles/ProfilePhotoPanel";
 
@@ -26,6 +27,8 @@ export default function ProfileScreen() {
  [canReviewDeletion,setCanReviewDeletion]=useState(false);
   const [canSearchMembers, setCanSearchMembers] = useState(false);
   const [access, setAccess] = useState(null);
+  const [pastorProfile, setPastorProfile] = useState(null);
+  const [googleLinked, setGoogleLinked] = useState(false);
   const [accessLoading, setAccessLoading] = useState(true);
   const [accessError, setAccessError] = useState("");
 
@@ -62,6 +65,14 @@ export default function ProfileScreen() {
       })
       .catch((e) => { if (live) setAccessError(e.message || "Could not load account access."); })
       .finally(() => { if (live) setAccessLoading(false); });
+    api
+      .request("/api/v1/me/pastoral/profile")
+      .then(({ data }) => { if (live) setPastorProfile(data); })
+      .catch((e) => { if (live && e.status !== 404) setPastorProfile(null); });
+    api
+      .reauthenticationStatus()
+      .then(({ data }) => { if (live) setGoogleLinked(data.googleAvailable === true); })
+      .catch(() => { if (live) setGoogleLinked(false); });
     return () => {
       mounted.current = false;
       live = false;
@@ -142,7 +153,6 @@ export default function ProfileScreen() {
           </details>
         </>}
       </section>
-{canFollowUp&&<button className="btn soft" onClick={()=>navigate("/visitors")}>Visitor follow-up</button>}
       {message && <p role="status">{message}</p>}
       {error && <p role="alert">{error}</p>}
       <form id="profile-details" className="auth-card" aria-label="Edit profile" onSubmit={save}>
@@ -172,16 +182,24 @@ export default function ProfileScreen() {
         </button>
       </form>
       <div id="security-tools" className="profile-security-tools">
-        <GoogleLinkPanel hasPassword={profile.hasPassword}/>
+        <GoogleLinkPanel hasPassword={profile.hasPassword} googleLinked={googleLinked}/>
         <ChangePasswordPanel hasPassword={profile.hasPassword} />
+        <MFASettings />
       </div>
-      <AccountDeletionPanel />
-      {canReviewDeletion && <button className="btn soft" onClick={() => navigate("/account-deletion-requests")}>Account deletion requests</button>}
-      {canSearchMembers && <button className="btn soft" onClick={() => navigate("/admin/members")}>Member lookup</button>}
-      {staff && <button className="btn soft" onClick={() => navigate("/admin")}>Church administration</button>}
-      {canManageSermons && <button className="btn gold" onClick={() => navigate("/admin/sermons")}>Sermon publishing</button>}
-      <div className="wrap">
-<a className="btn soft" href="#/pastors">Pastoral appointments</a>
+      <div id="account-deletion"><AccountDeletionPanel /></div>
+      {(pastorProfile || canFollowUp || canReviewDeletion || canSearchMembers || staff || canManageSermons) && <section className="profile-tools auth-card" aria-label="Available tools">
+        <div className="profile-section-heading"><div><p className="group-eyebrow">YOUR WORKSPACE</p><h2>Available tools</h2></div><span>Based on your account access</span></div>
+        <div className="profile-tool-list">
+          {pastorProfile && <button className="btn soft" onClick={() => navigate("/pastor-dashboard")}>Pastor dashboard</button>}
+          {canFollowUp && <button className="btn soft" onClick={() => navigate("/visitors")}>Visitor follow-up</button>}
+          {canReviewDeletion && <button className="btn soft" onClick={() => navigate("/account-deletion-requests")}>Account deletion requests</button>}
+          {canSearchMembers && <button className="btn soft" onClick={() => navigate("/admin/members")}>Member lookup</button>}
+          {staff && <button className="btn soft" onClick={() => navigate("/admin")}>Church administration</button>}
+          {canManageSermons && <button className="btn gold" onClick={() => navigate("/admin/sermons")}>Sermon publishing</button>}
+        </div>
+      </section>}
+      <div className="profile-actions-footer">
+        <a className="btn soft" href="#/pastors">Pastoral appointments</a>
         <button className="btn gold" disabled={busy} onClick={signOut}>
           Sign out
         </button>

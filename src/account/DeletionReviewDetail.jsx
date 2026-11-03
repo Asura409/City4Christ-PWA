@@ -96,8 +96,7 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
               <p>
                 Restoring access clears the deletion hold. It does not show the
                 member in the directory or restore old sign-in sessions. They
-                must sign in again. Existing role assignments remain, while
-                directory visibility can be chosen separately.
+                must sign in again. Existing role assignments remain.
               </p>
               <label htmlFor="restore-reason">
                 Reason for restoring account access

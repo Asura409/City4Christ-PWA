@@ -30,9 +30,11 @@ export default function HomeScreen() {
           ["/prayer", "flame", "Prayer", "Pray with the community"],
           ["/groups", "users", "Groups", "Find your ministry group"],
           ["/bible", "book", "Bible", "Read the Word together"],
-          ["/posts", "chat", "Community", "Share your faith"],
+          ["/community", "chat", "Community", "Find people and ministries"],
+          ["/live", "play", "Live", "Join worship online"],
           ["/chat", "chat", "Messages", "Stay connected with members"],
           ["/members", "users", "Members", "Find people in the church"],
+          ["/get-app", "download", "Get the App", "Keep City4Christ close"],
         ].map(([path, icon, label, description]) => (
           <button key={path} className="reference-quick-card" type="button" onClick={() => navigate(path)}>
             <span className="reference-quick-icon"><Icon name={icon} /></span>

@@ -2,7 +2,9 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
 import { hasCapability } from "../../js/access.js";
+import { SessionConfirmation } from "@/auth/SessionConfirmation";
 import { changeChurchRole, getAdminMember, getAdminMemberAccessAudit, getChurchRoles, searchAdminMembers, updateAdminMemberName } from "./adminApi";
+import { listMembers } from "./directoryApi";
 import "./admin-members.css";
 
 const PRIVILEGED_ROLE_OPTIONS = [
@@ -42,6 +44,9 @@ export function AdminMemberSearch() {
   const [roleNotice, setRoleNotice] = useState("");
   const [roleToAssign, setRoleToAssign] = useState("staff");
   const [roleReason, setRoleReason] = useState("");
+  const [roleProofReady, setRoleProofReady] = useState(false);
+  const [roleProofRevision, setRoleProofRevision] = useState(0);
+  const [roleConfirmOpen, setRoleConfirmOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -83,7 +88,9 @@ export function AdminMemberSearch() {
     const timer = setTimeout(async () => {
       setBusy(true); setError(""); setMembers([]); setCursor(""); setSelected(null); setDetailError("");
       try {
-        const page = await searchAdminMembers(trimmed, { signal: controller.signal });
+        const page = trimmed
+          ? await searchAdminMembers(trimmed, { signal: controller.signal })
+          : await listMembers({ limit: 50, signal: controller.signal });
         setMembers(page.members); setCursor(page.nextCursor);
       } catch (e) {
         if (e.name !== "AbortError") setError(e.message);
@@ -97,7 +104,9 @@ export function AdminMemberSearch() {
   async function more() {
     setBusy(true); setError("");
     try {
-      const page = await searchAdminMembers(query, { cursor });
+      const page = query.trim()
+        ? await searchAdminMembers(query, { cursor })
+        : await listMembers({ limit: 50, cursor });
       setMembers((current) => [...current, ...page.members]); setCursor(page.nextCursor);
     } catch (e) { setError(e.message); }
     finally { setBusy(false); }
@@ -107,6 +116,8 @@ export function AdminMemberSearch() {
     setDetailBusy(true); setDetailError(""); setSelected(null);
     setAuditEvents([]); setAuditCursor(""); setAuditError("");
     setRoles([]); setRoleError(""); setRoleNotice(""); setRoleReason("");
+    setRoleProofReady(false);
+    setRoleConfirmOpen(false);
     try {
       const detail = await getAdminMember(id);
       setSelected(detail);
@@ -123,13 +134,29 @@ export function AdminMemberSearch() {
   async function updateRole(event, revoke = false) {
     event.preventDefault();
     if (!selected || !roleReason.trim()) return;
+    if (!roleProofReady) {
+      setRoleError("");
+      setRoleConfirmOpen(true);
+      return;
+    }
+    if (!revoke && ["super_administrator", "assistant_pastor", "staff", "finance_officer"].includes(roleToAssign) && !selected.mfaEnabled) {
+      setRoleError("This member must enable authenticator protection before receiving a protected church role.");
+      return;
+    }
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
     try {
       await changeChurchRole(selected.id, { role: roleToAssign, reason: roleReason.trim(), revoke });
       setRoles(await getChurchRoles(selected.id));
       setRoleReason("");
       setRoleNotice(revoke ? "Role revoked." : "Role assigned.");
-    } catch (e) { setRoleError(e.message); }
+    } catch (e) {
+      setRoleError(e.message);
+      if (["reauthentication_required", "mfa_required"].includes(e.code)) {
+        setRoleProofReady(false);
+        setRoleProofRevision((value) => value + 1);
+        setRoleConfirmOpen(true);
+      }
+    }
     finally { setRoleBusy(false); }
   }
 
@@ -138,13 +165,25 @@ export function AdminMemberSearch() {
       setRoleError("Enter a reason before revoking a role.");
       return;
     }
+    if (!roleProofReady) {
+      setRoleError("");
+      setRoleConfirmOpen(true);
+      return;
+    }
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
     try {
       await changeChurchRole(selected.id, { role, scope, reason: roleReason.trim(), revoke: true });
       setRoles(await getChurchRoles(selected.id));
       setRoleReason("");
       setRoleNotice("Role revoked.");
-    } catch (e) { setRoleError(e.message); }
+    } catch (e) {
+      setRoleError(e.message);
+      if (["reauthentication_required", "mfa_required"].includes(e.code)) {
+        setRoleProofReady(false);
+        setRoleProofRevision((value) => value + 1);
+        setRoleConfirmOpen(true);
+      }
+    }
     finally { setRoleBusy(false); }
   }
 
@@ -185,7 +224,7 @@ export function AdminMemberSearch() {
   return (
     <section className="screen active admin-members" aria-label="Member administration">
       <h1>Member lookup</h1>
-      <p>Read-only search for verified, active members. This view shows basic account details only.</p>
+      <p>All verified, active members are listed below. Use search to filter the roster, or load the next page.</p>
       {allowed === null && <p role="status">Checking member lookup access…</p>}
       {allowed === false && <p role="alert">{error || "You do not have permission to search member records."}</p>}
       {allowed && <>
@@ -199,11 +238,11 @@ export function AdminMemberSearch() {
         {error && <p role="alert">{error}</p>}
         {busy && <p role="status">Searching members…</p>}
         {!busy && !error && members.length === 0 && <p>{query ? "No matching members were found." : "No verified active members were found."}</p>}
-        <div className="admin-member-list" aria-label="Search results">
+        <div className="admin-member-list" aria-label="All member records">
           {members.map((member) => <article className="admin-member-card" key={member.id}>
             <div className="admin-member-card-heading">
               <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatar?.url || member.avatarUrl} size={48} />
-              <div><h2>{member.firstName} {member.lastName}</h2><p>Joined {new Date(member.joinedAt).toLocaleDateString()}</p></div>
+              <div><h2>{member.firstName} {member.lastName}</h2><p>{member.joinedAt ? `Joined ${new Date(member.joinedAt).toLocaleDateString()}` : "Church member"}</p></div>
             </div>
             <button className="btn soft" disabled={detailBusy} onClick={() => showDetails(member.id)}>View member details</button>
             {roleManageAllowed && <button className="btn gold" disabled={detailBusy} onClick={() => showDetails(member.id)}>Assign role</button>}
@@ -241,7 +280,8 @@ export function AdminMemberSearch() {
             </form>
             {roleNotice && <p role="status">{roleNotice}</p>}
             {roleError && <p role="alert">{roleError}</p>}
-            <small>Role changes require a fresh administrator session. Protected roles also require the member to have verified MFA.</small>
+            <SessionConfirmation modal open={roleConfirmOpen} onClose={() => setRoleConfirmOpen(false)} requireMFA revision={roleProofRevision} onReady={(ready) => { setRoleProofReady(ready); if (ready) { setRoleConfirmOpen(false); setRoleNotice("Identity confirmed. You can now submit the role change."); } }} />
+            <small>Protected roles also require the selected member to have verified MFA. Confirmation applies only to this session and does not submit the role change.</small>
           </section>}
           {auditAllowed && <>
             <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id)}>Review member record history</button>

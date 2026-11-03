@@ -557,15 +557,13 @@ export async function mocked(
     if (path === "/api/v1/members")
       return route.fulfill({
         json: {
-          data: profile.directoryVisible
-            ? [
-                {
-                  id: ID,
-                  firstName: profile.firstName,
-                  lastName: profile.lastName,
-                },
-              ]
-            : [],
+          data: [
+            {
+              id: ID,
+              firstName: profile.firstName,
+              lastName: profile.lastName,
+            },
+          ],
           meta: { nextCursor: "" },
         },
       });

@@ -6,9 +6,13 @@ export function SessionConfirmation({
   requireMFA = false,
   revision = 0,
   onReady,
+  modal = false,
+  open = true,
+  onClose,
 }) {
   const [primary, setPrimary] = useState(null),
-    [factor, setFactor] = useState(null);
+    [factor, setFactor] = useState(null),
+    [method, setMethod] = useState(null);
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const passwordRef = useRef(null),
@@ -28,6 +32,15 @@ export function SessionConfirmation({
       throw new Error("Identity confirmation is unavailable.");
     setPrimary(p);
     setFactor(m);
+    setMethod(
+      p.fresh
+        ? null
+        : p.passwordAvailable && !p.googleAvailable
+          ? "password"
+          : !p.passwordAvailable && p.googleAvailable
+            ? "google"
+            : null,
+    );
     const fresh = p.fresh && Date.parse(p.freshUntil) > Date.now();
     const second = m.enabled
       ? Date.parse(m.freshUntil) > Date.now()
@@ -73,7 +86,7 @@ export function SessionConfirmation({
       setBusy(false);
     }
   }
-  return (
+  const panel = (
     <section className="auth-card" aria-label="Confirm sensitive action">
       <h3>Confirm your identity</h3>
       <p>
@@ -86,12 +99,19 @@ export function SessionConfirmation({
       )}
       {primary && (
         <>
-          <p>
-            {primary.fresh
-              ? "Primary identity is confirmed."
-              : "Confirm your password or linked Google account."}
-          </p>
-          {primary.passwordAvailable && (
+          {primary.fresh && <p role="status">Primary identity is confirmed.</p>}
+          {!primary.fresh && (
+            <>
+              <p>Choose how you want to confirm this session.</p>
+              {!method && (
+                <div className="confirmation-methods" aria-label="Identity confirmation methods">
+                  {primary.passwordAvailable && <button className="btn soft" type="button" disabled={busy} onClick={() => setMethod("password")}>Confirm with password</button>}
+                  {primary.googleAvailable && <button className="btn soft" type="button" disabled={busy} onClick={google}>Confirm with Google</button>}
+                </div>
+              )}
+            </>
+          )}
+          {primary.passwordAvailable && method === "password" && !primary.fresh && (
             <form
               aria-label="Confirm password for sensitive action"
               onSubmit={(e) => confirm(e, "password")}
@@ -112,17 +132,21 @@ export function SessionConfirmation({
               </button>
             </form>
           )}
-          {primary.googleAvailable && (
-            <button className="btn soft" disabled={busy} onClick={google}>
-              Confirm with Google
-            </button>
+          {primary.googleAvailable && method === "google" && !primary.fresh && (
+            <div className="confirmation-selected-method">
+              <button className="btn soft" disabled={busy} onClick={google}>Confirm with Google</button>
+              {primary.passwordAvailable && !busy && <button className="confirmation-change-method" type="button" onClick={() => setMethod(null)}>Use password instead</button>}
+            </div>
+          )}
+          {primary.passwordAvailable && method === "password" && !primary.fresh && primary.googleAvailable && (
+            <button className="confirmation-change-method" type="button" disabled={busy} onClick={() => setMethod(null)}>Use Google instead</button>
           )}
           {!primary.passwordAvailable && !primary.googleAvailable && (
             <p>No confirmation method is available. Contact church support.</p>
           )}
         </>
       )}
-      {factor?.enabled && (
+      {primary?.fresh && factor?.enabled && (
         <form
           aria-label="Confirm authenticator for sensitive action"
           onSubmit={(e) => confirm(e, "mfa")}
@@ -151,7 +175,8 @@ export function SessionConfirmation({
         </p>
       )}
       <button
-        className="btn soft"
+        className="confirmation-refresh"
+        type="button"
         disabled={busy}
         onClick={() => {
           setError("");
@@ -161,5 +186,14 @@ export function SessionConfirmation({
         Check confirmation
       </button>
     </section>
+  );
+  if (!modal) return panel;
+  return (
+    <dialog className="confirmation-dialog" open={open} aria-label="Confirm sensitive action">
+      <div className="confirmation-dialog-card">
+        <button className="confirmation-dialog-close" type="button" aria-label="Close confirmation" onClick={onClose} disabled={busy}>×</button>
+        {panel}
+      </div>
+    </dialog>
   );
 }
