@@ -1,6 +1,30 @@
 import { test, expect } from "@playwright/test";
 import { mocked, STAFF_ACCESS } from "./fixtures/api.mjs";
 
+test("sermon editors can find the publishing workspace from their profile", async ({ page }) => {
+  await mocked(page, { signedIn: true, access: STAFF_ACCESS });
+  await page.goto("/#/profile");
+
+  await page.getByRole("button", { name: "Sermon publishing" }).click();
+  await expect(page.getByRole("heading", { name: "Sermon publishing" })).toBeVisible();
+  await expect(page.getByRole("form", { name: "Create a sermon" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Sermon editorial list" })).toBeVisible();
+  await page.getByRole("link", { name: "View sermon library" }).click();
+  await expect(page.getByRole("link", { name: "Sermon publishing" })).toBeVisible();
+  await page.getByRole("link", { name: "Sermon publishing" }).click();
+  await expect(page.getByRole("heading", { name: "Sermon publishing" })).toBeVisible();
+});
+
+test("members without sermon permission cannot open the publishing tools", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  await page.goto("/#/profile");
+  await expect(page.getByRole("button", { name: "Sermon publishing" })).toHaveCount(0);
+
+  await page.goto("/#/admin/sermons");
+  await expect(page.getByRole("alert")).toContainText("does not have permission to manage sermons");
+  await expect(page.getByRole("form", { name: "Create a sermon" })).toHaveCount(0);
+});
+
 test("sermon editors can find drafts, scheduled sermons, and continue the list", async ({ page }) => {
   await mocked(page, { signedIn: true, access: STAFF_ACCESS });
   const requests = [];
@@ -22,7 +46,7 @@ test("sermon editors can find drafts, scheduled sermons, and continue the list",
     } });
   });
 
-  await page.goto("/#/word");
+  await page.goto("/#/admin/sermons");
   const list = page.getByRole("region", { name: "Sermon editorial list" });
   await expect(list).toBeVisible();
   await expect(list.getByText("Draft of hope")).toBeVisible();
