@@ -123,6 +123,7 @@ export default function ProfileScreen() {
       <AccountDeletionPanel />
       {canReviewDeletion && <button className="btn soft" onClick={() => navigate("/account-deletion-requests")}>Account deletion requests</button>}
       {canSearchMembers && <button className="btn soft" onClick={() => navigate("/admin/members")}>Member lookup</button>}
+      {staff && <button className="btn soft" onClick={() => navigate("/admin")}>Church administration</button>}
       <div className="wrap">
 <a className="btn soft" href="#/pastors">Pastoral appointments</a>
         <a className="btn soft" href="/profile.html">

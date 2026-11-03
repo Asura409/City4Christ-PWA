@@ -36,6 +36,10 @@ import { createPost, uploadPostMedia } from "./posts/api";
 import GivingScreen from "./screens/GivingScreen";
 import GivingReturnScreen from "./screens/GivingReturnScreen";
 import { AdminMemberSearch } from "@/members/AdminMemberSearch";
+import { Icon } from "@/lib/icons";
+import AdminDashboard from "@/admin/AdminDashboard";
+
+const profileImage = "/assets/images/maleMember.jpeg";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -82,24 +86,17 @@ export default function App() {
     <ToastProvider>
       <div className="app">
         <header className="topbar">
-          <div className="brand">
-            <div className="logo" aria-hidden="true">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#fff"
-                strokeWidth="2.6"
-                strokeLinecap="round"
-              >
-                <path d="M6 5c4 3 8 5 12 6M18 5c-4 3-8 5-12 6M12 8v13" />
-              </svg>
-            </div>
+          <a className="brand" href="#/home" aria-label="City4Christ home">
+            <img className="logo" src="/assets/images/logo.jpeg" alt="City4Christ logo" />
             <b>City4Christ</b>
+          </a>
+          <div className="header-actions">
+            <button className="header-btn" type="button" aria-label="Search" onClick={() => window.dispatchEvent(new CustomEvent("global-search"))}>
+              <Icon name="search" />
+            </button>
             <NotificationButton />
-            <a className="link" href="#/profile">
-              My account
+            <a className="header-profile-btn" href="#/profile" aria-label="My profile">
+              <img src={profileImage} alt="My profile" />
             </a>
           </div>
         </header>
@@ -109,6 +106,7 @@ export default function App() {
             <Route path="/visitors" element={<ProtectedRoute><VisitorsScreen/></ProtectedRoute>}/>
             <Route path="/account-deletion-requests" element={<ProtectedRoute><DeletionRequestsScreen /></ProtectedRoute>} />
             <Route path="/admin/members" element={<ProtectedRoute><AdminMemberSearch /></ProtectedRoute>} />
+            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
  <Route path="/" element={<Navigate to="/login" replace />} />
             <Route
               path="/home"

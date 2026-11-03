@@ -30,6 +30,36 @@ textarea { font: inherit; }
 a { color: inherit; }
 :focus-visible { outline: 2px solid var(--gold-2); outline-offset: 2px; }
 
+/* Reference site visual language: City4Christ purple, gold and white. */
+:root {
+  color-scheme: light;
+  --bg: #fafafa;
+  --bg-edge: #f3eef8;
+  --surface: #ffffff;
+  --surface-2: #f3eefa;
+  --surface-3: #eadff2;
+  --line: #eee8f0;
+  --text: #222222;
+  --muted: #777777;
+  --purple: #5b2c83;
+  --purple-2: #713a95;
+  --purple-deep: #43205f;
+  --gold: #d4af37;
+  --gold-2: #e3c24b;
+  --gold-ink: #34203f;
+  --lavender: #f3eefa;
+  --lav-ink: #2d1c37;
+  --cream: #fffaf0;
+  --cream-ink: #2d1c37;
+  --blue: #2563b8;
+  --green: #2f9a58;
+  --rose: #d72d39;
+  --serif: Georgia, "Times New Roman", serif;
+  --sans: "Segoe UI", Arial, sans-serif;
+}
+
+body { background: var(--bg); color: var(--text); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }

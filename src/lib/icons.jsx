@@ -34,6 +34,7 @@ const P = {
   image: 'M3.5 5h17v14a3 3 0 01-3 3h-11a3 3 0 01-3-3V5zM9 10.5a1.8 1.8 0 100-3.6 1.8 1.8 0 000 3.6zM4 17l5-4.5 4 3.5 3-2.5 4 3.5',
   ticket: 'M4 6h16v3.5a2.5 2.5 0 000 5V18H4v-3.5a2.5 2.5 0 000-5zM14 7.5v9',
   music: 'M9 18V6l10-2v12M7 18a2.5 2.5 0 100-5 2.5 2.5 0 000 5zM17 16a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
+  grid: 'M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z',
 };
 
 export function Icon({ name, className = '', fill = false, strokeWidth = 1.9 }) {

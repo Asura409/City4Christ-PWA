@@ -4,11 +4,10 @@ import { Icon } from '@/lib/icons';
 
 const ITEMS = [
   { path: '/home', icon: 'home', label: 'Home' },
-  { path: '/word', icon: 'book', label: 'Word' },
   { path: '/posts', icon: 'users', label: 'Community' },
   null, // FAB slot
   { path: '/prayer', icon: 'flame', label: 'Prayer' },
-  { path: '/chat', icon: 'chat', label: 'Chat' },
+  { path: '/word', icon: 'book', label: 'Word' },
 ];
 
 export function Nav({ onFab }) {

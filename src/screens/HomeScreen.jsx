@@ -3,35 +3,38 @@ import { useNavigate } from "react-router-dom";
 import { DailyVerseCard } from "@/dailyverse/DailyVerseCard";
 import { Icon } from "@/lib/icons";
 import { useSession } from "@/auth/session";
-const tiles = [
-  ["/word", "mic", "Sermons"],
- ["/bible", "sun", "Bible"],
- ["/devotionals", "sun", "Devotionals"],
-  ["/profile", "users", "My profile"],
-  ["/groups", "users", "Church groups"],
-  ["/events", "cal", "Church events"],
-["/pastors", "users", "Book a pastor"],
-];
 export default function HomeScreen() {
   const { profile } = useSession(),
     navigate = useNavigate();
   return (
     <section className="screen active" aria-label="Home">
-      <h1 className="greet">Welcome, {profile.firstName}</h1>
-      <p className="lead">The House of Good News</p>
+      <section className="welcome-card fade-up">
+        <h1>Welcome {profile.firstName} 🙏</h1>
+        <p>Welcome back to your faith community</p>
+      </section>
+      <section className="banner-card fade-up">
+        <img src="/assets/images/banner.jpeg" alt="City4Christ event" />
+        <div className="banner-overlay">
+          <h2>2026 Year of Enlargement</h2>
+          <button className="reference-gold-btn" type="button" onClick={() => navigate("/events")}>View Programme</button>
+        </div>
+      </section>
       <DailyVerseCard />
-      <div className="sh">
-        <h2>Explore City4Christ</h2>
-      </div>
-      <div className="tiles">
-        {tiles.map(([path, icon, label]) => (
-          <button key={path} className="tile" onClick={() => navigate(path)}>
-            <span
-              style={{ background: "linear-gradient(145deg,#8a4fe0,#5a2fa8)" }}
-            >
-              <Icon name={icon} />
-            </span>
-            {label}
+      <div className="reference-quick-links">
+        {[
+          ["/events", "cal", "Events", "See upcoming gatherings"],
+          ["/pastors", "users", "Book Pastor", "Request pastoral care"],
+          ["/giving", "heart", "Giving", "Tithe, offering & more"],
+          ["/word", "book", "Word", "Sermons and media"],
+          ["/prayer", "flame", "Prayer", "Pray with the community"],
+          ["/groups", "users", "Groups", "Find your ministry group"],
+          ["/bible", "book", "Bible", "Read the Word together"],
+          ["/posts", "chat", "Community", "Share your faith"],
+        ].map(([path, icon, label, description]) => (
+          <button key={path} className="reference-quick-card" type="button" onClick={() => navigate(path)}>
+            <span className="reference-quick-icon"><Icon name={icon} /></span>
+            <strong>{label}</strong>
+            <span>{description}</span>
           </button>
         ))}
       </div>
@@ -40,9 +43,6 @@ export default function HomeScreen() {
         <span className="home-giving-copy"><b>Give to City4Christ</b><small>Support the church through Give A Little</small></span>
         <Icon name="next" />
       </button>
-      <p className="lead">
-        Sermons, community posts, church events, prayer requests and direct messages are connected.
-      </p>
     </section>
   );
 }
