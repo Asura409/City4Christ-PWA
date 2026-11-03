@@ -1,17 +1,10 @@
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { Icon } from "@/lib/icons";
-import {
-  buildGiveALittleCheckoutURL,
-  GIVE_A_LITTLE_AMOUNTS,
-  GIVE_A_LITTLE_CAMPAIGN_URL,
-} from "@/giving/checkout";
+import { GIVE_A_LITTLE_CAMPAIGN_URL } from "@/giving/checkout";
 
 export default function GivingScreen() {
-  const [amount, setAmount] = useState(GIVE_A_LITTLE_AMOUNTS[0]);
-  const [recurring, setRecurring] = useState(false);
   const navigate = useNavigate();
-  const checkoutURL = buildGiveALittleCheckoutURL({ amount, recurring });
 
   return (
     <section className="screen active giving-screen" aria-label="Giving">
@@ -26,26 +19,10 @@ export default function GivingScreen() {
       </header>
 
       <section className="card giving-card" aria-label="Give A Little donation">
-        <h2>Choose an amount</h2>
-        <div className="giving-amounts" role="group" aria-label="Donation amount">
-          {GIVE_A_LITTLE_AMOUNTS.map((option) => (
-            <button
-              className="giving-amount"
-              key={option}
-              type="button"
-              aria-pressed={amount === option}
-              onClick={() => setAmount(option)}
-            >
-              £{option}
-            </button>
-          ))}
-        </div>
-        <label className="giving-recurring">
-          <input type="checkbox" checked={recurring} onChange={(event) => setRecurring(event.target.checked)} />
-          <span>Make this a monthly donation</span>
-        </label>
-        <a className="btn gold giving-checkout" href={checkoutURL}>
-          Continue to Give A Little
+        <h2>Give securely with Give A Little</h2>
+        <p>Choose your giving category and amount on Give A Little. City4Christ does not send donation details from this app.</p>
+        <a className="btn gold giving-checkout" href={GIVE_A_LITTLE_CAMPAIGN_URL}>
+          Donate with Give A Little
         </a>
         <p className="giving-provider-note">
           Give A Little handles your payment and receipt. Your card details stay with them.

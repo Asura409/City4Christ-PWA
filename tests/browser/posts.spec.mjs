@@ -15,6 +15,15 @@ test("members read and publish church-wide posts", async ({ page }) => {
     .toEqual({ body: "Looking forward to worship together." });
 });
 
+test("post and comment authors show their profile photos", async ({ page }) => {
+  await mocked(page, { signedIn: true, includeOtherPost: true, profilePhotos: true });
+  await page.goto("/#/posts");
+  const post = page.locator(".community-post").filter({ hasText: "A post from another member." });
+  await expect(post.locator(".who img.avatar-photo")).toHaveAttribute("src", "https://cdn.example.invalid/author.png");
+  await post.getByRole("button", { name: "View comments (1)" }).click();
+  await expect(post.locator(".post-comment img.avatar-photo")).toHaveAttribute("src", "https://cdn.example.invalid/commenter.png");
+});
+
 test("members can edit and delete only their own posts", async ({ page }) => {
   const fixture = await mocked(page, { signedIn: true, includeOtherPost: true });
   await page.goto("/#/posts");

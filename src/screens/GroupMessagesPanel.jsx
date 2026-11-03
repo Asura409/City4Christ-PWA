@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/auth/session";
+import { Avatar } from "@/components/Avatar";
 import RealtimeStatus from "@/messages/RealtimeStatus";
 import MessageComposer from "@/messages/MessageComposer";
 import MessageAttachments from "@/messages/MessageAttachments";
@@ -238,7 +239,7 @@ export default function GroupMessagesPanel() {
           <div className="message-history" aria-live="polite">
             {messages.length === 0 && !threadLoading && !threadError && <p className="messages-empty thread-empty">Start the group conversation.</p>}
             {messages.map((message) => <article key={message.id} className={`message-bubble${message.senderId !== profile?.id ? " received" : " sent"}${message.deleted ? " removed" : ""}`}>
-              {message.deleted ? <p>This message was removed by a group moderator.</p> : <><p>{message.senderId === profile?.id ? "You" : "Group member"}</p>{message.body && <p>{message.body}</p>}<MessageAttachments items={message.attachments} /></>}
+              {message.deleted ? <p>This message was removed by a group moderator.</p> : <><div className="group-message-author"><Avatar name={`${message.senderFirstName || "Group"} ${message.senderLastName || "member"}`} src={message.senderAvatar?.url || (message.senderId === profile?.id ? profile?.avatar?.url : "")} size={28} /><span>{message.senderId === profile?.id ? "You" : [message.senderFirstName, message.senderLastName].filter(Boolean).join(" ") || "Group member"}</span></div>{message.body && <p>{message.body}</p>}<MessageAttachments items={message.attachments} /></>}
               <time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time>
               {selected.canModerate && !message.deleted && <button type="button" className="group-message-delete" aria-label="Delete message" onClick={() => void removeMessage(message)}>Delete</button>}
             </article>)}

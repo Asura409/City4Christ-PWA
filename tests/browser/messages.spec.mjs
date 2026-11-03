@@ -4,10 +4,10 @@ import { mocked, ID, mockScannedUpload } from "./fixtures/api.mjs";
 const CONVERSATION = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const PARTNER = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
 
-async function mockMessaging(page, { failFirstList = false, existing = false, ownMessage = false, ownMessageAge = 0 } = {}) {
+async function mockMessaging(page, { failFirstList = false, existing = false, ownMessage = false, ownMessageAge = 0, partnerAvatar = false } = {}) {
   const calls = [];
   let listFailures = failFirstList ? 1 : 0;
-  let conversations = existing ? [{ id: CONVERSATION, partnerId: PARTNER, partnerFirstName: "Daniel", partnerLastName: "James", unreadCount: 1, myLastReadSequence: 0, partnerReadSequence: 0, createdAt: new Date().toISOString() }] : [];
+  let conversations = existing ? [{ id: CONVERSATION, partnerId: PARTNER, partnerFirstName: "Daniel", partnerLastName: "James", ...(partnerAvatar ? { partnerAvatar: { url: "https://cdn.example.invalid/daniel.png" } } : {}), unreadCount: 1, myLastReadSequence: 0, partnerReadSequence: 0, createdAt: new Date().toISOString() }] : [];
   let messages = existing ? [{ id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd", conversationId: CONVERSATION, senderId: PARTNER, clientMessageId: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee", body: "I am praying for you.", sequence: 1, createdAt: new Date().toISOString() }] : [];
   if (ownMessage) messages.push({ id: "12121212-1212-4212-8212-121212121212", conversationId: CONVERSATION, senderId: ID, clientMessageId: "34343434-3434-4434-8434-343434343434", body: "My recent message.", sequence: messages.length + 1, createdAt: new Date(Date.now() - ownMessageAge).toISOString(), attachments: [] });
   await page.route("**/api/v1/members**", async (route) => {
@@ -147,6 +147,26 @@ test("opening a direct conversation advances only the member's read receipt", as
   await expect(page.getByText("I am praying for you.")).toBeVisible();
   const receipt = fixture.calls.find((call) => call.path === `/api/v1/conversations/${CONVERSATION}/read` && call.method === "PUT");
   expect(receipt?.body).toEqual({ throughMessageId: "dddddddd-dddd-4ddd-8ddd-dddddddddddd" });
+});
+
+test("direct conversation list and header show the partner profile photo", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  await mockMessaging(page, { existing: true, partnerAvatar: true });
+  await page.goto("/#/chat");
+  const row = page.getByRole("button", { name: "Open conversation with Daniel James" });
+  await expect(row.locator("img.avatar-photo")).toHaveAttribute("src", "https://cdn.example.invalid/daniel.png");
+  await row.click();
+  await expect(page.getByRole("region", { name: "Conversation" }).locator("header img.avatar-photo"))
+    .toHaveAttribute("src", "https://cdn.example.invalid/daniel.png");
+});
+
+test("direct message text rows show the matching sender profile photo", async ({ page }) => {
+  await mocked(page, { signedIn: true, profilePhotos: true });
+  await mockMessaging(page, { existing: true, partnerAvatar: true });
+  await page.goto("/#/chat");
+  await page.getByRole("button", { name: "Open conversation with Daniel James" }).click();
+  const received = page.locator(".message-row.received");
+  await expect(received.locator("img.avatar-photo")).toHaveAttribute("src", "https://cdn.example.invalid/daniel.png");
 });
 
 test("senders can edit or delete their own messages inside the 10-minute window", async ({ page }) => {
