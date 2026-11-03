@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { DailyVerseCard } from "@/dailyverse/DailyVerseCard";
 import { Icon } from "@/lib/icons";
 import { useSession } from "@/auth/session";
+import { HomeCommunityPreview } from "@/posts/HomeCommunityPreview";
 export default function HomeScreen() {
   const { profile } = useSession(),
     navigate = useNavigate();
@@ -30,6 +31,7 @@ export default function HomeScreen() {
           ["/groups", "users", "Groups", "Find your ministry group"],
           ["/bible", "book", "Bible", "Read the Word together"],
           ["/posts", "chat", "Community", "Share your faith"],
+          ["/chat", "chat", "Messages", "Stay connected with members"],
         ].map(([path, icon, label, description]) => (
           <button key={path} className="reference-quick-card" type="button" onClick={() => navigate(path)}>
             <span className="reference-quick-icon"><Icon name={icon} /></span>
@@ -38,6 +40,7 @@ export default function HomeScreen() {
           </button>
         ))}
       </div>
+      <HomeCommunityPreview />
       <button className="home-giving" type="button" onClick={() => navigate("/giving")}>
         <span className="home-giving-icon"><Icon name="heart" fill /></span>
         <span className="home-giving-copy"><b>Give to City4Christ</b><small>Support the church through Give A Little</small></span>

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { useSession } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
 import { listGroups } from "@/groups/api";
 import {
@@ -27,6 +28,7 @@ function visibilityLabel(visibility) {
 }
 
 export default function PrayerScreen() {
+  const { profile } = useSession();
   const [status, setStatus] = useState("open");
   const [requests, setRequests] = useState([]);
   const [cursor, setCursor] = useState("");
@@ -258,6 +260,8 @@ export default function PrayerScreen() {
   }
 
   const groupUnavailable = visibility === "group" && (!groupId || groupsLoading || groups.length === 0);
+  const accountName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "You";
+  const accountAvatar = profile?.avatar?.url || "";
 
   return (
     <section className="screen active prayer-screen" aria-label="Prayer wall">
@@ -268,7 +272,13 @@ export default function PrayerScreen() {
       </header>
 
       <form className="prayer-compose" aria-label="Share a prayer request" onSubmit={submit}>
-        <h2>Share a prayer request</h2>
+        <div className="prayer-compose-heading">
+          <Avatar name={anonymous ? "Anonymous member" : accountName} src={anonymous ? "" : accountAvatar} size={44} />
+          <div>
+            <h2>Share a prayer request</h2>
+            <p>{anonymous ? "Your name and photo will be hidden" : `Sharing as ${accountName}`}</p>
+          </div>
+        </div>
         <label htmlFor="prayer-body">Your request</label>
         <textarea
           id="prayer-body"
@@ -328,7 +338,7 @@ export default function PrayerScreen() {
             <article className="card prayer-card" key={item.id}>
               <div className="prayer-card-heading">
                 <div className="who">
-                  <Avatar name={item.author || "Church member"} size={42} />
+                  <Avatar name={item.author || "Church member"} src={item.isOwner ? accountAvatar : item.authorAvatar?.url} size={42} />
                   <div><b>{item.author || "Church member"}</b><span>{dateLabel(item.createdAt)} · {visibilityLabel(item.visibility)}</span><small>Expires {new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(item.expiresAt))}</small></div>
                 </div>
                 {item.status === "answered" && <span className="prayer-answered">Answered</span>}

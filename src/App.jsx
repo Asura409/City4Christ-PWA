@@ -5,8 +5,8 @@ import {
   GroupPostsScreen,
   GroupEventsScreen,
 } from "./groups/GroupContentScreens";
-import React, { useState } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ToastProvider } from "@/components/Toast";
 import { Nav } from "@/components/Nav";
 import HomeScreen from "@/screens/HomeScreen";
@@ -38,8 +38,9 @@ import GivingReturnScreen from "./screens/GivingReturnScreen";
 import { AdminMemberSearch } from "@/members/AdminMemberSearch";
 import { Icon } from "@/lib/icons";
 import AdminDashboard from "@/admin/AdminDashboard";
-
-const profileImage = "/assets/images/maleMember.jpeg";
+import { NotificationToast } from "@/notifications/NotificationToast";
+import { Avatar } from "@/components/Avatar";
+import { useSession } from "@/auth/session";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -56,7 +57,18 @@ export default function App() {
   const [createAudienceGroup, setCreateAudienceGroup] = useState("");
   const [postsVersion, setPostsVersion] = useState(0);
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { profile } = useSession();
+  const accountName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "Your profile";
   const isAuth = AUTH_ROUTES.some((r) => pathname.startsWith(r));
+
+  useEffect(() => {
+    const onServiceWorkerMessage = (event) => {
+      if (event.data?.type === "notification-click") navigate("/notifications");
+    };
+    navigator.serviceWorker?.addEventListener("message", onServiceWorkerMessage);
+    return () => navigator.serviceWorker?.removeEventListener("message", onServiceWorkerMessage);
+  }, [navigate]);
 
   if (isAuth) {
     return (
@@ -85,6 +97,7 @@ export default function App() {
   return (
     <ToastProvider>
       <div className="app">
+        <NotificationToast />
         <header className="topbar">
           <a className="brand" href="#/home" aria-label="City4Christ home">
             <img className="logo" src="/assets/images/logo.jpeg" alt="City4Christ logo" />
@@ -96,7 +109,7 @@ export default function App() {
             </button>
             <NotificationButton />
             <a className="header-profile-btn" href="#/profile" aria-label="My profile">
-              <img src={profileImage} alt="My profile" />
+              <Avatar name={accountName} src={profile?.avatar?.url} size={38} />
             </a>
           </div>
         </header>

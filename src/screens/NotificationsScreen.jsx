@@ -1,6 +1,7 @@
 import { NotificationSettings } from "@/notifications/NotificationSettings";
 import { BroadcastPanel } from "@/notifications/BroadcastPanel";
 import React, { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   listNotifications,
   markNotificationRead,
@@ -15,6 +16,12 @@ function createdLabel(value) {
         dateStyle: "medium",
         timeStyle: "short",
       }).format(date);
+}
+
+function notificationRoute(value) {
+  if (typeof value !== "string" || !value.startsWith("/#/")) return "";
+  const route = value.slice(2);
+  return /^\/[A-Za-z0-9/_-]+$/.test(route) ? route : "";
 }
 
 export default function NotificationsScreen() {
@@ -114,29 +121,22 @@ export default function NotificationsScreen() {
         <p className="notification-empty">You’re all caught up.</p>
       ) : (
         <div className="notification-list" role="list">
-          {items.map((item) => (
-            <article
+          {items.map((item) => {
+            const route = notificationRoute(item.resourcePath);
+            const content = (
+              <>
+                <h2>{item.title}</h2>
+                {item.body && <p>{item.body}</p>}
+                {route && <span className="link notification-link">View details</span>}
+                <time dateTime={item.createdAt}>{createdLabel(item.createdAt)}</time>
+              </>
+            );
+            return <article
               className={`notification-card${item.readAt ? " is-read" : " is-unread"}`}
               role="listitem"
               key={item.id}
             >
-              <div className="notification-card-copy">
-                <h2>{item.title}</h2>
-                {item.body && <p>{item.body}</p>}
-                {typeof item.resourcePath === "string" &&
-                  item.resourcePath.startsWith("/#/") &&
-                  !/[?#\\]/.test(item.resourcePath.slice(3)) && (
-                    <a
-                      className="link notification-link"
-                      href={item.resourcePath}
-                    >
-                      View details
-                    </a>
-                  )}
-                <time dateTime={item.createdAt}>
-                  {createdLabel(item.createdAt)}
-                </time>
-              </div>
+              {route ? <Link className="notification-card-copy notification-card-link" to={route} onClick={() => { if (!item.readAt) void markRead(item); }}>{content}</Link> : <div className="notification-card-copy">{content}</div>}
               {!item.readAt && (
                 <button
                   className="btn notification-read"
@@ -146,8 +146,8 @@ export default function NotificationsScreen() {
                   {busyId === item.id ? "Saving…" : "Mark read"}
                 </button>
               )}
-            </article>
-          ))}
+            </article>;
+          })}
         </div>
       )}
       <NotificationSettings />

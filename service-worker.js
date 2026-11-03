@@ -106,7 +106,7 @@ self.addEventListener("notificationclick", (event) => {
   event.waitUntil((async () => {
     const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
     const app = windows.find((client) => { const u = new URL(client.url); return u.origin === ROOT.origin && u.pathname.startsWith(ROOT.pathname); });
-    if (app) { await app.navigate(target); await app.focus(); }
+    if (app) { app.postMessage({ type: "notification-click" }); await app.focus(); }
     else await self.clients.openWindow(target);
   })());
 });
