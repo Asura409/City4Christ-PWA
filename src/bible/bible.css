@@ -1,26 +1,46 @@
 .screen.active.bible-screen {
   display: grid;
   gap: 20px;
+  width: min(1280px, 100%) !important;
+}
+.bible-screen > p {
+  margin-inline: 0;
+}
+.bible-screen > .auth-card {
+  width: 100%;
+  max-width: none;
+  box-sizing: border-box;
+  margin: 4px 0 24px;
+  padding: clamp(20px, 3vw, 38px);
 }
 .bible-lookup {
   display: grid;
   gap: 14px;
-  margin-block: 16px;
+  margin: 0;
+  width: 100%;
+  container-type: inline-size;
 }
 .bible-lookup form {
   display: grid;
-  gap: 14px;
+  gap: 16px;
 }
 .bible-lookup label {
   display: grid;
-  gap: 6px;
+  gap: 8px;
   font-weight: 600;
+}
+.bible-verse-range {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  min-width: 0;
 }
 .bible-lookup input,
 .bible-lookup select {
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
+  height: 48px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
@@ -29,9 +49,17 @@
   color: var(--text);
 }
 .bible-passage {
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
+  margin-top: 8px;
+  padding: clamp(20px, 3vw, 34px);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
   overflow-wrap: anywhere;
+}
+.bible-passage h3 {
+  margin-top: 0;
+  font-size: clamp(1.35rem, 2vw, 1.8rem);
 }
 .bible-verses {
   padding-left: 28px;
@@ -46,4 +74,66 @@
 .bible-credit {
   color: var(--muted);
   font-size: 0.9rem;
+}
+
+.bible-lookup form > .btn {
+  box-sizing: border-box;
+  width: 100%;
+  height: 48px;
+}
+
+@media (min-width: 900px) {
+  .bible-screen > .auth-card {
+    padding: 32px;
+  }
+}
+
+@container (min-width: 1204px) {
+  .screen.active.bible-screen .bible-lookup form {
+    grid-template-columns: 280px 120px 180px minmax(0, 1fr) 220px !important;
+    align-items: end;
+  }
+  .bible-lookup form > .btn {
+    margin-top: 0 !important;
+  }
+}
+
+/* Keep the desktop mockup reliable when the PWA is rendered without
+   container-query support or through a cached shell stylesheet. */
+@media (min-width: 1204px) {
+  .screen.active.bible-screen .bible-lookup form {
+    grid-template-columns: 280px 120px 180px minmax(0, 1fr) 220px !important;
+    align-items: end;
+  }
+}
+
+@container (min-width: 760px) and (max-width: 1203px) {
+  .bible-lookup form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
+  .bible-lookup form > .btn {
+    width: 100%;
+    margin-top: 0 !important;
+  }
+}
+
+@container (max-width: 759px) {
+  .bible-lookup form {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bible-screen > .auth-card {
+    margin-inline: 0;
+    padding: 16px;
+  }
+  .bible-lookup form > .btn {
+    width: 100%;
+    margin-top: 0 !important;
+  }
+  .bible-passage {
+    padding: 18px 16px;
+  }
+  .bible-verse-range {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
 }

@@ -10,20 +10,43 @@ export function PassageLookup({ onUse, ...initial }) {
         aria-label="Bible lookup"
         onSubmit={(e) => {
           e.preventDefault();
-          void s.search();
+          void s.search(s.buildReference(), s.translation);
         }}
       >
         <label>
-          Bible reference
-          <input
-            required
-            maxLength={128}
-            placeholder="John 3:16-18 or Psalm 23"
-            value={s.reference}
+          Book
+          <select
             disabled={!s.ready}
-            onChange={(e) => s.changeReference(e.target.value)}
-          />
+            value={s.book}
+            onChange={(e) => s.changeBook(e.target.value)}
+          >
+            {s.books.map((item) => <option key={item.name}>{item.name}</option>)}
+          </select>
         </label>
+        <label>
+          Chapter
+          <select disabled={!s.ready} value={s.chapter} onChange={(e) => s.changeChapter(e.target.value)}>
+            {Array.from({ length: s.books.find((item) => item.name === s.book)?.chapters || 1 }, (_, i) => i + 1)
+              .map((number) => <option key={number} value={number}>{number}</option>)}
+          </select>
+        </label>
+        <div className="bible-verse-range">
+          <label>
+            Verse (optional)
+            <select disabled={!s.ready} value={s.verse} onChange={(e) => s.changeVerse(e.target.value)}>
+              <option value="">Whole chapter</option>
+              {Array.from({ length: 176 }, (_, i) => i + 1).map((number) => <option key={number} value={number}>{number}</option>)}
+            </select>
+          </label>
+          {s.verse && <label>
+            Through
+            <select disabled={!s.ready} value={s.endVerse} onChange={(e) => s.changeEndVerse(e.target.value)}>
+              <option value="">Single verse</option>
+              {Array.from({ length: 176 - Number(s.verse) }, (_, i) => Number(s.verse) + i + 1)
+                .map((number) => <option key={number} value={number}>{number}</option>)}
+            </select>
+          </label>}
+        </div>
         <label>
           Bible version
           <select

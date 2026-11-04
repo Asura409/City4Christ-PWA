@@ -1,13 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { getTranslations, lookupPassage } from "./api";
+import { BIBLE_BOOKS, formatReference, parseReference } from "./referenceOptions";
 export function useBibleLookup({
   initialReference = "",
   initialTranslation = "",
   initialTranslationName = "",
   autoLookup = true,
 } = {}) {
-  const [reference, setReference] = useState(initialReference),
-    [translation, setTranslation] = useState("web"),
+  const parsedInitial = parseReference(initialReference),
+    [reference, setReference] = useState(initialReference),
+    [book, setBook] = useState(parsedInitial.book || "John"),
+    [chapter, setChapter] = useState(parsedInitial.chapter || "3"),
+    [verse, setVerse] = useState(parsedInitial.verse || "16"),
+    [endVerse, setEndVerse] = useState(parsedInitial.endVerse || ""),
+    [translation, setTranslation] = useState(""),
     [translations, setTranslations] = useState([]),
     [passage, setPassage] = useState(null),
     [ready, setReady] = useState(false),
@@ -26,11 +32,21 @@ export function useBibleLookup({
     setNotice("");
     setBusy(false);
   }
+  function setReferenceParts(parts) {
+    const nextBook = BIBLE_BOOKS.some((item) => item.name.toLowerCase() === parts.book?.toLowerCase())
+      ? BIBLE_BOOKS.find((item) => item.name.toLowerCase() === parts.book.toLowerCase()).name
+      : book;
+    setBook(nextBook);
+    setChapter(parts.chapter || "1");
+    setVerse(parts.verse || "");
+    setEndVerse(parts.endVerse || "");
+  }
   async function search(ref = reference, id = translation) {
     const version = ++generation.current;
     controller.current?.abort();
     controller.current = new AbortController();
     setReference(ref);
+    setReferenceParts(parseReference(ref));
     setTranslation(id);
     setPassage(null);
     setError("");
@@ -67,6 +83,7 @@ export function useBibleLookup({
     clear();
     setReady(false);
     setReference(initialReference);
+    setReferenceParts(parsedInitial);
     getTranslations(metadata.signal)
       .then((list) => {
         if (cancelled) return;
@@ -80,10 +97,15 @@ export function useBibleLookup({
                 t.id === initialTranslationName.toLowerCase()),
         );
         if ((initialTranslation || initialTranslationName) && !selected) {
-          setTranslation("web");
+          selected = list[0];
+          setTranslation(selected?.id || "");
           setNotice(
             "The original version is not available here. Choose a supported version to look up this reference.",
           );
+          if (!selected) {
+            setReady(false);
+            setError("No Bible versions are available.");
+          }
           return;
         }
         selected = selected || list.find((t) => t.id === "web") || list[0];
@@ -116,6 +138,11 @@ export function useBibleLookup({
   ]);
   return {
     reference,
+    book,
+    chapter,
+    verse,
+    endVerse,
+    books: BIBLE_BOOKS,
     translation,
     translations,
     passage,
@@ -127,7 +154,13 @@ export function useBibleLookup({
     changeReference: (value) => {
       clear();
       setReference(value);
+      setReferenceParts(parseReference(value));
     },
+    changeBook: (value) => { clear(); setBook(value); setChapter("1"); setVerse(""); setEndVerse(""); },
+    changeChapter: (value) => { clear(); setChapter(value); setVerse(""); setEndVerse(""); },
+    changeVerse: (value) => { clear(); setVerse(value); setEndVerse(""); },
+    changeEndVerse: (value) => { clear(); setEndVerse(value); },
+    buildReference: () => formatReference({ book, chapter, verse, endVerse }),
     changeTranslation: (value) => {
       clear();
       setTranslation(value);
