@@ -46,7 +46,9 @@ export async function buildSite({
       await readFile(join(temporary, "index.html"), "utf8")
     ).replace("__API_ORIGIN__", origin).replaceAll("__MEDIA_ORIGIN__", mediaOrigin);
     await writeFile(join(outDir, "index.html"), html);
-    // Dedicated allowlisted callback pages render the same React application.
+    // The legacy auth page and dedicated OAuth callback pages all render the
+    // same React application shell.
+    await writeFile(join(outDir, 'auth.html'), html);
     for (const section of ['oauth', 'account']) {
       await mkdir(join(outDir, section), {recursive: true});
       await writeFile(join(outDir, section, 'auth.html'), html);

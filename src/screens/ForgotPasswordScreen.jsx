@@ -14,7 +14,9 @@ export default function ForgotPasswordScreen() {
     try {
       await api.forgotPassword(
         email,
-        new URL("/auth.html", location.origin).href,
+        // The build serves this React shell at auth.html while preserving any
+        // hosting prefix (for example /City4Christ-PWA/ on GitHub Pages).
+        new URL("auth.html", location.href).href,
       );
       setMessage(
         "If the account is eligible, a password reset email will arrive shortly.",

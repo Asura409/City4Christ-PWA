@@ -27,6 +27,7 @@ import "./App.css";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import VerifyScreen from "./screens/VerifyScreen";
 import ForgotPasswordScreen from "./screens/ForgotPasswordScreen";
+import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 import PostsScreen from "./screens/PostsScreen";
 import MessagesScreen from "./screens/MessagesScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
@@ -57,6 +58,7 @@ const AUTH_ROUTES = [
   "/signup",
   "/new-user",
   "/forgot-password",
+  "/reset-password",
   "/verify",
 ];
 
@@ -96,6 +98,7 @@ export default function App() {
           />
           <Route path="/verify" element={<VerifyScreen />} />
           <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
+          <Route path="/reset-password" element={<ResetPasswordScreen />} />
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </div>
