@@ -7,10 +7,10 @@ const ACCEPTED_TYPES = [
   "video/mp4", "video/webm",
 ].join(",");
 
-export default function MessageComposer({ label, placeholder, disabled = false, onSend, onTyping }) {
+export default function MessageComposer({ label, placeholder, initialBody = "", disabled = false, onSend, onTyping }) {
   const id = useId();
   const input = useRef(null);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(initialBody);
   const [files, setFiles] = useState([]);
   const [sending, setSending] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("");

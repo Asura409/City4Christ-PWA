@@ -4,6 +4,7 @@ import { Avatar } from "@/components/Avatar";
 import RealtimeStatus from "@/messages/RealtimeStatus";
 import MessageComposer from "@/messages/MessageComposer";
 import MessageAttachments from "@/messages/MessageAttachments";
+import MessageActionsMenu, { copyMessageText } from "@/messages/MessageActionsMenu";
 import { mergeMessageHistory } from "@/messages/realtimeClient";
 import { useRealtimeMessages } from "@/messages/useRealtimeMessages";
 import {
@@ -32,6 +33,8 @@ export default function GroupMessagesPanel() {
   const [messageQuery, setMessageQuery] = useState("");
   const [activeMessageQuery, setActiveMessageQuery] = useState("");
   const [typingSenders, setTypingSenders] = useState(new Set());
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [pinnedMessageIds, setPinnedMessageIds] = useState(() => new Set());
   const [presenceKnown, setPresenceKnown] = useState(false);
   const [onlineMemberCount, setOnlineMemberCount] = useState(0);
   const typingTimers = useRef(new Map());
@@ -187,6 +190,7 @@ export default function GroupMessagesPanel() {
       pendingIDs.current.delete(idempotencyKey);
       setMessages((current) => current.some((item) => item.id === message.id) ? current : [...current, message].sort((a, b) => a.sequence - b.sequence));
       setGroups((current) => current.map((item) => item.groupId === selected.groupId ? { ...item, lastMessage: message, unreadCount: 0 } : item));
+      setReplyingTo(null);
       return true;
     } catch (err) {
       setThreadError(err.message || "Message could not be sent. Retry when you are back online.");
@@ -208,6 +212,19 @@ export default function GroupMessagesPanel() {
     } catch (err) {
       setThreadError(err.message || "Message could not be removed.");
     }
+  }
+
+  async function cutOwnMessage(message) {
+    if (!await copyMessageText(message)) return;
+    await removeMessage(message);
+  }
+
+  function togglePinned(message) {
+    setPinnedMessageIds((current) => {
+      const next = new Set(current);
+      if (next.has(message.id)) next.delete(message.id); else next.add(message.id);
+      return next;
+    });
   }
 
   return (
@@ -238,14 +255,14 @@ export default function GroupMessagesPanel() {
           {threadLoading && <p role="status" className="messages-state">Loading group messages…</p>}
           <div className="message-history" aria-live="polite">
             {messages.length === 0 && !threadLoading && !threadError && <p className="messages-empty thread-empty">Start the group conversation.</p>}
-            {messages.map((message) => <article key={message.id} className={`message-bubble${message.senderId !== profile?.id ? " received" : " sent"}${message.deleted ? " removed" : ""}`}>
+            {messages.map((message) => <MessageActionsMenu key={message.id} message={message} own={message.senderId === profile?.id} canDelete={selected.canModerate || message.senderId === profile?.id} pinned={pinnedMessageIds.has(message.id)} onDelete={() => removeMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}><article className={`message-bubble${message.senderId !== profile?.id ? " received" : " sent"}${message.deleted ? " removed" : ""}`}>
               {message.deleted ? <p>This message was removed by a group moderator.</p> : <><div className="group-message-author"><Avatar name={`${message.senderFirstName || "Group"} ${message.senderLastName || "member"}`} src={message.senderAvatar?.url || (message.senderId === profile?.id ? profile?.avatar?.url : "")} size={28} /><span>{message.senderId === profile?.id ? "You" : [message.senderFirstName, message.senderLastName].filter(Boolean).join(" ") || "Group member"}</span></div>{message.body && <p>{message.body}</p>}<MessageAttachments items={message.attachments} /></>}
               <time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time>
-              {selected.canModerate && !message.deleted && <button type="button" className="group-message-delete" aria-label="Delete message" onClick={() => void removeMessage(message)}>Delete</button>}
-            </article>)}
+            </article></MessageActionsMenu>)}
           </div>
-          {typingSenders.size > 0 && <p className="message-typing-indicator" role="status">{typingSenders.size === 1 ? "A group member is typing…" : "Group members are typing…"}</p>}
-          <MessageComposer key={selected.groupId} label="Send a group message" placeholder="Write to the group…" disabled={sending} onSend={submit} onTyping={(active) => realtime.send({ type: active ? "typing.start" : "typing.stop", scope: "group", groupId: selected.groupId })} />
+          {typingSenders.size > 0 && <p className="message-typing-indicator" role="status"><span className="typing-dots" aria-hidden="true"><i /><i /><i /></span><span>{typingSenders.size === 1 ? "A group member is typing" : "Group members are typing"}</span></p>}
+          {replyingTo && <div className="message-reply-preview"><span><strong>Replying to</strong> {replyingTo.body?.slice(0, 100) || "Attachment"}</span><button type="button" onClick={() => setReplyingTo(null)} aria-label="Cancel reply">×</button></div>}
+          <MessageComposer key={`${selected.groupId}:${replyingTo?.id || "new"}`} initialBody={replyingTo ? `> ${replyingTo.body || "Attachment"}\n\n` : ""} label="Send a group message" placeholder="Write to the group…" disabled={sending} onSend={submit} onTyping={(active) => realtime.send({ type: active ? "typing.start" : "typing.stop", scope: "group", groupId: selected.groupId })} />
         </>}
       </section>
     </section>

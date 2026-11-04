@@ -6,7 +6,6 @@ const ITEMS = [
   { path: '/home', icon: 'home', label: 'Home' },
   { path: '/community', icon: 'users', label: 'Community' },
   null, // FAB slot
-  { path: '/chat', icon: 'chat', label: 'Messages' },
   { path: '/prayer', icon: 'flame', label: 'Prayer' },
   { path: '/word', icon: 'book', label: 'Word' },
 ];

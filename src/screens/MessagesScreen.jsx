@@ -5,6 +5,7 @@ import { useSession } from "@/auth/session";
 import RealtimeStatus from "@/messages/RealtimeStatus";
 import MessageComposer from "@/messages/MessageComposer";
 import MessageAttachments from "@/messages/MessageAttachments";
+import MessageActionsMenu, { copyMessageText } from "@/messages/MessageActionsMenu";
 import { mergeMessageHistory } from "@/messages/realtimeClient";
 import { useRealtimeMessages } from "@/messages/useRealtimeMessages";
 import {
@@ -31,7 +32,7 @@ function timeLabel(value) {
   return Number.isNaN(date.getTime()) ? "" : new Intl.DateTimeFormat(undefined, { hour: "numeric", minute: "2-digit" }).format(date);
 }
 
-export default function MessagesScreen() {
+export default function MessagesScreen({ embedded = false }) {
   const { profile } = useSession();
   const [view, setView] = useState("direct");
   const [conversations, setConversations] = useState([]);
@@ -46,7 +47,8 @@ export default function MessagesScreen() {
   const [activeMessageQuery, setActiveMessageQuery] = useState("");
   const [editingMessageId, setEditingMessageId] = useState("");
   const [editBody, setEditBody] = useState("");
-  const [clientTime, setClientTime] = useState(Date.now());
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [pinnedMessageIds, setPinnedMessageIds] = useState(() => new Set());
   const [sending, setSending] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -133,11 +135,6 @@ export default function MessagesScreen() {
     return () => { clearInterval(timer); realtime.send({ type: "presence.unsubscribe", ...target }); };
   }, [selectedId, realtime.status, realtime.send]);
   useEffect(() => () => clearTimeout(typingTimer.current), []);
-  useEffect(() => {
-    const timer = setInterval(() => setClientTime(Date.now()), 15000);
-    return () => clearInterval(timer);
-  }, []);
-
   useEffect(() => {
     const controller = new AbortController();
     void refreshConversations(controller.signal);
@@ -230,6 +227,7 @@ export default function MessagesScreen() {
       setConversations((current) => current.map((item) => item.id === selected.id
         ? { ...item, lastMessage: message, unreadCount: 0 }
         : item));
+      setReplyingTo(null);
       return true;
     } catch (error) {
       setThreadError(error.message || "Message could not be sent. Retry when you are back online.");
@@ -265,6 +263,19 @@ export default function MessagesScreen() {
     } catch (error) {
       setThreadError(error.message || "Could not delete this message.");
     }
+  }
+
+  async function cutOwnMessage(message) {
+    if (!await copyMessageText(message)) return;
+    await removeOwnMessage(message);
+  }
+
+  function togglePinned(message) {
+    setPinnedMessageIds((current) => {
+      const next = new Set(current);
+      if (next.has(message.id)) next.delete(message.id); else next.add(message.id);
+      return next;
+    });
   }
 
   async function loadOlderMessages() {
@@ -303,9 +314,9 @@ export default function MessagesScreen() {
 
   return (
     <div className="messages-workspace">
-      <div className="messages-view-tabs" role="group" aria-label="Message type">
-        <button type="button" className={view === "direct" ? "active" : ""} aria-pressed={view === "direct"} onClick={() => setView("direct")}>Direct messages</button>
-        <button type="button" className={view === "groups" ? "active" : ""} aria-pressed={view === "groups"} onClick={() => setView("groups")}>Group chats</button>
+      <div className="messages-view-tabs" role="group" aria-label="Community conversations">
+        <button type="button" className={view === "direct" ? "active" : ""} aria-pressed={view === "direct"} onClick={() => setView("direct")}>{embedded ? "People" : "Direct messages"}</button>
+        <button type="button" className={view === "groups" ? "active" : ""} aria-pressed={view === "groups"} onClick={() => setView("groups")}>{embedded ? "Groups & ministries" : "Group chats"}</button>
       </div>
       {view === "direct" ? <section className={`screen active messages-screen${selected ? " has-selection" : ""}`} aria-label="Messages">
       <aside className="messages-list-panel" aria-label="Conversations">
@@ -353,26 +364,20 @@ export default function MessagesScreen() {
             {messages.length === 0 && !threadLoading && <p className="messages-empty thread-empty">Start the conversation with a message.</p>}
             {messages.map((message) => { const sent = message.senderId === profile?.id; const authorName = sent ? nameOf(profile) : nameOf(selected); const authorAvatar = sent ? profile?.avatar?.url : selected.partnerAvatar?.url; return <div key={message.id} className={`message-row ${sent ? "sent" : "received"}`}>
               {!sent && <Avatar name={authorName} src={authorAvatar} size={30} />}
+              <MessageActionsMenu message={message} own={sent} canDelete={sent} pinned={pinnedMessageIds.has(message.id)} onDelete={() => removeOwnMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}>
               <article className={`message-bubble${sent ? " sent" : " received"}${message.deleted ? " removed" : ""}`}>
-              {message.deleted ? <p>This message was deleted.</p> : editingMessageId === message.id ? <form className="message-edit-form" onSubmit={(event) => { event.preventDefault(); void saveMessageEdit(message); }}>
-                <label className="sr-only" htmlFor={`edit-${message.id}`}>Edit message</label>
-                <textarea id={`edit-${message.id}`} aria-label="Edit message" rows={3} maxLength={4000} value={editBody} onChange={(event) => setEditBody(event.target.value)} />
-                <button className="btn dark" type="submit" disabled={!editBody.trim()}>Save edit</button>
-                <button className="btn soft" type="button" onClick={() => { setEditingMessageId(""); setEditBody(""); }}>Cancel</button>
-              </form> : <>{message.body && <p>{message.body}</p>}<MessageAttachments items={message.attachments} />{message.editedAt && <span className="message-edited-label">Edited</span>}</>}
+              {message.deleted ? <p>This message was deleted.</p> : <>{message.body && <p>{message.body}</p>}<MessageAttachments items={message.attachments} />{message.editedAt && <span className="message-edited-label">Edited</span>}</>}
               <time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time>
-              {message.senderId === profile?.id && !message.deleted && clientTime - new Date(message.createdAt).getTime() >= 0 && clientTime - new Date(message.createdAt).getTime() < 10 * 60 * 1000 && editingMessageId !== message.id && <div className="message-own-actions">
-                <button type="button" className="btn soft" aria-label="Edit message" onClick={() => { setEditingMessageId(message.id); setEditBody(message.body); }}>Edit</button>
-                <button type="button" className="btn soft" aria-label="Delete message" onClick={() => void removeOwnMessage(message)}>Delete</button>
-              </div>}
               {message.senderId === profile?.id && message.sequence <= selected.partnerReadSequence && <span className="message-read-receipt">Seen</span>}
               </article>
+              </MessageActionsMenu>
               {sent && <Avatar name={authorName} src={authorAvatar} size={30} />}
             </div>; })}
           </div>
-          {partnerTyping && <p className="message-typing-indicator" role="status">{nameOf(selected)} is typing…</p>}
+          {partnerTyping && <p className="message-typing-indicator" role="status"><span className="typing-dots" aria-hidden="true"><i /><i /><i /></span><span>{nameOf(selected)} is typing</span></p>}
           {hasOlder && <button className="btn soft older-messages" type="button" onClick={() => void loadOlderMessages()} disabled={threadLoading}>Load older messages</button>}
-          <MessageComposer key={selected.id} label="Send a message" placeholder="Write a message…" disabled={sending} onSend={submitMessage} onTyping={(active) => realtime.send({ type: active ? "typing.start" : "typing.stop", scope: "direct", conversationId: selected.id })} />
+          {replyingTo && <div className="message-reply-preview"><span><strong>Replying to</strong> {replyingTo.body?.slice(0, 100) || "Attachment"}</span><button type="button" onClick={() => setReplyingTo(null)} aria-label="Cancel reply">×</button></div>}
+          <MessageComposer key={`${selected.id}:${replyingTo?.id || "new"}`} initialBody={replyingTo ? `> ${replyingTo.body || "Attachment"}\n\n` : ""} label="Send a message" placeholder="Write a message…" disabled={sending} onSend={submitMessage} onTyping={(active) => realtime.send({ type: active ? "typing.start" : "typing.stop", scope: "direct", conversationId: selected.id })} />
         </>}
       </section>
       </section> : <GroupMessagesPanel />}
