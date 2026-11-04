@@ -31,6 +31,7 @@ export default function PostsScreen({
   refreshKey = 0,
   groupId = "",
   onAccessChange,
+  composer = null,
 }) {
   const { profile } = useSession();
   const [posts, setPosts] = useState([]);
@@ -505,6 +506,7 @@ export default function PostsScreen({
           )}
         </section>
       )}
+      {composer}
       {loading && (
         <p className="posts-state" role="status">
           Loading posts…

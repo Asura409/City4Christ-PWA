@@ -99,8 +99,9 @@ test("Super Admin can open the redacted member record history", async ({ page })
   expect(paths).toContain(`/api/v1/admin/members/${id}/access-audit`);
 });
 
-test("staff can correct a member name with a reason and the current version", async ({ page }) => {
-  await mocked(page, { signedIn: true, access: STAFF });
+for (const [role, access] of [["staff", STAFF], ["super administrator", SUPER_ADMIN]]) {
+test(`${role} cannot edit another member name`, async ({ page }) => {
+  await mocked(page, { signedIn: true, access });
   const id = "11111111-1111-4111-8111-111111111111";
   let correction;
   await page.route("**/api/v1/admin/members**", async (route) => {
@@ -118,11 +119,12 @@ test("staff can correct a member name with a reason and the current version", as
   await page.goto("/#/admin/members");
   const roster = page.getByRole("region", { name: "Member administration" });
   await roster.getByLabel("Search by name or email").fill("Grace");
-  await roster.getByRole("button", { name: "Search members" }).click();
   await roster.getByRole("button", { name: "View member details" }).click();
-  await roster.getByLabel("Last name").fill("Corrected");
-  await roster.getByLabel("Reason for correction").fill("Member asked to correct the spelling");
-  await roster.getByRole("button", { name: "Save name correction" }).click();
-  await expect(roster.getByRole("heading", { name: "Grace Corrected" })).toBeVisible();
-  expect(correction).toEqual({ lastName: "Corrected", expectedVersion: 1, reason: "Member asked to correct the spelling" });
+  await expect(roster.getByRole("region", { name: "Member details" })).toBeVisible();
+  await expect(roster.getByLabel("First name", { exact: true })).toHaveCount(0);
+  await expect(roster.getByLabel("Last name", { exact: true })).toHaveCount(0);
+  await expect(roster.getByRole("button", { name: "Save name correction" })).toHaveCount(0);
+  await expect(roster.getByText("Members manage their own names from My account.")).toBeVisible();
+  expect(correction).toBeUndefined();
 });
+}

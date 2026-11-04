@@ -8,6 +8,13 @@ import { MFASettings } from "@/auth/MFASettings";
 import { AccountDeletionPanel } from "@/account/AccountDeletionPanel";
 import ProfilePhotoPanel from "@/profiles/ProfilePhotoPanel";
 
+function AccountOption({ title, description, children, danger = false }) {
+  return <details className={`account-option ${danger ? "account-option-danger" : ""}`}>
+    <summary><span><strong>{title}</strong><small>{description}</small></span><span className="account-option-chevron" aria-hidden="true">+</span></summary>
+    <div className="account-option-body">{children}</div>
+  </details>;
+}
+
 function readableRole(role) {
   return role.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
@@ -26,6 +33,7 @@ export default function ProfileScreen() {
  [canFollowUp,setCanFollowUp]=useState(false),
  [canReviewDeletion,setCanReviewDeletion]=useState(false);
   const [canSearchMembers, setCanSearchMembers] = useState(false);
+  const [canManagePastors, setCanManagePastors] = useState(false);
   const [access, setAccess] = useState(null);
   const [pastorProfile, setPastorProfile] = useState(null);
   const [googleLinked, setGoogleLinked] = useState(false);
@@ -37,7 +45,15 @@ export default function ProfileScreen() {
     setAccessError("");
     try {
       const { data } = await api.request("/api/v1/me/access");
-      if (mounted.current) setAccess(data);
+      if (mounted.current) {
+        setAccess(data);
+        setCanFollowUp(hasCapability(data, "visitors.follow_up"));
+        setCanReviewDeletion(hasCapability(data, "accounts.deletion.review"));
+        setCanSearchMembers(hasCapability(data, "members.records.read"));
+        setCanManagePastors(hasCapability(data, "roles.privileged.manage"));
+        setCanManageSermons(hasCapability(data, "sermons.manage"));
+        setStaff(["sermons.manage", "roles.manage", "roles.read"].some((permission) => hasCapability(data, permission)));
+      }
     } catch (e) {
       if (mounted.current) setAccessError(e.message || "Could not load account access.");
     } finally {
@@ -55,6 +71,7 @@ export default function ProfileScreen() {
  if(live)setCanFollowUp(hasCapability(data,"visitors.follow_up"));
  if(live)setCanReviewDeletion(hasCapability(data,"accounts.deletion.review"));
         if(live)setCanSearchMembers(hasCapability(data,"members.records.read"));
+        if(live)setCanManagePastors(hasCapability(data,"roles.privileged.manage"));
         if(live)setCanManageSermons(hasCapability(data,"sermons.manage"));
         if (live)
           setStaff(
@@ -82,6 +99,7 @@ export default function ProfileScreen() {
     e.preventDefault();
     setBusy(true);
     setError("");
+    setMessage("");
     try {
       const patch = {};
       if (firstName !== profile.firstName) patch.firstName = firstName;
@@ -109,103 +127,69 @@ export default function ProfileScreen() {
     }
   }
   return (
-    <section className="screen active" aria-label="Your profile">
-      <div className="profile-layout">
-        <aside className="profile-sidebar">
-          <div className="profile-identity">
-            <div className="banner" />
-            <ProfilePhotoPanel profile={profile} setProfile={setProfile} />
-            <h1 className="p-name">{profile.firstName} {profile.lastName}</h1>
-            <p>{profile.email}</p>
+    <section className="screen active account-screen" aria-label="Your profile">
+      <div className="account-page">
+        <header className="account-heading"><p className="group-eyebrow">YOUR CITY4CHRIST ACCOUNT</p><h1>My account</h1><p>A little about you. Everything you need to manage your account.</p></header>
+        <section className="account-hero" aria-label="Account overview">
+          <div className="account-cover" aria-hidden="true"><span>Faith. Community. Connection.</span></div>
+          <div className="account-hero-body">
+            <ProfilePhotoPanel profile={profile} setProfile={setProfile} compact />
+            <div className="account-hero-name"><h2>{profile.firstName} {profile.lastName}</h2><p>{profile.email}</p>{profile.emailVerified === true && <span className="account-verified"><span aria-hidden="true">✓</span> Email verified</span>}</div>
           </div>
-          <div className="profile-sidebar-status"><span>Account status</span><strong>Active member</strong></div>
-          <nav className="profile-sidebar-nav" aria-label="Profile shortcuts">
-            <a href="#profile-details">Profile details</a>
-            <a href="#account-access">Account access</a>
-            <a href="#security-tools">Security tools</a>
-          </nav>
-        </aside>
-        <div className="profile-content">
-      <section id="account-access" className="profile-access auth-card" aria-label="My account access">
-        <div className="profile-access-heading">
-          <div><p className="group-eyebrow">SECURITY</p><h2>Account access</h2></div>
-          <button className="btn soft" type="button" onClick={() => void loadAccess()} disabled={accessLoading}>
-            {accessLoading ? "Checking…" : "Refresh"}
-          </button>
-        </div>
-        {accessError && <p role="alert">{accessError}</p>}
-        {accessLoading && !access && <p role="status">Checking your roles and permissions…</p>}
-        {!accessLoading && access && <>
-          <div className="profile-access-status">
-            <strong>{access.roles?.length ? "Assigned church roles" : "Member access"}</strong>
-            <span>{access.roles?.length ? "Your current roles are shown below." : "No elevated church role is assigned to this account."}</span>
-          </div>
-          <div className="profile-access-roles">
-            {(access.roles || []).length ? access.roles.map((role) => (
-              <div className="profile-access-role" key={`${role.role}:${role.scope}`}>
-                <b>{readableRole(role.role)}</b><small>{role.scope || "Church-wide access"}</small>
-              </div>
-            )) : <div className="profile-access-role"><b>Standard member</b><small>Community access</small></div>}
-          </div>
-          <details className="profile-access-details">
-            <summary>View permissions ({(access.capabilities || []).length})</summary>
-            <ul>{(access.capabilities || []).map((capability) => <li key={`${capability.permission}:${capability.scope}`}><span>{capability.permission}</span><small>{capability.scope || "Global"}</small></li>)}</ul>
-          </details>
-        </>}
-      </section>
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert">{error}</p>}
-      <form id="profile-details" className="auth-card" aria-label="Edit profile" onSubmit={save}>
-        <div className="auth-field">
-          <label htmlFor="first">First name</label>
-          <input
-            id="first"
-            required
-            maxLength={100}
-            value={firstName}
-            onChange={(e) => setFirst(e.target.value)}
-          />
-        </div>
-        <div className="auth-field">
-          <label htmlFor="last">Last name</label>
-          <input
-            id="last"
-            required
-            maxLength={100}
-            value={lastName}
-            onChange={(e) => setLast(e.target.value)}
-          />
-        </div>
-        <p className="profile-directory-note">Verified members are visible in the church member directory. Private conversations remain in Messages.</p>
-        <button className="btn gold block" disabled={busy}>
-          Save profile
-        </button>
-      </form>
-      <div id="security-tools" className="profile-security-tools">
-        <GoogleLinkPanel hasPassword={profile.hasPassword} googleLinked={googleLinked}/>
-        <ChangePasswordPanel hasPassword={profile.hasPassword} />
-        <MFASettings />
+        </section>
+
+        <section id="profile-details" className="account-card" aria-labelledby="personal-heading">
+          <div className="account-section-heading"><h2 id="personal-heading">Personal information</h2><p>How you appear in the church community.</p></div>
+          <form className="account-personal-form" aria-label="Edit profile" onSubmit={save}>
+            <label className="auth-field" htmlFor="first">First name<input id="first" required maxLength={100} value={firstName} disabled={busy} onChange={(e) => { setFirst(e.target.value); setMessage(""); }} /></label>
+            <label className="auth-field" htmlFor="last">Last name<input id="last" required maxLength={100} value={lastName} disabled={busy} onChange={(e) => { setLast(e.target.value); setMessage(""); }} /></label>
+            <div className="account-email"><span>Email address</span><strong>{profile.email}</strong><small>Your email is used to sign in.</small></div>
+            {message && <p role="status">{message}</p>}
+            {error && <p role="alert">{error}</p>}
+            <div className="account-save-row"><small>Your name and photo appear in the member directory.</small><button className="btn gold" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button></div>
+          </form>
+        </section>
+
+        <section id="security-tools" className="account-card" aria-labelledby="security-heading">
+          <div className="account-section-heading"><h2 id="security-heading">Sign-in and security</h2><p>Your sign-in options and an extra layer of protection.</p></div>
+          <AccountOption title="Password" description={profile.hasPassword ? "Change your current password" : "You use Google to sign in"}><ChangePasswordPanel hasPassword={profile.hasPassword} /></AccountOption>
+          <AccountOption title="Google account" description={googleLinked ? "✓ Connected to Google" : "Manage your Google sign-in connection"}><GoogleLinkPanel hasPassword={profile.hasPassword} googleLinked={googleLinked} /></AccountOption>
+          <AccountOption title="Authenticator protection" description="Set up an authenticator app or manage recovery codes"><MFASettings /></AccountOption>
+        </section>
+
+        <section className="account-card" aria-labelledby="preferences-heading">
+          <div className="account-section-heading"><h2 id="preferences-heading">Preferences</h2><p>Make City4Christ feel right for you.</p></div>
+          <button className="account-destination" onClick={() => navigate("/notifications")}><span><strong>Notifications</strong><small>Manage updates and notifications on this device</small></span><span aria-hidden="true">→</span></button>
+          <button className="account-destination" onClick={() => navigate("/settings")}><span><strong>Appearance</strong><small>Light, dark, or your device theme</small></span><span aria-hidden="true">→</span></button>
+        </section>
+
+        <section id="account-access" className="account-card" aria-label="My account access">
+          <div className="account-section-heading"><h2>Your roles and workspace</h2><p>Your church responsibilities and available tools.</p></div>
+          {accessError && <p role="alert">{accessError}</p>}
+          {accessLoading && !access && <p role="status">Checking your roles and permissions…</p>}
+          {access && <div className="account-role-list">{access.roles?.length ? access.roles.map((role) => <span className="account-role" key={`${role.role}:${role.scope}`}><strong>{readableRole(role.role)}</strong><small>{role.scope || "Church-wide"}</small></span>) : <span className="account-role"><strong>Member</strong><small>Church community</small></span>}</div>}
+          {(pastorProfile || canManagePastors || canFollowUp || canReviewDeletion || canSearchMembers || staff || canManageSermons) && <div className="account-workspace">
+            {[
+              [pastorProfile, "Pastor dashboard", "/pastor-dashboard"],
+              [canManagePastors, "Create pastor profile", "/pastors"],
+              [canFollowUp, "Visitor follow-up", "/visitors"],
+              [canReviewDeletion, "Account deletion requests", "/account-deletion-requests"],
+              [canSearchMembers, "Member lookup", "/admin/members"],
+              [staff, "Church administration", "/admin"],
+              [canManageSermons, "Sermon publishing", "/admin/sermons"],
+            ].filter(([allowed]) => allowed).map(([, title, path]) => <button className="account-destination" key={path} onClick={() => navigate(path)}><strong>{title}</strong><span aria-hidden="true">→</span></button>)}
+          </div>}
+          <button className="account-refresh" type="button" onClick={() => void loadAccess()} disabled={accessLoading}>{accessLoading ? "Checking access…" : "Refresh account access"}</button>
+          {access?.capabilities?.length > 0 && <details className="profile-access-details"><summary>View detailed permissions</summary><ul>{access.capabilities.map((capability) => <li key={`${capability.permission}:${capability.scope}`}><span>{capability.permission}</span><small>{capability.scope || "Church-wide"}</small></li>)}</ul></details>}
+        </section>
+
+        <section id="account-deletion" className="account-card account-management" aria-labelledby="management-heading">
+          <div className="account-section-heading"><h2 id="management-heading">Account management</h2><p>Manage your current session or request to leave.</p></div>
+          <div className="account-signout"><div><strong>Sign out</strong><p>End your session on this browser.</p></div><button className="btn soft" disabled={busy} onClick={signOut}>Sign out</button></div>
+          <AccountOption title="Request account deletion" description="Understand what happens before submitting a request" danger><AccountDeletionPanel /></AccountOption>
+        </section>
+        <p className="account-footer-note">Need a conversation? <a href="#/pastors">Find a pastor</a></p>
       </div>
-      <div id="account-deletion"><AccountDeletionPanel /></div>
-      {(pastorProfile || canFollowUp || canReviewDeletion || canSearchMembers || staff || canManageSermons) && <section className="profile-tools auth-card" aria-label="Available tools">
-        <div className="profile-section-heading"><div><p className="group-eyebrow">YOUR WORKSPACE</p><h2>Available tools</h2></div><span>Based on your account access</span></div>
-        <div className="profile-tool-list">
-          {pastorProfile && <button className="btn soft" onClick={() => navigate("/pastor-dashboard")}>Pastor dashboard</button>}
-          {canFollowUp && <button className="btn soft" onClick={() => navigate("/visitors")}>Visitor follow-up</button>}
-          {canReviewDeletion && <button className="btn soft" onClick={() => navigate("/account-deletion-requests")}>Account deletion requests</button>}
-          {canSearchMembers && <button className="btn soft" onClick={() => navigate("/admin/members")}>Member lookup</button>}
-          {staff && <button className="btn soft" onClick={() => navigate("/admin")}>Church administration</button>}
-          {canManageSermons && <button className="btn gold" onClick={() => navigate("/admin/sermons")}>Sermon publishing</button>}
-        </div>
-      </section>}
-      <div className="profile-actions-footer">
-        <a className="btn soft" href="#/pastors">Pastoral appointments</a>
-        <button className="btn gold" disabled={busy} onClick={signOut}>
-          Sign out
-        </button>
-      </div>
-      </div>
-        </div>
     </section>
   );
 }

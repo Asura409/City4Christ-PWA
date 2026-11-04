@@ -11,6 +11,7 @@ test("React profile links Google directly with the active bearer session", async
     }),
   );
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Google account/ }).click();
   await page.getByRole("button", { name: "Link Google", exact: true }).click();
   await expect(
     page.getByRole("heading", { name: "Google test consent" }),
@@ -80,6 +81,7 @@ test("React Google linking lets an expired confirmation be renewed without leavi
     }),
   );
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Google account/ }).click();
   await page.getByRole("button", { name: "Link Google", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("Confirm your identity");
   await page
@@ -117,6 +119,7 @@ test("React Google linking retains MFA confirmation requirements", async ({
     }),
   );
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Google account/ }).click();
   await page.getByRole("button", { name: "Link Google", exact: true }).click();
   await expect(
     page.getByLabel("Authenticator code", { exact: true }),

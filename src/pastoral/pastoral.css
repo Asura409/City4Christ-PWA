@@ -43,6 +43,33 @@
   width: 100%;
   min-height: 7rem;
 }
+.pastoral-member-options {
+  display: grid;
+  max-height: 240px;
+  overflow-y: auto;
+  margin-top: 7px;
+  border: 1px solid #e5d7ee;
+  border-radius: 12px;
+  background: #fff;
+}
+.pastoral-member-options > small {
+  padding: 12px;
+  color: #806d8d;
+}
+.pastoral-member-option {
+  display: grid;
+  gap: 3px;
+  padding: 11px 13px;
+  border: 0;
+  border-bottom: 1px solid #f0e8f3;
+  color: #3b165d;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+.pastoral-member-option:last-child { border-bottom: 0; }
+.pastoral-member-option:hover, .pastoral-member-option:focus-visible { background: #f7effc; }
+.pastoral-member-option span, .pastoral-selected-member { color: #806d8d; font-size: 12px; }
 .pastoral-screen [role="alert"] {
   color: var(--rose, #b01c59);
 }

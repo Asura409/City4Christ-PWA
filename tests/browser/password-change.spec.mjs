@@ -24,6 +24,7 @@ test("signed-in password change confirms locally, revokes session and returns to
     return route.fulfill({ json: { data: { status: "password_changed" } } });
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Password/ }).click();
   const panel = page.getByRole("region", {
     name: "Change password",
     exact: true,
@@ -76,6 +77,7 @@ test("wrong current password and provider errors keep the session without false 
     });
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Password/ }).click();
   const panel = page.getByRole("region", {
     name: "Change password",
     exact: true,
@@ -98,6 +100,7 @@ test("wrong current password and provider errors keep the session without false 
   expect(changes).toBe(2);
   await page.getByRole("button", { name: "Home", exact: true }).click();
   await page.getByRole("button", { name: "My profile", exact: true }).click();
+  await page.locator(".account-option > summary").filter({ hasText: /^Password/ }).click();
   await expect(
     page
       .getByRole("region", { name: "Change password", exact: true })
@@ -124,6 +127,7 @@ test("Google-only accounts are not offered a local password change", async ({
     }),
   );
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Password/ }).click();
   const panel = page.getByRole("region", {
     name: "Change password",
     exact: true,

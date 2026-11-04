@@ -33,7 +33,18 @@ function validCapability({ permission, scope } = {}) {
     (permission === "ministry.members.manage" && ministryID(scope))
   );
 }
+export function isSuperAdmin(snapshot) {
+  return (snapshot?.roles || []).some((role) => role.role === "super_administrator" && role.scope === "");
+}
+
+const superAdminOnly = new Set([
+  "roles.manage", "roles.read", "roles.privileged.manage", "roles.operational.manage",
+  "members.records.read", "members.records.audit.read", "accounts.deletion.review",
+]);
+
 export function hasCapability(snapshot, permission, scope = "") {
+  if (permission === "members.records.manage") return false;
+  if (superAdminOnly.has(permission) && !isSuperAdmin(snapshot)) return false;
   return (
     validCapability({ permission, scope }) &&
     Array.isArray(snapshot?.capabilities) &&

@@ -3,7 +3,7 @@ import { api } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
 import { hasCapability } from "../../js/access.js";
 import { SessionConfirmation } from "@/auth/SessionConfirmation";
-import { changeChurchRole, getAdminMember, getAdminMemberAccessAudit, getChurchRoles, searchAdminMembers, updateAdminMemberName } from "./adminApi";
+import { changeChurchRole, getAdminMember, getAdminMemberAccessAudit, getChurchRoles, searchAdminMembers } from "./adminApi";
 import { listMembers } from "./directoryApi";
 import "./admin-members.css";
 
@@ -18,7 +18,6 @@ const OPERATIONAL_ROLE_OPTIONS = [["content_editor", "Content editor"]];
 export function AdminMemberSearch() {
   const [allowed, setAllowed] = useState(null);
   const [auditAllowed, setAuditAllowed] = useState(false);
-  const [manageAllowed, setManageAllowed] = useState(false);
   const [roleManageAllowed, setRoleManageAllowed] = useState(false);
   const [privilegedRoleAllowed, setPrivilegedRoleAllowed] = useState(false);
   const [query, setQuery] = useState("");
@@ -33,11 +32,6 @@ export function AdminMemberSearch() {
   const [auditCursor, setAuditCursor] = useState("");
   const [auditBusy, setAuditBusy] = useState(false);
   const [auditError, setAuditError] = useState("");
-  const [editFirstName, setEditFirstName] = useState("");
-  const [editLastName, setEditLastName] = useState("");
-  const [editReason, setEditReason] = useState("");
-  const [editBusy, setEditBusy] = useState(false);
-  const [editError, setEditError] = useState("");
   const [roles, setRoles] = useState([]);
   const [roleBusy, setRoleBusy] = useState(false);
   const [roleError, setRoleError] = useState("");
@@ -56,7 +50,6 @@ export function AdminMemberSearch() {
           setAllowed(hasCapability(data, "members.records.read"));
           const systemAuditRole = (data.roles || []).some(({ role, scope }) => ["super_administrator", "system_administrator"].includes(role) && scope === "");
           setAuditAllowed(systemAuditRole && hasCapability(data, "members.records.audit.read"));
-          setManageAllowed(hasCapability(data, "members.records.manage"));
           const privileged = hasCapability(data, "roles.privileged.manage");
           setPrivilegedRoleAllowed(privileged);
           setRoleManageAllowed(privileged || hasCapability(data, "roles.operational.manage") || hasCapability(data, "roles.manage"));
@@ -121,10 +114,6 @@ export function AdminMemberSearch() {
     try {
       const detail = await getAdminMember(id);
       setSelected(detail);
-      setEditFirstName(detail.firstName);
-      setEditLastName(detail.lastName);
-      setEditReason("");
-      setEditError("");
       if (roleManageAllowed) setRoles(await getChurchRoles(id));
     }
     catch (e) { setDetailError(e.message); }
@@ -198,29 +187,6 @@ export function AdminMemberSearch() {
     finally { setAuditBusy(false); }
   }
 
-  async function correctName(e) {
-    e.preventDefault();
-    if (!selected) return;
-    setEditBusy(true); setEditError("");
-    const input = { expectedVersion: selected.version, reason: editReason.trim() };
-    if (editFirstName.trim() !== selected.firstName) input.firstName = editFirstName;
-    if (editLastName.trim() !== selected.lastName) input.lastName = editLastName;
-    if (!input.firstName && !input.lastName) {
-      setEditError("Change a first or last name before saving.");
-      setEditBusy(false);
-      return;
-    }
-    try {
-      const updated = await updateAdminMemberName(selected.id, input);
-      setSelected((current) => ({ ...current, ...updated }));
-      setEditFirstName(updated.firstName);
-      setEditLastName(updated.lastName);
-      setEditReason("");
-      if (auditAllowed) await showAudit(selected.id);
-    } catch (e) { setEditError(e.message); }
-    finally { setEditBusy(false); }
-  }
-
   return (
     <section className="screen active admin-members" aria-label="Member administration">
       <h1>Member lookup</h1>
@@ -258,18 +224,7 @@ export function AdminMemberSearch() {
             <dt>Joined</dt>
             <dd>{new Date(selected.joinedAt).toLocaleDateString()}</dd>
           </dl>
-          {manageAllowed && <form className="admin-member-edit" onSubmit={correctName}>
-            <h3>Correct member name</h3>
-            <label htmlFor="admin-member-first-name">First name</label>
-            <input id="admin-member-first-name" maxLength={100} required value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} />
-            <label htmlFor="admin-member-last-name">Last name</label>
-            <input id="admin-member-last-name" maxLength={100} required value={editLastName} onChange={(e) => setEditLastName(e.target.value)} />
-            <label htmlFor="admin-member-edit-reason">Reason for correction</label>
-            <input id="admin-member-edit-reason" maxLength={500} required value={editReason} onChange={(e) => setEditReason(e.target.value)} />
-            <p>Only names can be changed here. Do not include private care information in the reason.</p>
-            <button className="btn dark" disabled={editBusy || !editReason.trim()}>{editBusy ? "Saving…" : "Save name correction"}</button>
-            {editError && <p role="alert">{editError}</p>}
-          </form>}
+          <p>Members manage their own names from My account.</p>
           {roleManageAllowed && <section className="admin-member-roles" aria-label="Assign church role">
             <h3>Church roles</h3>
             {roles.length > 0 ? <ul>{roles.map((assignment) => <li key={`${assignment.role}:${assignment.scope}`}><span>{assignment.role.replaceAll("_", " ")}{assignment.scope ? ` · ${assignment.scope}` : ""}</span><button className="btn soft" type="button" disabled={roleBusy || !roleReason.trim()} onClick={() => void revokeRole(assignment.role, assignment.scope)}>Revoke</button></li>)}</ul> : <p>No elevated roles assigned.</p>}

@@ -94,6 +94,7 @@ test("deletion request requires current policy consent then disables the local s
     return r.fulfill({ status: 202, json: { data: entry } });
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
   const panel = page.getByRole("region", {
     name: "Request account deletion",
     exact: true,
@@ -179,6 +180,7 @@ test("password and enrolled MFA confirmation never automatically submit deletion
     });
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
   const panel = page.getByRole("region", {
     name: "Request account deletion",
     exact: true,
@@ -242,6 +244,7 @@ test("Google-only confirmation returns to profile without submitting a request",
     return r.fallback();
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
   const confirmation = page
     .getByRole("region", { name: "Request account deletion", exact: true })
     .getByRole("region", { name: "Confirm sensitive action" });
@@ -281,6 +284,7 @@ test("deletion policy failures and outages never pretend the account was disable
     });
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
   const panel = page.getByRole("region", {
     name: "Request account deletion",
     exact: true,
@@ -319,6 +323,7 @@ test("reviewer opens separate sensitive detail and records reviewing with the cu
     });
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
   await page
     .getByRole("button", { name: "Account deletion requests", exact: true })
     .click();
@@ -460,6 +465,7 @@ test("expired deletion proof is renewed explicitly and a rate limit is not retri
     });
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
   const panel = page.getByRole("region", {
     name: "Request account deletion",
     exact: true,
@@ -604,6 +610,7 @@ test("a delayed profile save cannot restore the session after a deletion request
     return r.fallback();
   });
   await page.goto("/#/profile");
+  await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
   await page.getByLabel("First name", { exact: true }).fill("Late");
   await page.getByRole("button", { name: "Save profile", exact: true }).click();
   const panel = page.getByRole("region", {

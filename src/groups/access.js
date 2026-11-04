@@ -1,3 +1,5 @@
+import { isSuperAdmin } from "../../js/access.js";
+
 function hasRole(access, role) {
   return (access?.roles || []).some((item) => item.role === role);
 }
@@ -20,15 +22,23 @@ export function canManageGroup(access, group) {
   if (group.audience === "leadership" && !canViewLeadershipGroup(access))
     return false;
   return (
-    hasCapability(access, "groups.members.manage") ||
-    hasCapability(access, "ministry.members.manage", group.id)
+    (isSuperAdmin(access) && hasCapability(access, "groups.members.manage")) ||
+    ((access?.roles || []).some((role) => role.role === "ministry_leader" && role.scope === group.id) &&
+      hasCapability(access, "ministry.members.manage", group.id))
   );
 }
 
 export function canManageChurchGroups(access) {
-  return hasCapability(access, "groups.manage");
+  return isSuperAdmin(access) && hasCapability(access, "groups.manage");
 }
 
 export function canCreateLeadershipGroup(access) {
-  return hasRole(access, "super_administrator");
+  return isSuperAdmin(access);
+}
+
+// Scoped removals need a server-computed target decision: roster names alone
+// cannot tell us whether someone is a creator, leader, or Super Admin.
+export function canRemoveGroupMember(access, group, member, actorId) {
+  if (!member || member.accountId === actorId || !canManageGroup(access, group)) return false;
+  return isSuperAdmin(access) || member.canRemove === true;
 }

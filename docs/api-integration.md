@@ -185,6 +185,21 @@ backend slice.
 
 ## React Google sign-in and linking
 
+Member names are self-managed through My account (`PATCH /api/v1/me`). The
+member-administration frontend has no name-editing controls or admin name-update
+client, even when the account has `members.records.manage`. The corresponding
+backend admin member PATCH route must also reject name changes; removing the
+frontend controls alone does not enforce this policy against direct API calls.
+
+The React profile is organized as a single-column My account page: photo and
+identity, personal information, sign-in and security, preferences, account access
+and workspace links, and account management. Photo editing, password changes,
+Google linking, authenticator management, and deletion controls expand on demand.
+Browser workflows must open the corresponding summary before using those controls.
+Workspace shortcuts follow the account's capabilities; refreshing access also
+refreshes their visibility. Notification and appearance rows link to the existing
+screens. No additional API or environment configuration is required.
+
 The main React login uses `/oauth/auth.html` as its frontend return page. Linking
 starts directly from the React profile and uses `/account/auth.html`. Both pages
 load the same React bundle and restore access through the HttpOnly refresh cookie;

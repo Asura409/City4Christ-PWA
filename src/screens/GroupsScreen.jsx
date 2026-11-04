@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useToast } from "@/components/Toast";
 import { useSession } from "@/auth/session";
 import { GroupCard } from "@/groups/GroupCard";
-import { canManageChurchGroups, canManageGroup } from "@/groups/access";
+import { canManageChurchGroups, canManageGroup, canRemoveGroupMember } from "@/groups/access";
 import {
   decideMembership,
   getAccess,
@@ -189,6 +189,7 @@ function GroupDetailScreen({ groupId }) {
   const [members, setMembers] = useState([]);
   const [requests, setRequests] = useState([]);
   const [contentManager, setContentManager] = useState(false);
+  const [groupAccess, setGroupAccess] = useState(null);
   const [showRoster, setShowRoster] = useState(false);
   const [loading, setLoading] = useState(true);
   const [busyAccount, setBusyAccount] = useState("");
@@ -205,6 +206,7 @@ function GroupDetailScreen({ groupId }) {
       setRequests([]);
       setShowRoster(false);
       setContentManager(false);
+      setGroupAccess(null);
       setError("");
       try {
         const [{ groups }, access] = await Promise.all([
@@ -216,6 +218,7 @@ function GroupDetailScreen({ groupId }) {
           throw new Error("This group is unavailable to your account.");
         if (!current) return;
         setGroup(found);
+        setGroupAccess(access);
         const manager = canManageGroup(access, found);
         setContentManager(manager);
         setShowRoster(manager || found.membershipStatus === "active");
@@ -273,6 +276,7 @@ function GroupDetailScreen({ groupId }) {
 
   async function removeMember(member, event) {
     event.preventDefault();
+    if (!canRemoveGroupMember(groupAccess, group, member, profile?.id)) return;
     const reason = removalReason.trim();
     if (!reason) return;
     setBusyAccount(member.accountId);
@@ -404,7 +408,7 @@ function GroupDetailScreen({ groupId }) {
                     </b>
                     <span>Group member</span>
                   </div>
-                  {contentManager && member.accountId !== profile?.id && (
+                  {canRemoveGroupMember(groupAccess, group, member, profile?.id) && (
                     removingAccount === member.accountId ? (
                       <form className="group-member-removal" onSubmit={(event) => void removeMember(member, event)}>
                         <label className="auth-field">

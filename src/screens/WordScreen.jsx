@@ -161,17 +161,21 @@ export default function WordScreen() {
     finally { setMemberBusy(false); }
   }
   return (
-    <section className="screen active" aria-label="Sermons and media">
-      <div className="sh">
+    <section className="screen active word-screen" aria-label="Sermons and media">
+      <header className="word-heading">
+        <p className="group-eyebrow">GROW IN THE WORD</p>
         <h1>Word Hub</h1>
-<a className="btn soft" href="#/devotionals">Read devotionals</a>
-<a className="btn soft" href="#/bible">Open Bible</a>
-<a className="btn gold" href="#/pastors">Book a pastor</a>
-        {canManageSermons && <a className="btn gold" href="#/admin/sermons">Sermon publishing</a>}
-      </div>
+        <p className="word-intro">Teaching and encouragement for your everyday walk.</p>
+        <nav className="word-shortcuts" aria-label="Word resources">
+          <a href="#/devotionals"><span>Read devotionals</span><span aria-hidden="true">↗</span></a>
+          <a href="#/bible"><span>Open Bible</span><span aria-hidden="true">↗</span></a>
+        </nav>
+        <div className="word-utility-links"><a href="#/pastors">Book a pastor <span aria-hidden="true">→</span></a>
+        {canManageSermons && <a href="#/admin/sermons">Sermon publishing <span aria-hidden="true">→</span></a>}</div>
+      </header>
       {error && <p role="alert">{error}</p>}
       {selected ? (
-        <article className="card sermon">
+        <article className="card sermon sermon-detail">
           <button className="btn soft" onClick={() => setSelected(null)}>
             Back to sermons
           </button>
@@ -209,28 +213,27 @@ export default function WordScreen() {
       ) : (
         <>
           <form
-            className="sermon-search"
+            className="sermon-search word-search"
             role="search"
             onSubmit={(e) => {
               e.preventDefault();
               void load();
             }}
           >
-            <label htmlFor="sermon-query">Search sermons</label>
+            <div className="word-query-field"><label htmlFor="sermon-query">Search sermons</label>
             <input
               id="sermon-query"
               type="search"
+              placeholder="Title, speaker, or topic"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-            />
-            <label htmlFor="sermon-series">Sermon series</label>
+            /></div>
+            <button className="btn gold word-search-submit" aria-label="Search sermons" disabled={busy}>Search</button>
+            <div className="word-series-field"><label htmlFor="sermon-series">Sermon series</label>
             <select id="sermon-series" value={seriesFilter} onChange={(event) => setSeriesFilter(event.target.value)}>
               <option value="">All series</option>
               {seriesOptions.map((series) => <option key={series.name} value={series.name}>{series.name} ({series.sermonCount})</option>)}
-            </select>
-            <button className="btn gold" disabled={busy}>
-              Search sermons
-            </button>
+            </select></div>
           </form>
           {seriesError && <p role="status">{seriesError}</p>}
           {!busy && !items.length && <p>No published sermons yet.</p>}

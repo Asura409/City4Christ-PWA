@@ -11,11 +11,15 @@ function GroupPostFeed({ groupId, refreshKey }) {
     [error, setError] = useState("");
   return (
     <>
-      <Link to={`/groups/${groupId}`}>Back to group</Link>
-      {authorized && (
-        <form
-          aria-label="Group post"
-          className="auth-card"
+      <Link className="group-content-back" to={`/groups/${groupId}`}>← Back to group</Link>
+      <PostsScreen
+        key={`${groupId}/${revision}/${refreshKey}`}
+        groupId={groupId}
+        onAccessChange={setAuthorized}
+        composer={authorized ? (
+          <form
+            aria-label="Group post"
+            className="group-post-composer"
           onSubmit={async (e) => {
             e.preventDefault();
             setBusy(true);
@@ -31,29 +35,27 @@ function GroupPostFeed({ groupId, refreshKey }) {
               setBusy(false);
             }
           }}
-        >
-          <p>Visible only to active members of this group.</p>
-          <label>
-            Group post text
+          >
+            <div className="group-post-composer-heading">
+              <div><p className="group-eyebrow">SHARE WITH YOUR GROUP</p><h2>Post an update</h2></div>
+              <span>Active members only</span>
+            </div>
+            <label className="group-post-field">
+              <span>What would you like to share?</span>
             <textarea
               required
               maxLength={5000}
+              placeholder="Share an encouragement, update, or prayer…"
               value={body}
               onChange={(e) => setBody(e.target.value)}
             />
-          </label>
-          <button className="btn gold" disabled={busy}>
-            Share with group
-          </button>
-          {error && <p role="alert">{error}</p>}
-        </form>
-      )}
-      {!authorized && error && <p role="alert">{error}</p>}
-      <PostsScreen
-        key={`${groupId}/${revision}/${refreshKey}`}
-        groupId={groupId}
-        onAccessChange={setAuthorized}
+            </label>
+            <div className="group-post-composer-footer"><small>Your post will be visible to active members of this group.</small><button className="btn gold" disabled={busy}>{busy ? "Sharing…" : "Share update"}</button></div>
+            {error && <p role="alert">{error}</p>}
+          </form>
+        ) : null}
       />
+      {!authorized && error && <p role="alert">{error}</p>}
     </>
   );
 }

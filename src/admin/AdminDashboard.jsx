@@ -12,6 +12,7 @@ const MODULES = [
   { label: "Account requests", description: "Review deletion requests", path: "/account-deletion-requests", icon: "lock", permission: "accounts.deletion.review", accent: "lavender" },
   { label: "Events", description: "Manage church gatherings", path: "/events", icon: "cal", permission: "roles.read", accent: "gold" },
   { label: "Content", description: "Manage sermons and devotionals", path: "/word", icon: "book", permission: "sermons.manage", accent: "purple" },
+  { label: "Pastor profiles", description: "Create and manage pastor directory profiles", path: "/pastors", icon: "users", permission: "roles.privileged.manage", accent: "gold" },
 ];
 
 function readableRole(role) {

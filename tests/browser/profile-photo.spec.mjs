@@ -25,6 +25,7 @@ test("members upload a scanned profile photo and can remove it", async ({ page }
     return route.fulfill({ json: { data: { id: "11111111-1111-4111-8111-111111111111", email: "tester@example.invalid", firstName: "Grace", lastName: "Member", emailVerified: true, hasPassword: true, directoryVisible: false, ...(avatar ? { avatar } : {}) } } });
   });
   await page.goto("/#/profile");
+  await page.getByText("Change photo", { exact: true }).click();
   await page.getByLabel("Profile photo", { exact: true }).setInputFiles({
     name: "portrait.png",
     mimeType: "image/png",

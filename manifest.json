@@ -2,7 +2,7 @@
   "name": "City4Christ",
   "short_name": "City4Christ",
   "description": "A faith-centered digital community for fellowship, prayer, worship, gatherings and pastoral care.",
-  "start_url": "index.html",
+  "start_url": "/#/home",
   "scope": "./",
   "display": "standalone",
   "background_color": "#5B2C83",

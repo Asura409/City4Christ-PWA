@@ -13,7 +13,7 @@ function safePhotoURL(value) {
   }
 }
 
-export default function ProfilePhotoPanel({ profile, setProfile }) {
+export default function ProfilePhotoPanel({ profile, setProfile, compact = false }) {
   const input = useRef(null);
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -86,6 +86,8 @@ export default function ProfilePhotoPanel({ profile, setProfile }) {
           </span>
         )}
       </div>
+      <details className="profile-photo-editor" open={compact ? undefined : true}>
+      <summary>Change photo</summary>
       <form className="profile-photo-form" onSubmit={upload}>
         <label className="auth-field" htmlFor="profile-photo-file">
           Profile photo
@@ -98,7 +100,7 @@ export default function ProfilePhotoPanel({ profile, setProfile }) {
             disabled={busy}
           />
         </label>
-        <p className="profile-photo-help">JPEG, PNG or WebP, up to 5 MB. Your photo appears in the member directory only while your profile is visible there.</p>
+        <p className="profile-photo-help">JPEG, PNG or WebP, up to 5 MB. Your photo appears in the member directory.</p>
         <div className="wrap">
           <button className="btn gold" type="submit" disabled={!file || busy}>
             {busy ? "Working…" : "Upload photo"}
@@ -108,6 +110,7 @@ export default function ProfilePhotoPanel({ profile, setProfile }) {
         {status && <p role="status">{status}</p>}
         {error && <p role="alert">{error}</p>}
       </form>
+      </details>
     </section>
   );
 }
