@@ -7,7 +7,7 @@ export async function copyMessageText(message) {
   return true;
 }
 
-export default function MessageActionsMenu({ message, own = false, canDelete = false, pinned = false, onDelete, onReply, onPin, onCut, children }) {
+export default function MessageActionsMenu({ message, own = false, canDelete = false, pinned = false, onDelete, onReply, onPin, onCut, className = "", children }) {
   const [open, setOpen] = useState(false);
   const timer = useRef(null);
   const root = useRef(null);
@@ -23,7 +23,7 @@ export default function MessageActionsMenu({ message, own = false, canDelete = f
   function cancelLongPress() { clearTimeout(timer.current); }
   function choose(action) { setOpen(false); void action?.(); }
   if (message.deleted) return null;
-  return <span ref={root} className="message-actions-anchor" onContextMenu={(event) => { event.preventDefault(); setOpen(true); }} onPointerDown={startLongPress} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress}>
+  return <span ref={root} className={`message-actions-anchor ${className}`.trim()} onContextMenu={(event) => { event.preventDefault(); setOpen(true); }} onPointerDown={startLongPress} onPointerUp={cancelLongPress} onPointerLeave={cancelLongPress} onPointerCancel={cancelLongPress}>
     {children}
     {pinned && <span className="message-pin-mark" aria-label="Pinned message" title="Pinned message">●</span>}
     {open && <span className="message-actions-menu" role="menu" aria-label="Message actions">

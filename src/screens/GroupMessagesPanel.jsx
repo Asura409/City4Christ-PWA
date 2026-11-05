@@ -14,6 +14,7 @@ import {
   markGroupConversationRead,
   sendGroupMessage,
 } from "@/messages/groupApi";
+import { messageGroupPosition } from "@/messages/messageGrouping";
 
 function timeLabel(value) {
   const date = new Date(value);
@@ -255,10 +256,13 @@ export default function GroupMessagesPanel() {
           {threadLoading && <p role="status" className="messages-state">Loading group messages…</p>}
           <div className="message-history" aria-live="polite">
             {messages.length === 0 && !threadLoading && !threadError && <p className="messages-empty thread-empty">Start the group conversation.</p>}
-            {messages.map((message) => <MessageActionsMenu key={message.id} message={message} own={message.senderId === profile?.id} canDelete={selected.canModerate || message.senderId === profile?.id} pinned={pinnedMessageIds.has(message.id)} onDelete={() => removeMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}><article className={`message-bubble${message.senderId !== profile?.id ? " received" : " sent"}${message.deleted ? " removed" : ""}`}>
-              {message.deleted ? <p>This message was removed by a group moderator.</p> : <><div className="group-message-author"><Avatar name={`${message.senderFirstName || "Group"} ${message.senderLastName || "member"}`} src={message.senderAvatar?.url || (message.senderId === profile?.id ? profile?.avatar?.url : "")} size={28} /><span>{message.senderId === profile?.id ? "You" : [message.senderFirstName, message.senderLastName].filter(Boolean).join(" ") || "Group member"}</span></div>{message.body && <p>{message.body}</p>}<MessageAttachments items={message.attachments} /></>}
-              <time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time>
-            </article></MessageActionsMenu>)}
+            {messages.map((message, index) => { const sent = message.senderId === profile?.id; const { first, last } = messageGroupPosition(messages, index); const author = [message.senderFirstName, message.senderLastName].filter(Boolean).join(" ") || "Group member"; return <div key={message.id} className={`message-row ${sent ? "sent" : "received"} ${first ? "group-start" : "group-continued"} ${last ? "group-end" : "group-middle"}`}>
+              <MessageActionsMenu message={message} own={sent} canDelete={selected.canModerate || sent} pinned={pinnedMessageIds.has(message.id)} className={first ? "group-start" : "group-continued"} onDelete={() => removeMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}><article className={`message-bubble${sent ? " sent" : " received"}${message.deleted ? " removed" : ""}`}>
+              {!sent && first && <div className="group-message-author"><Avatar name={author} src={message.senderAvatar?.url} size={24} /><span>{author}</span></div>}
+              {message.deleted ? <p>This message was removed by a group moderator.</p> : <>{message.body && <p className="message-text">{message.body}</p>}<MessageAttachments items={message.attachments} /></>}
+              <span className="message-meta"><time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time></span>
+            </article></MessageActionsMenu>
+            </div>; })}
           </div>
           {typingSenders.size > 0 && <p className="message-typing-indicator" role="status"><span className="typing-dots" aria-hidden="true"><i /><i /><i /></span><span>{typingSenders.size === 1 ? "A group member is typing" : "Group members are typing"}</span></p>}
           {replyingTo && <div className="message-reply-preview"><span><strong>Replying to</strong> {replyingTo.body?.slice(0, 100) || "Attachment"}</span><button type="button" onClick={() => setReplyingTo(null)} aria-label="Cancel reply">×</button></div>}

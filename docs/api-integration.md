@@ -298,9 +298,11 @@ separate under src/dailyverse; shared paginated-list state is in src/content.
 Bible lookup uses public `/api/v1/bible/translations` and `/api/v1/bible/passages`.
 The `/#/bible` route supports reference, translation ID, or original translation
 name query parameters. Daily Bread editors can copy a passage into a dated draft;
-saving and publishing remain explicit actions. Initial versions are WEB, WEB
-British Edition and ASV 1901. Use the existing `API_URL` setting; no provider key
-is exposed to the browser.
+saving and publishing remain explicit actions. Without backend provider
+configuration, versions are WEB, WEB British Edition and ASV 1901. With the
+backend `BIBLE_API_KEY`, the same routes expose the API.Bible catalog enabled
+for NIV, KJV, NKJV and AMP. The provider key remains server-side and is never
+placed in frontend settings.
 
 Group content routes: `/#/groups/:groupId/posts` and `/#/groups/:groupId/events`.
 Use the existing API_URL; private calendars are downloaded with Bearer headers.

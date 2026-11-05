@@ -5,14 +5,12 @@ import { useTodayVerse } from "./useTodayVerse";
 export function DailyVerseCard() {
   const { data, busy, error, refresh } = useTodayVerse();
   return (
-    <section className="hero" aria-label="Daily bread">
+    <section className="hero daily-home-card" aria-label="Daily verse">
       <span className="pill">
         <Icon name="sun" />
         Daily bread
       </span>
-      <p>
-        <small>{data?.date ? data.date + " · " : ""}GMT+1</small>
-      </p>
+      <p className="daily-home-date"><small>{data?.date ? data.date + " · " : ""}GMT+1</small></p>
       {error ? (
         <p role="alert">{error}</p>
       ) : !data ? (
@@ -20,10 +18,7 @@ export function DailyVerseCard() {
       ) : data.verse ? (
         <>
           <p className="verse">{data.verse.text}</p>
-          <cite>
-            {data.verse.scriptureReference}
-            {data.verse.translation ? " · " + data.verse.translation : ""}
-          </cite>
+          <div className="daily-home-reference"><cite>{data.verse.scriptureReference}</cite>{data.verse.translation && <span>{data.verse.translation}</span>}</div>
         </>
       ) : (
         <p>No verse has been published for today.</p>

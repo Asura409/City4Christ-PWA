@@ -79,6 +79,13 @@ export default function AdminDashboard() {
       </aside>
 
       <div className="admin-main">
+        <div className="admin-topbar">
+          <div className="admin-breadcrumb"><span>Administration</span><b>/</b><strong>Overview</strong></div>
+          <div className="admin-topbar-actions">
+            <span className="admin-role-chip"><Icon name="shield" /> {roles[0] ? readableRole(roles[0].role) : "Member"}</span>
+            <button className="admin-topbar-link" type="button" onClick={() => navigate("/home")}>Return to app <Icon name="next" /></button>
+          </div>
+        </div>
         <header className="admin-dashboard-header">
           <div>
             <span className="admin-eyebrow">Admin / Church management</span>

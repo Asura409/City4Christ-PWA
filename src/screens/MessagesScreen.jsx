@@ -19,6 +19,7 @@ import {
   sendMessage,
 } from "@/messages/api";
 import GroupMessagesPanel from "@/screens/GroupMessagesPanel";
+import { messageGroupPosition } from "@/messages/messageGrouping";
 import "@/messages/messages.css";
 
 function nameOf(value) {
@@ -164,6 +165,9 @@ export default function MessagesScreen({ embedded = false }) {
   }, [search, searchOpen]);
 
   const selected = conversations.find((item) => item.id === selectedId) || null;
+  const latestSeenOutgoingId = messages
+    .filter((message) => message.senderId === profile?.id && message.sequence <= (selected?.partnerReadSequence || 0))
+    .at(-1)?.id;
 
   const openConversation = useCallback(async (conversation) => {
     selectedIdRef.current = conversation.id;
@@ -362,16 +366,13 @@ export default function MessagesScreen({ embedded = false }) {
           {threadLoading && <p role="status" className="messages-state">Loading messages…</p>}
           <div className="message-history" aria-live="polite">
             {messages.length === 0 && !threadLoading && <p className="messages-empty thread-empty">Start the conversation with a message.</p>}
-            {messages.map((message) => { const sent = message.senderId === profile?.id; const authorName = sent ? nameOf(profile) : nameOf(selected); const authorAvatar = sent ? profile?.avatar?.url : selected.partnerAvatar?.url; return <div key={message.id} className={`message-row ${sent ? "sent" : "received"}`}>
-              {!sent && <Avatar name={authorName} src={authorAvatar} size={30} />}
-              <MessageActionsMenu message={message} own={sent} canDelete={sent} pinned={pinnedMessageIds.has(message.id)} onDelete={() => removeOwnMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}>
+            {messages.map((message, index) => { const sent = message.senderId === profile?.id; const { first, last } = messageGroupPosition(messages, index); return <div key={message.id} className={`message-row ${sent ? "sent" : "received"} ${first ? "group-start" : "group-continued"} ${last ? "group-end" : "group-middle"}`}>
+              <MessageActionsMenu message={message} own={sent} canDelete={sent} pinned={pinnedMessageIds.has(message.id)} className={first ? "group-start" : "group-continued"} onDelete={() => removeOwnMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}>
               <article className={`message-bubble${sent ? " sent" : " received"}${message.deleted ? " removed" : ""}`}>
-              {message.deleted ? <p>This message was deleted.</p> : <>{message.body && <p>{message.body}</p>}<MessageAttachments items={message.attachments} />{message.editedAt && <span className="message-edited-label">Edited</span>}</>}
-              <time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time>
-              {message.senderId === profile?.id && message.sequence <= selected.partnerReadSequence && <span className="message-read-receipt">Seen</span>}
+              {message.deleted ? <p>This message was deleted.</p> : <>{message.body && <p className="message-text">{message.body}</p>}<MessageAttachments items={message.attachments} />{message.editedAt && <span className="message-edited-label">Edited</span>}</>}
+              <span className="message-meta"><time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time>{message.id === latestSeenOutgoingId && <span className="message-read-receipt">Seen</span>}</span>
               </article>
               </MessageActionsMenu>
-              {sent && <Avatar name={authorName} src={authorAvatar} size={30} />}
             </div>; })}
           </div>
           {partnerTyping && <p className="message-typing-indicator" role="status"><span className="typing-dots" aria-hidden="true"><i /><i /><i /></span><span>{nameOf(selected)} is typing</span></p>}

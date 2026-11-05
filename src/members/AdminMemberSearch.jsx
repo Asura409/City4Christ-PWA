@@ -15,6 +15,15 @@ const PRIVILEGED_ROLE_OPTIONS = [
 ];
 const OPERATIONAL_ROLE_OPTIONS = [["content_editor", "Content editor"]];
 
+function readableRole(role) {
+  return String(role || "").replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function memberRoleLabels(member, roleByMember) {
+  const roles = roleByMember[member.id] || (Array.isArray(member.roles) ? member.roles : (member.role ? [member.role] : []));
+  return roles.map((role) => typeof role === "string" ? role : role.role).filter(Boolean).map(readableRole);
+}
+
 export function AdminMemberSearch() {
   const [allowed, setAllowed] = useState(null);
   const [auditAllowed, setAuditAllowed] = useState(false);
@@ -26,6 +35,7 @@ export function AdminMemberSearch() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [selected, setSelected] = useState(null);
+  const [roleByMember, setRoleByMember] = useState({});
   const [detailBusy, setDetailBusy] = useState(false);
   const [detailError, setDetailError] = useState("");
   const [auditEvents, setAuditEvents] = useState([]);
@@ -114,7 +124,11 @@ export function AdminMemberSearch() {
     try {
       const detail = await getAdminMember(id);
       setSelected(detail);
-      if (roleManageAllowed) setRoles(await getChurchRoles(id));
+      if (roleManageAllowed) {
+        const currentRoles = await getChurchRoles(id);
+        setRoles(currentRoles);
+        setRoleByMember((current) => ({ ...current, [id]: currentRoles }));
+      }
     }
     catch (e) { setDetailError(e.message); }
     finally { setDetailBusy(false); }
@@ -135,7 +149,9 @@ export function AdminMemberSearch() {
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
     try {
       await changeChurchRole(selected.id, { role: roleToAssign, reason: roleReason.trim(), revoke });
-      setRoles(await getChurchRoles(selected.id));
+      const currentRoles = await getChurchRoles(selected.id);
+      setRoles(currentRoles);
+      setRoleByMember((current) => ({ ...current, [selected.id]: currentRoles }));
       setRoleReason("");
       setRoleNotice(revoke ? "Role revoked." : "Role assigned.");
     } catch (e) {
@@ -162,7 +178,9 @@ export function AdminMemberSearch() {
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
     try {
       await changeChurchRole(selected.id, { role, scope, reason: roleReason.trim(), revoke: true });
-      setRoles(await getChurchRoles(selected.id));
+      const currentRoles = await getChurchRoles(selected.id);
+      setRoles(currentRoles);
+      setRoleByMember((current) => ({ ...current, [selected.id]: currentRoles }));
       setRoleReason("");
       setRoleNotice("Role revoked.");
     } catch (e) {
@@ -204,15 +222,24 @@ export function AdminMemberSearch() {
         {error && <p role="alert">{error}</p>}
         {busy && <p role="status">Searching members…</p>}
         {!busy && !error && members.length === 0 && <p>{query ? "No matching members were found." : "No verified active members were found."}</p>}
-        <div className="admin-member-list" aria-label="All member records">
-          {members.map((member) => <article className="admin-member-card" key={member.id}>
-            <div className="admin-member-card-heading">
-              <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatar?.url || member.avatarUrl} size={48} />
-              <div><h2>{member.firstName} {member.lastName}</h2><p>{member.joinedAt ? `Joined ${new Date(member.joinedAt).toLocaleDateString()}` : "Church member"}</p></div>
-            </div>
-            <button className="btn soft" disabled={detailBusy} onClick={() => showDetails(member.id)}>View member details</button>
-            {roleManageAllowed && <button className="btn gold" disabled={detailBusy} onClick={() => showDetails(member.id)}>Assign role</button>}
-          </article>)}
+        <div className="admin-member-table-wrap">
+          <table className="admin-member-table">
+            <caption className="sr-only">Member role administration</caption>
+            <thead><tr><th scope="col">Member</th><th scope="col">Role</th><th scope="col" className="admin-member-actions-heading">Actions</th></tr></thead>
+            <tbody>{members.map((member) => {
+              const rolesForMember = memberRoleLabels(member, roleByMember);
+              return <tr key={member.id}>
+                <td>
+                  <div className="admin-member-identity">
+                    <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatar?.url || member.avatarUrl} size={44} />
+                    <div><strong>{member.firstName} {member.lastName}</strong><small>{member.joinedAt ? `Joined ${new Date(member.joinedAt).toLocaleDateString()}` : "Church member"}</small></div>
+                  </div>
+                </td>
+                <td><div className="admin-member-role-list">{rolesForMember.length ? rolesForMember.map((role) => <span className="admin-member-role" key={role}>{role}</span>) : <span className="admin-member-role member">Member</span>}</div></td>
+                <td><div className="admin-member-actions"><button type="button" className="btn soft" disabled={detailBusy} onClick={() => showDetails(member.id)}>View details</button>{roleManageAllowed && <button type="button" className="btn gold" disabled={detailBusy} onClick={() => showDetails(member.id)}>Assign role</button>}</div></td>
+              </tr>;
+            })}</tbody>
+          </table>
         </div>
         {detailBusy && <p role="status">Loading member details…</p>}
         {detailError && <p role="alert">{detailError}</p>}

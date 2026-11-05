@@ -11,7 +11,22 @@
 .admin-member-edit label { color: var(--muted); font-size: 14px; font-weight: 650; }
 .admin-member-edit input { min-width: 0; min-height: 44px; padding: 9px 11px; border: 1px solid var(--line); border-radius: 10px; background: rgba(20,16,36,.76); color: var(--text); }
 .admin-member-edit p { margin: 0; color: var(--muted); overflow-wrap: anywhere; }
-.admin-member-list { display: grid; gap: 10px; }
+.admin-member-table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); box-shadow: 0 10px 24px rgba(39,24,47,.06); }
+.admin-member-table { width: 100%; min-width: 680px; border-collapse: collapse; text-align: left; }
+.admin-member-table th { padding: 12px 16px; border-bottom: 1px solid var(--line); color: var(--muted); background: #faf7fc; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+.admin-member-table td { padding: 13px 16px; border-bottom: 1px solid #eee8f0; vertical-align: middle; }
+.admin-member-table tbody tr:last-child td { border-bottom: 0; }
+.admin-member-table tbody tr:hover { background: #fdfaff; }
+.admin-member-identity { display: flex; align-items: center; gap: 11px; min-width: 220px; }
+.admin-member-identity > div { display: grid; gap: 4px; min-width: 0; }
+.admin-member-identity strong { color: var(--lav-ink); font-size: 14px; }
+.admin-member-identity small { color: var(--muted); font-size: 11px; }
+.admin-member-role-list { display: flex; flex-wrap: wrap; gap: 6px; min-width: 150px; }
+.admin-member-role { display: inline-flex; align-items: center; padding: 5px 8px; border-radius: 999px; color: #5b2c83; background: #eee3f5; font-size: 11px; font-weight: 800; white-space: nowrap; }
+.admin-member-role.member { color: #75677c; background: #f1edf2; }
+.admin-member-actions-heading { text-align: right; }
+.admin-member-actions { display: flex; justify-content: flex-end; gap: 7px; min-width: 210px; }
+.admin-member-actions .btn { min-height: 36px; padding: 7px 10px; font-size: 11px; white-space: nowrap; }
 .admin-member-card { padding: 14px 16px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
 .admin-member-card-heading { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .admin-member-card-heading > div { min-width: 0; }

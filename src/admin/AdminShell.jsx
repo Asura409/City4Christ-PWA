@@ -35,6 +35,8 @@ export default function AdminShell({ children }) {
 
   const availableModules = useMemo(() => MODULES.filter(({ permission }) => hasCapability(access, permission)), [access]);
   const roles = access?.roles || [];
+  const currentModule = MODULES.find((item) => item.path === location.pathname);
+  const pageLabel = currentModule?.label || (location.pathname === "/admin" ? "Overview" : "Workspace");
 
   if (error) return <section className="screen active admin-dashboard-state"><p role="alert">{error}</p></section>;
   if (!access) return <section className="screen active admin-dashboard-state"><p role="status">Checking administration access…</p></section>;
@@ -51,7 +53,16 @@ export default function AdminShell({ children }) {
         <button className="admin-side-link admin-side-home" onClick={() => navigate("/home")}><Icon name="back" /> Return to app</button>
         <div className="admin-sidebar-account"><span className="admin-sidebar-avatar">{profile?.firstName?.[0]}{profile?.lastName?.[0]}</span><span><strong>{profile?.firstName} {profile?.lastName}</strong><small>{roles[0] ? readableRole(roles[0].role) : "Member"}</small></span></div>
       </aside>
-      <div className="admin-main admin-subpage-main">{children}</div>
+      <div className="admin-main admin-subpage-main">
+        <div className="admin-topbar">
+          <div className="admin-breadcrumb"><span>Administration</span><b>/</b><strong>{pageLabel}</strong></div>
+          <div className="admin-topbar-actions">
+            <span className="admin-role-chip"><Icon name="shield" /> {roles[0] ? readableRole(roles[0].role) : "Member"}</span>
+            <button className="admin-topbar-link" type="button" onClick={() => navigate("/admin")}>Dashboard <Icon name="next" /></button>
+          </div>
+        </div>
+        {children}
+      </div>
     </section>
   );
 }

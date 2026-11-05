@@ -6,7 +6,7 @@ const empty = {
   scriptureReference: "",
   author: "City4Christ",
 };
-export function DevotionalForm({ entry, onSaved, onReload, onForbidden }) {
+export function DevotionalForm({ entry, onSaved, onReload, onForbidden, onDirty }) {
   const [fields, setFields] = useState(empty),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
@@ -26,11 +26,15 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden }) {
     setError("");
     setNotice("");
     setConflict(false);
+    onDirty?.(false);
   }, [entry]);
   function field(name) {
     return {
       value: fields[name],
-      onChange: (e) => setFields((old) => ({ ...old, [name]: e.target.value })),
+      onChange: (e) => {
+        setFields((old) => ({ ...old, [name]: e.target.value }));
+        onDirty?.(true);
+      },
     };
   }
   async function save(event) {
@@ -49,6 +53,7 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden }) {
           })
         : await createDraft(fields);
       onSaved(result);
+      onDirty?.(false);
       setNotice(
         result.status === "published"
           ? "Devotional published."
@@ -77,11 +82,9 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden }) {
       onSubmit={save}
       className="devotional-form"
     >
-      <h3>{entry ? "Edit devotional" : "New devotional"}</h3>
+      <div className="devotional-form-heading"><div><p className="devotionals-eyebrow">{entry ? "EDITING" : "NEW ENTRY"}</p><h3>{entry ? "Edit devotional" : "New devotional"}</h3></div>{entry && <span className="devotional-status-badge">{entry.status}</span>}</div>
       {entry && (
-        <p>
-          Status: <strong>{entry.status}</strong> · Version {entry.version}
-        </p>
+        <p className="devotional-version">Version {entry.version}</p>
       )}
       {error && <p role="alert">{error}</p>}
       {notice && <p role="status">{notice}</p>}
@@ -95,11 +98,11 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden }) {
           Reload latest version
         </button>
       )}
-      <label>
+      <label className="devotional-title-field">
         Title
         <input required maxLength={200} {...field("title")} />
       </label>
-      <label>
+      <label className="devotional-body-field">
         Devotional text
         <textarea required maxLength={20000} rows={10} {...field("body")} />
       </label>
@@ -115,7 +118,7 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden }) {
         Author
         <input maxLength={200} {...field("author")} />
       </label>
-      <p>Text is displayed as written. HTML formatting is not supported.</p>
+      <p className="devotional-form-help">Text is displayed as written. HTML formatting is not supported.</p>
       <div className="devotional-actions">
         <button
           className="btn soft"
@@ -137,6 +140,7 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden }) {
         >
           {entry?.status === "published" ? "Publish changes" : "Publish"}
         </button>
+        {!entry && <span className="devotional-publish-help">Save a draft before publishing.</span>}
       </div>
     </form>
   );

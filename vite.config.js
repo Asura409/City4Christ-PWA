@@ -34,7 +34,15 @@ export default defineConfig(({ mode }) => {
       },
     ],
     resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
-    server: { allowedHosts: allowedHost ? [allowedHost] : [] },
+    server: {
+      allowedHosts: allowedHost ? [allowedHost] : [],
+      proxy: process.env.VITE_API_PROXY_TARGET
+        ? {
+            "/api": { target: process.env.VITE_API_PROXY_TARGET, changeOrigin: false, ws: true },
+            "/health": { target: process.env.VITE_API_PROXY_TARGET, changeOrigin: false },
+          }
+        : undefined,
+    },
     build: { outDir: "dist", emptyOutDir: true },
   };
 });
