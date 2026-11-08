@@ -17,6 +17,8 @@ test("editor creates a devotional draft, publishes it and withdraws it", async (
   await expect(reader).toContainText("No published devotionals");
   await page.getByRole("tab", { name: "Manage devotionals" }).click();
   const managementForm = page.getByRole("form", { name: "Devotional editor" });
+  await page.getByRole("button", { name: "Edit Hope today" }).click();
+  await expect(managementForm.getByLabel("Title", { exact: true })).toHaveValue("Hope today");
   await managementForm.getByRole("button", { name: "Publish", exact: true }).click();
   await expect(managementForm).toContainText("published");
   await page.getByRole("tab", { name: "Read" }).click();
@@ -27,6 +29,7 @@ test("editor creates a devotional draft, publishes it and withdraws it", async (
     status: "published",
   });
   await page.getByRole("tab", { name: "Manage devotionals" }).click();
+  await page.getByRole("button", { name: "Edit Hope today" }).click();
   await page.getByRole("form", { name: "Devotional editor" })
     .getByRole("button", { name: "Save as draft", exact: true })
     .click();

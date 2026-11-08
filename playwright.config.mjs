@@ -5,7 +5,7 @@ export default defineConfig({
   timeout: 45000,
   expect: { timeout: 10000 },
   fullyParallel: false,
-  workers: 1,
+  workers: process.env.CI ? 2 : 1,
   reporter: "list",
   use: {
     baseURL: external || "http://127.0.0.1:4173",
