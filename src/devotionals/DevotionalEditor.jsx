@@ -21,11 +21,12 @@ export function DevotionalEditor({ revision, onChange, onDirty }) {
     if (dirty && !window.confirm("You have unsaved changes. Discard them?")) return;
     const version = ++generation.current;
     setSelectionVersion(version);
+    setMobileEditing(true);
     setBusy(true);
     setError("");
     try {
       const value = await getEditorial(id);
-      if (version === generation.current) { setEntry(value); setDirty(false); onDirty?.(false); setMobileEditing(true); }
+      if (version === generation.current) { setEntry(value); setDirty(false); onDirty?.(false); }
     } catch (e) {
       if (version === generation.current) {
         setError(e.message);

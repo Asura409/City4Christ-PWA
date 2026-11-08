@@ -139,7 +139,7 @@ test("starting a new draft clears unsaved text from an unfinished draft", async 
     await page.getByRole("button", { name: /Back to devotionals/ }).click();
     await page.getByRole("button", { name: /New devotional/ }).first().click();
   } else {
-    await page.getByRole("button", { name: "New devotional", exact: true }).click();
+    await page.getByRole("button", { name: /New devotional/ }).first().click();
   }
   await expect(form.getByLabel("Title", { exact: true })).toHaveValue("");
   await expect(form.getByLabel("Devotional text")).toHaveValue("");

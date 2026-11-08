@@ -8,7 +8,7 @@ const prefs = {
   messages: true,
   announcements: true,
 };
-async function settings(page, { staff = false } = {}) {
+async function settings(page, { staff = false, push = false } = {}) {
   await mocked(page, {
     signedIn: true,
     access: staff
@@ -25,7 +25,7 @@ async function settings(page, { staff = false } = {}) {
     return r.fulfill({ json: { data: saved || prefs } });
   });
   await page.route("**/api/v1/notifications/push/config", (r) =>
-    r.fulfill({ json: { data: { enabled: false, publicKey: "" } } }),
+    r.fulfill({ json: { data: { enabled: push, publicKey: push ? "BABA" : "" } } }),
   );
   await page.route("**/api/v1/notifications/read-all", (r) => {
     all++;
@@ -137,7 +137,7 @@ test("staff can create a draft for the staff-only audience", async ({ page }) =>
 test("device opt-in requests permission after a click and registers through the API", async ({
   page,
 }) => {
-  await settings(page);
+  await settings(page, { push: true });
   await page.addInitScript(() => {
     window.__pushPrompts = 0;
     const subscription = {
