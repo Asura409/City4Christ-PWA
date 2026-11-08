@@ -47,6 +47,7 @@ test("register, verify, sign in and sign out without storing credentials", async
   );
   expect(stored).not.toContain("private-browser-token");
   expect(stored).not.toContain("password");
+  await page.getByRole("button", { name: "My profile", exact: true }).click();
   await page.getByRole("button", { name: "Sign out", exact: true }).click();
   await expect(
     page.getByRole("form", { name: "Sign in", exact: true }),
