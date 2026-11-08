@@ -40,7 +40,7 @@ export function PassageLookup({ onUse, autoUse = false, embedded = false, ...ini
   );
   return (
     <section className="bible-lookup">
-      {embedded ? <div className="bible-lookup-form">{controls}</div> : <form aria-label="Bible lookup" onSubmit={submit}>{controls}</form>}
+      {embedded ? <div role="form" aria-label="Bible lookup" className="bible-lookup-form">{controls}</div> : <form aria-label="Bible lookup" onSubmit={submit}>{controls}</form>}
       {!s.ready && !s.error && <p role="status">Loading Bible versions…</p>}
       {s.busy && <p role="status">Looking up passage…</p>}
       {s.notice && <p role="status">{s.notice}</p>}

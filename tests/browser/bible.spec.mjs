@@ -6,7 +6,9 @@ test("Bible reader looks up a passage, changes version and opens its chapter", a
   const { requests } = await bibleMock(page);
   await page.goto("/#/bible");
   const form = page.getByRole("form", { name: "Bible lookup" });
-  await form.getByLabel("Bible reference").fill("John 3:16");
+  await form.locator("label").filter({ hasText: /^Book/ }).locator("select").selectOption({ label: "John" });
+  await form.locator("label").filter({ hasText: /^Chapter/ }).locator("select").selectOption("3");
+  await form.locator("label").filter({ hasText: /^Verse \(optional\)/ }).locator("select").selectOption("16");
   await form.getByLabel("Bible version").selectOption("web");
   await form.getByRole("button", { name: "Look up passage" }).click();
   const result = page.getByRole("region", { name: "Bible passage" });
@@ -53,14 +55,17 @@ test("Daily Bread lookup fills a reviewed draft without automatically saving or 
 }) => {
   const { calls } = await bibleMock(page, { daily: true, editor: true });
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Daily verse" }).click();
   const draft = page.getByRole("form", { name: "Daily verse editor" });
   await draft.getByLabel("Display date (GMT+1)").fill("2026-11-01");
   const lookup = page.getByRole("form", { name: "Bible lookup" });
-  await lookup.getByLabel("Bible reference").fill("John 3:16");
+  await lookup.locator("label").filter({ hasText: /^Book/ }).locator("select").selectOption({ label: "John" });
+  await lookup.locator("label").filter({ hasText: /^Chapter/ }).locator("select").selectOption("3");
+  await lookup.locator("label").filter({ hasText: /^Verse \(optional\)/ }).locator("select").selectOption("16");
   await lookup.getByRole("button", { name: "Look up passage" }).click();
   await page.getByRole("button", { name: "Use passage in editor" }).click();
   await expect(draft.getByLabel("Verse text")).toHaveValue(
-    "World English Bible synthetic passage.",
+    "[16] World English Bible synthetic passage.",
   );
   await expect(
     draft.getByLabel("Scripture reference", { exact: true }),
@@ -75,9 +80,9 @@ test("Daily Bread lookup fills a reviewed draft without automatically saving or 
     calls.some((c) => c.method === "POST" && c.path.endsWith("/daily-verses")),
   ).toBe(false);
   await draft
-    .getByRole("button", { name: "Create draft", exact: true })
+    .getByRole("button", { name: "Save draft", exact: true })
     .click();
-  await expect(draft.locator("strong")).toHaveText("draft");
+  await expect(draft.locator(".daily-verse-badge")).toHaveText("draft");
   expect(calls.some((c) => c.method === "PATCH")).toBe(false);
 });
 

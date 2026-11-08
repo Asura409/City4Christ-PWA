@@ -19,7 +19,7 @@ test("member has no staff controls and no privileged requests", async ({
   await expect(page.locator("#staff-access-empty")).toBeVisible();
   expect(calls.some((c) => c.path.startsWith("/api/v1/admin/"))).toBe(false);
 });
-for (const role of ["content_editor", "access_administrator"]) {
+for (const role of ["content_editor", "super_administrator"]) {
   test(`${role} sees only its assigned tools`, async ({ page }) => {
     const permission =
       role === "content_editor" ? "sermons.manage" : "roles.manage";

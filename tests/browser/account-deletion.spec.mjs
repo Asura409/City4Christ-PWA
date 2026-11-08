@@ -188,6 +188,10 @@ test("password and enrolled MFA confirmation never automatically submit deletion
   const confirmation = panel.getByRole("region", {
     name: "Confirm sensitive action",
   });
+  await panel.getByRole("checkbox").check();
+  await panel
+    .getByRole("button", { name: "Request account deletion", exact: true })
+    .click();
   await confirmation
     .getByLabel("Current password", { exact: true })
     .fill("synthetic current password");
@@ -203,7 +207,7 @@ test("password and enrolled MFA confirmation never automatically submit deletion
   expect(writes).toBe(0);
   await expect(
     confirmation.getByLabel("Current password", { exact: true }),
-  ).toHaveValue("");
+  ).toHaveCount(0);
   await panel.getByRole("checkbox").check();
   await panel
     .getByRole("button", { name: "Request account deletion", exact: true })
@@ -248,6 +252,14 @@ test("Google-only confirmation returns to profile without submitting a request",
   const confirmation = page
     .getByRole("region", { name: "Request account deletion", exact: true })
     .getByRole("region", { name: "Confirm sensitive action" });
+  const panel = page.getByRole("region", {
+    name: "Request account deletion",
+    exact: true,
+  });
+  await panel.getByRole("checkbox").check();
+  await panel
+    .getByRole("button", { name: "Request account deletion", exact: true })
+    .click();
   await expect(
     confirmation.getByLabel("Current password", { exact: true }),
   ).toHaveCount(0);
@@ -480,10 +492,13 @@ test("expired deletion proof is renewed explicitly and a rate limit is not retri
   await expect(panel.getByRole("alert").first()).toContainText(
     "Confirm your identity again",
   );
-  await expect(submit).toBeDisabled();
+  await expect(submit).toBeEnabled();
   const confirm = panel.getByRole("region", {
     name: "Confirm sensitive action",
   });
+  await confirm
+    .getByRole("button", { name: "Check confirmation", exact: true })
+    .click();
   await confirm
     .getByLabel("Current password", { exact: true })
     .fill("synthetic current password");

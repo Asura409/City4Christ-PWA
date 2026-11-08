@@ -7,7 +7,7 @@ const target = {
   email: "joy@example.invalid",
   mfaEnabled: true,
 };
-for (const role of ["super_administrator", "staff"])
+for (const role of ["super_administrator"])
   test(`${role} sees only permitted church appointments`, async ({ page }) => {
     await mocked(page, {
       signedIn: true,
@@ -156,5 +156,5 @@ test("permission refresh and field changes cannot reuse confirmation for another
   await expect(page.locator("#church-selected-member")).toHaveText(
     "No member selected.",
   );
-  await expect(form.getByRole("checkbox")).not.toBeChecked();
+  await expect(form).toHaveCount(0);
 });

@@ -67,6 +67,7 @@ export function DevotionalReader({ revision }) {
                 ref={(node) => { if (node) buttonRefs.current.set(e.id, node); else buttonRefs.current.delete(e.id); }}
                 type="button"
                 className={`devotional-list-item ${selected?.id === e.id ? "is-selected" : ""}`}
+                aria-label={`Read ${e.title}`}
                 aria-current={selected?.id === e.id ? "true" : undefined}
                 onClick={() => open(e.id)}
               >

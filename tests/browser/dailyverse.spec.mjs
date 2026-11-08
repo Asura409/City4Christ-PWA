@@ -41,18 +41,19 @@ test("editor creates, publishes and withdraws a dated verse", async ({
     available: false,
   });
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Daily verse" }).click();
   const form = page.getByRole("form", { name: "Daily verse editor" });
   await form.getByLabel("Display date (GMT+1)").fill("2026-10-31");
   await form.getByLabel("Verse text").fill("Synthetic edited verse.");
   await form
     .getByLabel("Scripture reference", { exact: true })
     .fill("Test 2:1");
-  await form.getByRole("button", { name: "Create draft", exact: true }).click();
-  await expect(form.locator("strong")).toHaveText("draft");
+  await form.getByRole("button", { name: "Save draft", exact: true }).click();
+  await expect(form.locator(".daily-verse-badge")).toHaveText("draft");
   await form
-    .getByRole("button", { name: "Publish verse", exact: true })
+    .getByRole("button", { name: /Publish for 31 Oct/, exact: true })
     .click();
-  await expect(form.locator("strong")).toHaveText("published");
+  await expect(form.locator(".daily-verse-badge")).toHaveText("published");
   expect(
     calls.find((c) => c.path.includes("/daily-verses/") && c.method === "PATCH")
       .body,
@@ -66,12 +67,13 @@ test("editor creates, publishes and withdraws a dated verse", async ({
     "Synthetic edited verse.",
   );
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Daily verse" }).click();
   await page
     .getByRole("button", { name: "Edit verse for 2026-10-31: Test 2:1" })
     .click();
   await page
     .getByRole("form", { name: "Daily verse editor" })
-    .getByRole("button", { name: "Save as draft", exact: true })
+    .getByRole("button", { name: /Save .*draft/, exact: true })
     .click();
   await page.goto("/#/home");
   await expect(page.getByRole("region", { name: "Daily bread" })).toContainText(
@@ -100,18 +102,19 @@ test("same-date conflicts preserve the draft and do not retry publication", asyn
     return route.fallback();
   });
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Daily verse" }).click();
   const form = page.getByRole("form", { name: "Daily verse editor" });
   await form.getByLabel("Display date (GMT+1)").fill("2026-10-31");
   await form.getByLabel("Verse text").fill("Candidate verse.");
   await form
     .getByLabel("Scripture reference", { exact: true })
     .fill("Test 1:1");
-  await form.getByRole("button", { name: "Create draft", exact: true }).click();
+  await form.getByRole("button", { name: "Save draft", exact: true }).click();
   await form
-    .getByRole("button", { name: "Publish verse", exact: true })
+    .getByRole("button", { name: /Publish for 31 Oct/, exact: true })
     .click();
   await expect(form.getByRole("alert")).toContainText("already published");
-  await expect(form.locator("strong")).toHaveText("draft");
+  await expect(form.locator(".daily-verse-badge")).toHaveText("draft");
   await expect(form.getByLabel("Verse text")).toHaveValue("Candidate verse.");
   expect(writes).toBe(1);
 });

@@ -5,25 +5,32 @@ test("editor creates a devotional draft, publishes it and withdraws it", async (
 }) => {
   const { calls } = await devotionalMock(page, { editor: true });
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Manage devotionals" }).click();
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Title", { exact: true }).fill("Hope today");
   await form.getByLabel("Devotional text").fill("Reflect and pray.");
   await form.getByLabel("Scripture reference").fill("Psalm 28:7");
   await form.getByRole("button", { name: "Create draft", exact: true }).click();
   await expect(form).toContainText("draft");
+  await page.getByRole("tab", { name: "Read" }).click();
   const reader = page.getByRole("region", { name: "Published devotionals" });
   await expect(reader).toContainText("No published devotionals");
-  await form.getByRole("button", { name: "Publish", exact: true }).click();
-  await expect(form).toContainText("published");
+  await page.getByRole("tab", { name: "Manage devotionals" }).click();
+  const managementForm = page.getByRole("form", { name: "Devotional editor" });
+  await managementForm.getByRole("button", { name: "Publish", exact: true }).click();
+  await expect(managementForm).toContainText("published");
+  await page.getByRole("tab", { name: "Read" }).click();
   await reader.getByRole("button", { name: "Read Hope today" }).click();
   await expect(reader.getByRole("article")).toContainText("Reflect and pray.");
   expect(calls.find((c) => c.method === "PATCH").body).toMatchObject({
     version: 1,
     status: "published",
   });
-  await form
+  await page.getByRole("tab", { name: "Manage devotionals" }).click();
+  await page.getByRole("form", { name: "Devotional editor" })
     .getByRole("button", { name: "Save as draft", exact: true })
     .click();
+  await page.getByRole("tab", { name: "Read" }).click();
   await expect(reader).toContainText("No published devotionals");
   await expect(reader.getByRole("article")).toHaveCount(0);
 });
@@ -63,6 +70,7 @@ test("editor conflict preserves unsaved text and never retries automatically", a
     return route.fallback();
   });
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Manage devotionals" }).click();
   await page.getByRole("button", { name: "Edit Hope today" }).click();
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Devotional text").fill("Unsaved reflection");
@@ -92,6 +100,7 @@ test("loading an editorial selection hides the previous editable form", async ({
     },
   );
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Manage devotionals" }).click();
   await page.getByRole("button", { name: "Edit Hope today" }).click();
   await expect(
     page.getByRole("status").filter({ hasText: "Loading draft" }),
@@ -115,6 +124,7 @@ test("starting a new draft clears unsaved text from an unfinished draft", async 
 }) => {
   await devotionalMock(page, { editor: true });
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Manage devotionals" }).click();
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Title", { exact: true }).fill("Unsubmitted title");
   await form.getByLabel("Devotional text").fill("Unsubmitted reflection");
@@ -144,6 +154,7 @@ test("field validation tells the editor which text to fix", async ({
       : route.fallback(),
   );
   await page.goto("/#/devotionals");
+  await page.getByRole("tab", { name: "Manage devotionals" }).click();
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Title", { exact: true }).fill("Hope");
   await form.getByLabel("Devotional text").fill(" ");

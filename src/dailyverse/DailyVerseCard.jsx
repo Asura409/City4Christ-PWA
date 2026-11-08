@@ -5,7 +5,7 @@ import { useTodayVerse } from "./useTodayVerse";
 export function DailyVerseCard() {
   const { data, busy, error, refresh } = useTodayVerse();
   return (
-    <section className="hero daily-home-card" aria-label="Daily verse">
+    <section className="hero daily-home-card" aria-label="Daily bread">
       <span className="pill">
         <Icon name="sun" />
         Daily bread

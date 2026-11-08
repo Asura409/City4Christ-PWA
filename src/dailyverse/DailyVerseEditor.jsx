@@ -43,7 +43,7 @@ export function DailyVerseEditor({ revision, onChange }) {
           <ContentListState state={state} label="Loading verse schedule…" />
           {error && <p className="daily-verse-error" role="alert">{error}</p>}
           <div className="daily-verse-list" role="list">
-            {state.items.map((item) => <button key={item.id} type="button" className={`daily-verse-list-item ${entry?.id === item.id ? "is-selected" : ""}`} onClick={() => open(item.id)} disabled={busy}><span className="daily-verse-list-date">{shortDate(item.displayDate)}</span><span className="daily-verse-list-reference">{item.scriptureReference || "No reference"}</span><span className={`daily-verse-badge ${item.status === "published" ? "is-published" : ""}`}>{item.status}</span></button>)}
+            {state.items.map((item) => <button key={item.id} type="button" aria-label={`Edit verse for ${item.displayDate}: ${item.scriptureReference || "No reference"}`} className={`daily-verse-list-item ${entry?.id === item.id ? "is-selected" : ""}`} onClick={() => open(item.id)} disabled={busy}><span className="daily-verse-list-date">{shortDate(item.displayDate)}</span><span className="daily-verse-list-reference">{item.scriptureReference || "No reference"}</span><span className={`daily-verse-badge ${item.status === "published" ? "is-published" : ""}`}>{item.status}</span></button>)}
           </div>
         </aside>
         <div className="daily-verse-editor-pane">
