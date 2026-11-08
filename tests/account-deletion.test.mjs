@@ -68,14 +68,16 @@ test("account deletion never auto-replays expired-session or transient failures"
     assert.equal(client.isSignedIn(), true);
   }
 });
-test("deletion review display capability is global and cannot be widened from a group", () => {
+test("deletion review display requires the global Super Admin boundary", () => {
   const snapshot = {
     capabilities: [{ permission: "accounts.deletion.review", scope: "" }],
   };
-  assert.equal(hasCapability(snapshot, "accounts.deletion.review"), true);
+  assert.equal(hasCapability(snapshot, "accounts.deletion.review"), false);
+  const superAdmin = { roles: [{ role: "super_administrator", scope: "" }], capabilities: snapshot.capabilities };
+  assert.equal(hasCapability(superAdmin, "accounts.deletion.review"), true);
   assert.equal(
     hasCapability(
-      snapshot,
+      superAdmin,
       "accounts.deletion.review",
       "11111111-1111-4111-8111-111111111111",
     ),

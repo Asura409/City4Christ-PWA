@@ -133,9 +133,10 @@ test("devotional authority uses the explicit global capability and supports refr
   assert.equal(hasCapability(state.current(), "devotionals.manage"), true);
 });
 
-test("member record lookup is a known global capability without implicit staff escalation", () => {
+test("member record lookup requires the global Super Admin boundary", () => {
   const access = { roles: [{ role: "staff", scope: "" }], capabilities: [{ permission: "members.records.read", scope: "" }] };
-  assert.equal(hasCapability(access, "members.records.read"), true);
+  assert.equal(hasCapability(access, "members.records.read"), false);
+  assert.equal(hasCapability({ roles: [{ role: "super_administrator", scope: "" }], capabilities: access.capabilities }, "members.records.read"), true);
   assert.equal(hasCapability({ roles: access.roles, capabilities: [] }, "members.records.read"), false);
   assert.equal(hasCapability({ roles: access.roles, capabilities: [{ permission: "members.records.read", scope: "11111111-1111-4111-8111-111111111111" }] }, "members.records.read"), false);
 });
@@ -147,9 +148,9 @@ test("member access-audit review remains an explicit global capability", () => {
   assert.equal(hasCapability({ ...superAdmin, capabilities: [{ permission: "members.records.audit.read", scope: "11111111-1111-4111-8111-111111111111" }] }, "members.records.audit.read"), false);
 });
 
-test("member record management is an explicit global capability", () => {
+test("member record management remains denied in the frontend", () => {
   const staff = { roles: [{ role: "staff", scope: "" }], capabilities: [{ permission: "members.records.manage", scope: "" }] };
-  assert.equal(hasCapability(staff, "members.records.manage"), true);
+  assert.equal(hasCapability(staff, "members.records.manage"), false);
   assert.equal(hasCapability({ ...staff, capabilities: [] }, "members.records.manage"), false);
   assert.equal(hasCapability({ ...staff, capabilities: [{ permission: "members.records.manage", scope: "11111111-1111-4111-8111-111111111111" }] }, "members.records.manage"), false);
 });

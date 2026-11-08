@@ -19,12 +19,12 @@ test("church roles and capabilities parse without losing exact scope checks", as
     false,
   );
 });
-test("staff can offer ministry appointments but not privileged roles", () => {
+test("only the Super Admin boundary can offer ministry appointments", () => {
   assert.deepEqual(
     churchRolesFor({
       capabilities: [{ permission: "roles.operational.manage", scope: "" }],
     }),
-    ["ministry_leader"],
+    [],
   );
   assert.ok(churchRolesFor(snapshot).includes("finance_officer"));
   assert.deepEqual(churchRolesFor(null), []);
