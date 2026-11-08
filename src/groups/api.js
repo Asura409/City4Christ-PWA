@@ -64,6 +64,24 @@ export async function setGroupLifecycle(groupId, status, reason) {
   })).data;
 }
 
+export async function updateGroup(groupId, body) {
+  return (await api.request(`/api/v1/admin/groups/${groupId}`, {
+    method: "PUT",
+    body,
+  })).data;
+}
+
+export async function transferGroupOwnership(groupId, accountId, reason) {
+  return (await api.request(`/api/v1/admin/groups/${groupId}/ownership`, {
+    method: "POST",
+    body: { accountId, reason },
+  })).data;
+}
+
+export async function getGroupAnalytics(groupId) {
+  return (await api.request(`/api/v1/admin/groups/${groupId}/analytics`)).data;
+}
+
 export async function listGroupLeaders(groupId) {
   return (await api.request(`/api/v1/admin/groups/${groupId}/leaders`)).data || [];
 }

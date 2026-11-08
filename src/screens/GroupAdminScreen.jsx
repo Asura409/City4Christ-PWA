@@ -8,11 +8,13 @@ import {
 import {
   changeGroupLeader,
   createGroup,
+  getGroupAnalytics,
   getAccess,
   listGroupLeaders,
   listManagedGroups,
   searchRoleCandidates,
   setGroupLifecycle,
+  updateGroup,
 } from "@/groups/api";
 
 export default function GroupAdminScreen() {
@@ -33,6 +35,8 @@ function GroupLifecycle() {
   const [joinPolicy, setJoinPolicy] = useState("approval");
   const [lifecycleTarget, setLifecycleTarget] = useState(null);
   const [lifecycleReason, setLifecycleReason] = useState("");
+  const [editing, setEditing] = useState(null);
+  const [analytics, setAnalytics] = useState(null);
 
   async function load() {
     setLoading(true);
@@ -93,6 +97,24 @@ function GroupLifecycle() {
     await transition(lifecycleTarget.group, lifecycleTarget.status, lifecycleReason);
   }
 
+  async function saveSettings(event) {
+    event.preventDefault();
+    if (!editing) return;
+    setBusy(true); setError("");
+    try {
+      await updateGroup(editing.id, editing);
+      setEditing(null);
+      await load();
+    } catch (e) { setError(e.message); } finally { setBusy(false); }
+  }
+
+  async function showAnalytics(group) {
+    setBusy(true); setError("");
+    try { setAnalytics({ group, stats: await getGroupAnalytics(group.id) }); }
+    catch (e) { setError(e.message); }
+    finally { setBusy(false); }
+  }
+
   if (loading) return <section className="screen active" aria-label="Group administration"><p role="status">Loading group administration…</p></section>;
   if (!canManageChurchGroups(access)) return <section className="screen active groups-screen"><p role="alert">You are not authorized to manage church groups.</p><Link className="btn soft" to="/groups">Back to groups</Link></section>;
 
@@ -119,12 +141,14 @@ function GroupLifecycle() {
           {groups.map((group) => <article className="group-admin-row" key={group.id}>
             <div className="group-admin-summary"><div><h3>{group.name}</h3><p>{group.audience === "leadership" ? "Leadership group" : "Church group"} · {group.memberCount} active {group.memberCount === 1 ? "member" : "members"}</p></div><span className={`group-status ${group.archived ? "archived" : "active"}`}>{group.archived ? "Archived" : "Active"}</span></div>
             <div className="group-admin-actions">
-              {!group.archived && <Link className="btn dark" to={`/groups/manage/${group.id}`}>Manage leaders</Link>}
+              {!group.archived && <><button type="button" className="btn soft" disabled={busy} onClick={() => setEditing({ ...group, reason: "" })}>Edit settings</button><button type="button" className="btn soft" disabled={busy} onClick={() => void showAnalytics(group)}>Analytics</button><Link className="btn dark" to={`/groups/manage/${group.id}`}>Manage leaders</Link></>}
               <button className={`btn ${group.archived ? "soft" : "danger"}`} disabled={busy} onClick={() => { setLifecycleTarget({ group, status: group.archived ? "active" : "archived" }); setLifecycleReason(""); }}>{group.archived ? "Restore group" : "Archive group"}</button>
             </div>
           </article>)}
         </div>}
       </section>
+      {editing && <div className="group-confirm-backdrop" role="presentation"><section className="group-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="group-settings-title"><p className="group-eyebrow">GROUP SETTINGS</p><h2 id="group-settings-title">Edit {editing.name}</h2><form onSubmit={saveSettings}><label className="auth-field">Group name<input required maxLength={120} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} /></label><label className="auth-field">Description<textarea maxLength={2000} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} /></label><label className="auth-field">Join policy<select value={editing.joinPolicy} onChange={(e) => setEditing({ ...editing, joinPolicy: e.target.value })}><option value="approval">Leader approval</option><option value="open">Open membership</option><option value="closed">Invitation only</option></select></label><label className="auth-field">Reason for change<textarea required minLength={1} maxLength={500} value={editing.reason} onChange={(e) => setEditing({ ...editing, reason: e.target.value })} /></label><div className="group-confirm-actions"><button className="btn soft" type="button" disabled={busy} onClick={() => setEditing(null)}>Cancel</button><button className="btn gold" disabled={busy}>Save settings</button></div></form></section></div>}
+      {analytics && <div className="group-confirm-backdrop" role="presentation"><section className="group-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="group-analytics-title"><p className="group-eyebrow">GROUP ANALYTICS</p><h2 id="group-analytics-title">{analytics.group.name}</h2><div className="group-analytics-grid"><strong>{analytics.stats.activeMembers}<span>Active members</span></strong><strong>{analytics.stats.pendingRequests}<span>Pending requests</span></strong><strong>{analytics.stats.posts}<span>Posts</span></strong><strong>{analytics.stats.events}<span>Events</span></strong><strong>{analytics.stats.messages}<span>Messages</span></strong></div><button className="btn soft" type="button" onClick={() => setAnalytics(null)}>Close</button></section></div>}
       {lifecycleTarget && <div className="group-confirm-backdrop" role="presentation">
         <section className="group-confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="group-confirm-title">
           <p className="group-eyebrow">{lifecycleTarget.status === "archived" ? "ARCHIVE GROUP" : "RESTORE GROUP"}</p>

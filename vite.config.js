@@ -8,6 +8,7 @@ export default defineConfig(({ mode }) => {
   const apiURL = process.env.API_URL || environment.API_URL || "/";
   const apiOrigin = apiURL === "/" ? "" : validateAPIURL(apiURL);
   const allowedHost = process.env.VITE_ALLOWED_HOST || environment.VITE_ALLOWED_HOST;
+  const allowedHosts = [allowedHost, "blustery-uninjured-antler.ngrok-free.dev"].filter(Boolean);
   const mediaOrigin = process.env.MEDIA_ORIGIN || environment.MEDIA_ORIGIN || "https:";
   return {
     plugins: [
@@ -35,7 +36,7 @@ export default defineConfig(({ mode }) => {
     ],
     resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
     server: {
-      allowedHosts: allowedHost ? [allowedHost] : [],
+      allowedHosts,
       proxy: process.env.VITE_API_PROXY_TARGET
         ? {
             "/api": { target: process.env.VITE_API_PROXY_TARGET, changeOrigin: false, ws: true },

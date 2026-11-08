@@ -567,6 +567,9 @@
 .group-appointment-form { display: grid; gap: 12px; margin-top: 14px; padding: 13px; border-radius: 14px; background: rgba(255,255,255,.035); }
 .group-appointment-form p, .group-panel > p { color: var(--muted); font-size: 13px; }
 .group-admin-actions .btn { min-width: 132px; }
+.group-analytics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 10px; margin: 16px 0; }
+.group-analytics-grid strong { display: grid; gap: 3px; padding: 12px; border: 1px solid var(--line); border-radius: 12px; color: var(--gold); font-size: 22px; }
+.group-analytics-grid span { color: var(--muted); font-size: 11px; font-weight: 600; }
 .group-confirm-backdrop { position: fixed; z-index: 70; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(25,14,38,.58); backdrop-filter: blur(3px); }
 .group-confirm-dialog { width: min(500px, 100%); padding: 24px; border: 1px solid #eadff0; border-radius: 22px; color: var(--text); background: var(--surface); box-shadow: 0 22px 70px rgba(24,12,34,.32); }
 .group-confirm-dialog h2 { margin: 4px 0 8px; color: var(--lav-ink); font-family: var(--serif); font-size: 25px; }

@@ -32,6 +32,18 @@ export function canManageChurchGroups(access) {
   return isSuperAdmin(access) && hasCapability(access, "groups.manage");
 }
 
+export function canManageGroupSettings(access, group) {
+  if (!group) return false;
+  return hasCapability(access, "groups.settings.manage", group.id) ||
+    hasCapability(access, "groups.settings.manage", "");
+}
+
+export function canViewGroupAnalytics(access, group) {
+  if (!group) return false;
+  return hasCapability(access, "groups.analytics.read", group.id) ||
+    hasCapability(access, "groups.analytics.read", "");
+}
+
 export function canCreateLeadershipGroup(access) {
   return isSuperAdmin(access);
 }
