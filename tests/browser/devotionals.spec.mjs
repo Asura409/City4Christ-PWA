@@ -127,6 +127,9 @@ test("loading an editorial selection hides the previous editable form", async ({
 test("starting a new draft clears unsaved text from an unfinished draft", async ({
   page,
 }) => {
+  // The editor must protect unsaved work. This test intentionally confirms
+  // the discard dialog before starting a different draft.
+  page.on("dialog", (dialog) => dialog.accept());
   await devotionalMock(page, { editor: true });
   await page.goto("/#/devotionals");
   await page.getByRole("tab", { name: "Manage devotionals" }).click();

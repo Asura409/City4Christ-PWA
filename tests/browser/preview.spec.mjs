@@ -33,7 +33,7 @@ test("register, verify, sign in and sign out without storing credentials", async
     .fill("a sufficiently long test password");
   await login.getByRole("button", { name: "Sign in", exact: true }).click();
   await expect(
-    page.getByRole("heading", { name: "Welcome, Grace" }),
+    page.getByRole("heading", { name: /Welcome, Grace/ }),
   ).toBeVisible();
   const stored = await page.evaluate(() =>
     JSON.stringify({

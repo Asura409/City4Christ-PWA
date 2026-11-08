@@ -24,7 +24,7 @@ async function settings(page, { staff = false, push = false } = {}) {
     if (r.request().method() === "PUT") saved = r.request().postDataJSON();
     return r.fulfill({ json: { data: saved || prefs } });
   });
-  await page.route("**/api/v1/notifications/push/config", (r) =>
+  await page.route("**/api/v1/notifications/push/config**", (r) =>
     r.fulfill({ json: { data: { enabled: push, publicKey: push ? "BABA" : "" } } }),
   );
   await page.route("**/api/v1/notifications/read-all", (r) => {
@@ -179,7 +179,7 @@ test("device opt-in requests permission after a click and registers through the 
       configurable: true,
     });
   });
-  await page.route("**/api/v1/notifications/push/config", (r) =>
+  await page.route("**/api/v1/notifications/push/config**", (r) =>
     r.fulfill({ json: { data: { enabled: true, publicKey: "BABA" } } }),
   );
   let subscribed = 0;
