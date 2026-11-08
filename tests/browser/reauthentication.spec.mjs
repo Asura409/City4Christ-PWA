@@ -89,7 +89,7 @@ test("a return marker cannot claim confirmation and an unavailable status fails 
   await setup(page);
   await page.goto("/profile.html");
   const panel = page.getByRole("region", { name: "Confirm your identity" });
-  await expect(panel).toContainText("Confirmation applies only to this session");
+  await expect(panel).toContainText("Confirm before changing role assignments");
   await page.route("**/api/v1/auth/reauthentication", (route) =>
     route.fulfill({
       status: 503,

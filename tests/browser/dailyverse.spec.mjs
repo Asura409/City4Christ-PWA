@@ -70,8 +70,10 @@ test("editor creates, publishes and withdraws a dated verse", async ({
   );
   await page.goto("/#/devotionals");
   await page.getByRole("tab", { name: "Daily verse" }).click();
-  if ((page.viewportSize()?.width ?? 1024) < 900)
-    await page.getByRole("button", { name: /New verse/ }).click();
+  if ((page.viewportSize()?.width ?? 1024) < 900) {
+    const back = page.getByRole("button", { name: "Back to schedule" });
+    if (await back.isVisible()) await back.click();
+  }
   await page
     .getByRole("button", { name: "Edit verse for 2026-10-31: Test 2:1" })
     .click();

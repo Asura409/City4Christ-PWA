@@ -45,7 +45,7 @@ test("group leaders can remove an active member with a reason", async ({ page })
     },
   });
   await page.route(`**/api/v1/groups/${GROUP}/members`, (route) => route.fulfill({
-    json: { data: [{ accountId: "88888888-8888-4888-8888-888888888888", firstName: "Isaac", lastName: "Miller" }] },
+    json: { data: [{ accountId: "88888888-8888-4888-8888-888888888888", firstName: "Isaac", lastName: "Miller", canRemove: true }] },
   }));
   await page.goto(`/#/groups/${GROUP}`);
 

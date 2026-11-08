@@ -58,7 +58,7 @@ export function DevotionalEditor({ revision, onChange, onDirty }) {
           <button className="devotional-new-mobile btn gold" type="button" onClick={startNew}>+ New devotional</button>
           <DevotionalListState state={state} />
           <div className="devotional-list" role="list">
-            {state.items.map((e) => <button key={e.id} type="button" className={`devotional-editor-item ${entry?.id === e.id ? "is-selected" : ""}`} disabled={busy} onClick={() => open(e.id)}><span><strong>{e.title}</strong><small>{e.status}</small></span><i>→</i></button>)}
+            {state.items.map((e) => <button key={e.id} type="button" aria-label={`Edit ${e.title}`} className={`devotional-editor-item ${entry?.id === e.id ? "is-selected" : ""}`} disabled={busy} onClick={() => open(e.id)}><span><strong>{e.title}</strong><small>{e.status}</small></span><i aria-hidden="true">→</i></button>)}
           </div>
         </aside>
         <div className="devotional-editor-form-area">

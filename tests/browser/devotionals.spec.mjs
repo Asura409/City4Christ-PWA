@@ -135,9 +135,12 @@ test("starting a new draft clears unsaved text from an unfinished draft", async 
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Title", { exact: true }).fill("Unsubmitted title");
   await form.getByLabel("Devotional text").fill("Unsubmitted reflection");
-  await page
-    .getByRole("button", { name: "New devotional", exact: true })
-    .click();
+  if ((page.viewportSize()?.width ?? 1024) < 900) {
+    await page.getByRole("button", { name: /Back to devotionals/ }).click();
+    await page.getByRole("button", { name: /New devotional/ }).first().click();
+  } else {
+    await page.getByRole("button", { name: "New devotional", exact: true }).click();
+  }
   await expect(form.getByLabel("Title", { exact: true })).toHaveValue("");
   await expect(form.getByLabel("Devotional text")).toHaveValue("");
 });

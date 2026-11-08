@@ -493,15 +493,10 @@ test("expired deletion proof is renewed explicitly and a rate limit is not retri
     "Confirm your identity again",
   );
   await expect(submit).toBeEnabled();
+  await submit.click();
   const confirm = panel.getByRole("region", {
     name: "Confirm sensitive action",
   });
-  await confirm
-    .getByRole("button", { name: "Confirm with password", exact: true })
-    .click();
-  await confirm
-    .getByRole("button", { name: "Check confirmation", exact: true })
-    .click();
   await confirm
     .getByLabel("Current password", { exact: true })
     .fill("synthetic current password");

@@ -12,7 +12,7 @@ test("register, verify, sign in and sign out without storing credentials", async
     .getByLabel("Email", { exact: true })
     .fill("tester@example.invalid");
   await register
-    .getByLabel("Password (at least 15 characters)", { exact: true })
+    .getByLabel("Password", { exact: true })
     .fill("a sufficiently long test password");
   await register
     .getByLabel("Confirm password", { exact: true })

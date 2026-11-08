@@ -89,7 +89,7 @@ test("React public sermons use API search and detail safely, old tools remain av
     "src",
     "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ",
   );
-  await page.goto("/auth.html");
+  await page.goto("/auth.html#/login");
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
