@@ -199,7 +199,7 @@ export async function mocked(
   await page.route("**/api/v1/**", async (route) => {
     const request = route.request(),
       u = new URL(request.url()),
-      path = u.pathname,
+      path = u.pathname.replace(/\/+$/, "") || "/",
       method = request.method();
     let body;
     try {
