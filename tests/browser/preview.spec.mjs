@@ -29,6 +29,9 @@ test("register, verify, sign in and sign out without storing credentials", async
   const login = page.getByRole("form", { name: "Sign in", exact: true });
   await expect(login).toBeVisible();
   await login
+    .getByLabel("Email", { exact: true })
+    .fill("tester@example.invalid");
+  await login
     .getByLabel("Password", { exact: true })
     .fill("a sufficiently long test password");
   await login.getByRole("button", { name: "Sign in", exact: true }).click();

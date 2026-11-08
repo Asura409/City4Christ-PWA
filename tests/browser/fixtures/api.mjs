@@ -49,7 +49,7 @@ export async function mockScannedUpload(page) {
 
 export async function mocked(
   page,
-  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false, includePendingReport = false, profilePhotos = false } = {},
+  { signedIn = false, access = { roles: [], capabilities: [] }, activeGroupMembership = false, includeOtherPost = false, includePendingReport = false, profilePhotos = false, push = false } = {},
 ) {
   let assignedAccess = access;
   const calls = [];
@@ -268,7 +268,7 @@ export async function mocked(
     if (path === "/api/v1/me/deletion-request")
       return ok({ requested: false, request: null, policyVersion: "account-deletion-request-v1", notice: "Requesting deletion disables your account and signs out every session while staff review it. Permanent deletion has not happened." });
     if(path === '/api/v1/notifications/preferences') return route.fulfill({json:{data:{pushEnabled:false,groups:true,events:true,pastoral:true,messages:true,announcements:true}}});
-    if(path === '/api/v1/notifications/push/config') return route.fulfill({json:{data:{enabled:false,publicKey:''}}});
+    if(path === '/api/v1/notifications/push/config') return route.fulfill({json:{data:{enabled:push,publicKey:push ? 'BABA' : ''}}});
     if (path === "/api/v1/notifications/unread-count") {
       if (!authenticated) return error(401, "invalid_session", "Sign in again.");
       return ok({ unreadCount: notifications.filter((item) => !item.readAt).length });

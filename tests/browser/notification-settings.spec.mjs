@@ -11,6 +11,7 @@ const prefs = {
 async function settings(page, { staff = false, push = false } = {}) {
   await mocked(page, {
     signedIn: true,
+    push,
     access: staff
       ? {
           roles: [{ role: "staff", scope: "" }],
