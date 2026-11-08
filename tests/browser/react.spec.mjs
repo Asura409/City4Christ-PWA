@@ -91,7 +91,7 @@ test("React public sermons use API search and detail safely, old tools remain av
   );
   await page.goto("/auth.html");
   await expect(
-    page.getByRole("form", { name: "Sign in", exact: true }),
+    page.getByRole("heading", { name: "Welcome back" }),
   ).toBeVisible();
 });
 test("React protects member routes and provides password recovery without false success", async ({

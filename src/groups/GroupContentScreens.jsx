@@ -43,6 +43,7 @@ function GroupPostFeed({ groupId, refreshKey }) {
             <label className="group-post-field">
               <span>What would you like to share?</span>
             <textarea
+              aria-label="Group post text"
               required
               maxLength={5000}
               placeholder="Share an encouragement, update, or prayer…"
@@ -50,7 +51,7 @@ function GroupPostFeed({ groupId, refreshKey }) {
               onChange={(e) => setBody(e.target.value)}
             />
             </label>
-            <div className="group-post-composer-footer"><small>Your post will be visible to active members of this group.</small><button className="btn gold" disabled={busy}>{busy ? "Sharing…" : "Share update"}</button></div>
+            <div className="group-post-composer-footer"><small>Your post will be visible to active members of this group.</small><button aria-label="Share with group" className="btn gold" disabled={busy}>{busy ? "Sharing…" : "Share update"}</button></div>
             {error && <p role="alert">{error}</p>}
           </form>
         ) : null}

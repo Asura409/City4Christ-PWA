@@ -81,7 +81,7 @@ export default function SignUpScreen() {
       title="Join the church"
       subtitle="Create your City4Christ account"
     >
-      <form onSubmit={handleSubmit} noValidate autoComplete="on">
+      <form aria-label="Create account" onSubmit={handleSubmit} noValidate autoComplete="on">
         {error && (
           <div className="auth-err" role="alert" aria-live="assertive">
             <Icon name="shield" />

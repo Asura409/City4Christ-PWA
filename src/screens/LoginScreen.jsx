@@ -57,7 +57,7 @@ export default function LoginScreen() {
       subtitle={location.state?.from?.pathname === "/admin" ? "Sign in to open church administration" : "Sign in to your church account"}
     >
       {sessionNotice && <p role="status">{sessionNotice}</p>}
-      <form onSubmit={handleSubmit} noValidate autoComplete="on">
+      <form aria-label="Sign in" onSubmit={handleSubmit} noValidate autoComplete="on">
         {error && (
           <div
             id="login-err"

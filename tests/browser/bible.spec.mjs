@@ -56,6 +56,8 @@ test("Daily Bread lookup fills a reviewed draft without automatically saving or 
   const { calls } = await bibleMock(page, { daily: true, editor: true });
   await page.goto("/#/devotionals");
   await page.getByRole("tab", { name: "Daily verse" }).click();
+  if ((page.viewportSize()?.width ?? 1024) < 900)
+    await page.getByRole("button", { name: /New verse/ }).click();
   const draft = page.getByRole("form", { name: "Daily verse editor" });
   await draft.getByLabel("Display date (GMT+1)").fill("2026-11-01");
   const lookup = page.getByRole("form", { name: "Bible lookup" });

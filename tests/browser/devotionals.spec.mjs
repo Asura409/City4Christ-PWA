@@ -6,6 +6,8 @@ test("editor creates a devotional draft, publishes it and withdraws it", async (
   const { calls } = await devotionalMock(page, { editor: true });
   await page.goto("/#/devotionals");
   await page.getByRole("tab", { name: "Manage devotionals" }).click();
+  if ((page.viewportSize()?.width ?? 1024) < 900)
+    await page.getByRole("button", { name: /New devotional/ }).first().click();
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Title", { exact: true }).fill("Hope today");
   await form.getByLabel("Devotional text").fill("Reflect and pray.");
@@ -128,6 +130,8 @@ test("starting a new draft clears unsaved text from an unfinished draft", async 
   await devotionalMock(page, { editor: true });
   await page.goto("/#/devotionals");
   await page.getByRole("tab", { name: "Manage devotionals" }).click();
+  if ((page.viewportSize()?.width ?? 1024) < 900)
+    await page.getByRole("button", { name: /New devotional/ }).first().click();
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Title", { exact: true }).fill("Unsubmitted title");
   await form.getByLabel("Devotional text").fill("Unsubmitted reflection");
@@ -158,6 +162,8 @@ test("field validation tells the editor which text to fix", async ({
   );
   await page.goto("/#/devotionals");
   await page.getByRole("tab", { name: "Manage devotionals" }).click();
+  if ((page.viewportSize()?.width ?? 1024) < 900)
+    await page.getByRole("button", { name: /New devotional/ }).first().click();
   const form = page.getByRole("form", { name: "Devotional editor" });
   await form.getByLabel("Title", { exact: true }).fill("Hope");
   await form.getByLabel("Devotional text").fill(" ");

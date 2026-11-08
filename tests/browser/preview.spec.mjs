@@ -4,8 +4,7 @@ test("register, verify, sign in and sign out without storing credentials", async
   page,
 }) => {
   const { calls } = await mocked(page);
-  await page.goto("/auth.html");
-  await page.getByRole("tab", { name: "Create account" }).click();
+  await page.goto("/#/signup");
   const register = page.getByRole("form", { name: "Create account" });
   await register.getByLabel("First name", { exact: true }).fill("Grace");
   await register.getByLabel("Last name", { exact: true }).fill("Member");

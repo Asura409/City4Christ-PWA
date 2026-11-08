@@ -497,6 +497,9 @@ test("expired deletion proof is renewed explicitly and a rate limit is not retri
     name: "Confirm sensitive action",
   });
   await confirm
+    .getByRole("button", { name: "Confirm with password", exact: true })
+    .click();
+  await confirm
     .getByRole("button", { name: "Check confirmation", exact: true })
     .click();
   await confirm

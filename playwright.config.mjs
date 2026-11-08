@@ -5,7 +5,9 @@ export default defineConfig({
   timeout: 45000,
   expect: { timeout: 10000 },
   fullyParallel: false,
-  workers: process.env.CI ? 2 : 1,
+  // Each browser project runs in parallel in CI. Keep tests within a project
+  // serial because their API fixtures intentionally share in-page state.
+  workers: 1,
   reporter: "list",
   use: {
     baseURL: external || "http://127.0.0.1:4173",
