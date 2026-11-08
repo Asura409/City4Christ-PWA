@@ -138,6 +138,22 @@ test("device opt-in requests permission after a click and registers through the 
   await settings(page, { push: true });
   await page.addInitScript(() => {
     window.__pushPrompts = 0;
+    const originalFetch = window.fetch.bind(window);
+    window.fetch = (input, init) => {
+      const url = new URL(
+        typeof input === "string" ? input : input.url,
+        window.location.href,
+      );
+      if (url.pathname === "/api/v1/notifications/push/config") {
+        return Promise.resolve(
+          new Response(
+            JSON.stringify({ data: { enabled: true, publicKey: "BABA" } }),
+            { headers: { "Content-Type": "application/json" } },
+          ),
+        );
+      }
+      return originalFetch(input, init);
+    };
     const subscription = {
       endpoint: "https://fcm.googleapis.com/fcm/send/synthetic",
       toJSON() {
