@@ -24,6 +24,13 @@ test("Google callback stays on the React interface and forwards only known statu
   );
   assert.equal(
     googleCallbackRoute(
+      "/account/auth.html",
+      "?reauthentication=complete&next=https://evil.example",
+    ),
+    "/#/google-return?intent=link&reauthentication=complete",
+  );
+  assert.equal(
+    googleCallbackRoute(
       "/oauth/auth.html",
       "?auth_error=account_link_required",
     ),

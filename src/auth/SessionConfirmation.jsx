@@ -77,6 +77,13 @@ export function SessionConfirmation({
     setBusy(true);
     setError("");
     try {
+      // The OAuth callback is a full browser navigation, so remember the
+      // protected screen that opened this confirmation. The callback screen
+      // restores it after the server has recorded fresh authentication.
+      sessionStorage.setItem(
+        "city4christ:reauth-return",
+        `${location.pathname}${location.search}${location.hash}`,
+      );
       const { data } = await api.beginGoogleReauthentication(
         googleReturnURL("link"),
       );

@@ -42,6 +42,8 @@ export function googleCallbackRoute(path, search) {
   const safe = new URLSearchParams({
     intent: path === "/account/auth.html" ? "link" : "login",
   });
+  if (params.get("reauthentication") === "complete")
+    safe.set("reauthentication", "complete");
   if (params.has("auth_error")) {
     const code = params.get("auth_error");
     safe.set(

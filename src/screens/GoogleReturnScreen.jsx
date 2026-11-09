@@ -10,16 +10,37 @@ export default function GoogleReturnScreen() {
   const [params] = useSearchParams();
   const failure = params.get("auth_error");
   const linking = params.get("intent") === "link";
+  const reauthenticated = params.get("reauthentication") === "complete";
+  const [returnTo] = React.useState(() => {
+    if (!reauthenticated) return "";
+    try {
+      const stored = sessionStorage.getItem("city4christ:reauth-return") || "";
+      sessionStorage.removeItem("city4christ:reauth-return");
+      const destination = new URL(stored, location.origin);
+      return destination.origin === location.origin
+        ? `${destination.pathname}${destination.search}${destination.hash}`
+        : "";
+    } catch {
+      // Session storage is a convenience; the normal profile fallback remains.
+      return "";
+    }
+  });
   useEffect(() => {
-    if (!failure && !loading && profile)
-      navigate(linking ? "/profile" : "/home", { replace: true });
-  }, [failure, loading, profile, linking, navigate]);
+    if (!failure && !loading && profile) {
+      if (reauthenticated && returnTo) navigate(returnTo, { replace: true });
+      else navigate(linking ? "/profile" : "/home", { replace: true });
+    }
+  }, [failure, loading, profile, linking, navigate, reauthenticated, returnTo]);
   return (
     <AuthLayout title="Google sign-in">
       {failure ? (
         <p role="alert">{googleErrorMessage(failure)}</p>
       ) : loading ? (
-        <p role="status">Completing Google sign-in…</p>
+        <p role="status">
+          {reauthenticated
+            ? "Completing Google identity confirmation…"
+            : "Completing Google sign-in…"}
+        </p>
       ) : !profile ? (
         <p role="alert">
           We could not restore your Google session. Please try signing in again.
@@ -27,8 +48,8 @@ export default function GoogleReturnScreen() {
         </p>
       ) : null}
       {(!loading || failure) && (
-        <Link to={profile ? "/profile" : "/login"}>
-          {profile ? "Back to profile" : "Back to sign in"}
+        <Link to={profile ? (reauthenticated && returnTo ? returnTo : "/profile") : "/login"}>
+          {profile ? (reauthenticated && returnTo ? "Return to your previous screen" : "Back to profile") : "Back to sign in"}
         </Link>
       )}
     </AuthLayout>
