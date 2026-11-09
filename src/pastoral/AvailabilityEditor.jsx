@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { createSlot, withdrawSlot, nextMonthRange, dateLabel } from "./api";
 import { usePastoralList, ListState } from "./usePastoralList";
+import { ukInputToInstant } from "../../js/time.js";
 export function AvailabilityEditor({ revision, onChange, listed = true }) {
   const range = useMemo(nextMonthRange, []),
     state = usePastoralList(
@@ -20,8 +21,8 @@ export function AvailabilityEditor({ revision, onChange, listed = true }) {
     setMessage("");
     try {
       await createSlot({
-        startsAt: new Date(starts).toISOString(),
-        endsAt: new Date(ends).toISOString(),
+        startsAt: ukInputToInstant(starts),
+        endsAt: ukInputToInstant(ends),
       });
       setStarts("");
       setEnds("");
@@ -49,15 +50,15 @@ export function AvailabilityEditor({ revision, onChange, listed = true }) {
     <section className="auth-card" aria-label="Manage my availability">
       <h2>My availability</h2>
       <p>
-        Publish explicit slots lasting 15–120 minutes. Inputs use your device's
-        local time. Slots cannot overlap.
+        Publish explicit slots lasting 15–120 minutes. Inputs use UK time
+        (GMT/BST). Slots cannot overlap.
       </p>
       {message && <p role="status">{message}</p>}
       {error && <p role="alert">{error}</p>}
       {!listed && <p>Your profile is not listed. Existing appointments remain available, but new availability cannot be published.</p>}
       <form onSubmit={save} aria-label="Publish availability">
         <div className="auth-field">
-          <label htmlFor="pastoral-start">Starts at (your local time)</label>
+          <label htmlFor="pastoral-start">Starts at (UK time)</label>
           <input
             id="pastoral-start"
             type="datetime-local"
@@ -67,7 +68,7 @@ export function AvailabilityEditor({ revision, onChange, listed = true }) {
           />
         </div>
         <div className="auth-field">
-          <label htmlFor="pastoral-end">Ends at (your local time)</label>
+          <label htmlFor="pastoral-end">Ends at (UK time)</label>
           <input
             id="pastoral-end"
             type="datetime-local"

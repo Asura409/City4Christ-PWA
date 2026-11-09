@@ -8,7 +8,7 @@ test("Home displays the API daily verse and its church timezone", async ({
   const card = page.getByRole("region", { name: "Daily bread" });
   await expect(card).toContainText("Synthetic daily verse.");
   await expect(card).toContainText("Test 1:1");
-  await expect(card).toContainText("GMT+1");
+  await expect(card).toContainText("UK time");
 });
 test("Home shows an honest empty state and never the old hardcoded verse", async ({
   page,
@@ -45,7 +45,7 @@ test("editor creates, publishes and withdraws a dated verse", async ({
   if ((page.viewportSize()?.width ?? 1024) < 900)
     await page.getByRole("button", { name: /New verse/ }).click();
   const form = page.getByRole("form", { name: "Daily verse editor" });
-  await form.getByLabel("Display date (GMT+1)").fill("2026-10-31");
+  await form.getByLabel("Display date (UK time)").fill("2026-10-31");
   await form.getByLabel("Verse text").fill("Synthetic edited verse.");
   await form
     .getByLabel("Scripture reference", { exact: true })
@@ -112,7 +112,7 @@ test("same-date conflicts preserve the draft and do not retry publication", asyn
   if ((page.viewportSize()?.width ?? 1024) < 900)
     await page.getByRole("button", { name: /New verse/ }).click();
   const form = page.getByRole("form", { name: "Daily verse editor" });
-  await form.getByLabel("Display date (GMT+1)").fill("2026-10-31");
+  await form.getByLabel("Display date (UK time)").fill("2026-10-31");
   await form.getByLabel("Verse text").fill("Candidate verse.");
   await form
     .getByLabel("Scripture reference", { exact: true })
@@ -160,9 +160,9 @@ test("daily verse text is escaped rather than interpreted as HTML", async ({
       json: {
         data: {
           date: "2026-10-31",
-          timeZone: "UTC+01:00",
+          timeZone: "Europe/London",
           serverTime: "2026-10-31T10:00:00Z",
-          nextDayAt: "2026-10-31T23:00:00Z",
+          nextDayAt: "2026-11-01T00:00:00Z",
           verse: {
             id: VERSE,
             displayDate: "2026-10-31",

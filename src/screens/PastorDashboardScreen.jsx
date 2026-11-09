@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
@@ -7,7 +8,7 @@ import "@/pastoral/pastoral.css";
 
 function dayKey(value, timeZone) {
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
+    timeZone: UK_TIME_ZONE,
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
@@ -81,7 +82,7 @@ export default function PastorDashboardScreen() {
         <div className="pastor-dashboard-main">
           <header className="pastor-dashboard-header">
             <div>
-              <p className="pastoral-eyebrow">{new Intl.DateTimeFormat(undefined, { dateStyle: "full" }).format(new Date())}</p>
+              <p className="pastoral-eyebrow">{new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "full" }).format(new Date())}</p>
               <h1>Good day, {profile?.firstName || "Pastor"}</h1>
               <p>Here is your pastoral schedule and care queue.</p>
             </div>
@@ -102,7 +103,7 @@ export default function PastorDashboardScreen() {
 
             <section className="pastor-dashboard-card" id="appointments" aria-label="Upcoming appointments">
               <div className="pastor-card-heading"><div><p className="pastoral-eyebrow">COMING UP</p><h2>Upcoming appointments</h2></div><Link to="/pastors">View all</Link></div>
-              {!upcoming.length ? <p className="pastor-muted">No upcoming appointments.</p> : upcoming.map((booking) => <article className="pastor-upcoming-row" key={booking.id}><div className="pastor-date-badge"><strong>{new Intl.DateTimeFormat(undefined, { day: "2-digit" }).format(new Date(booking.startsAt))}</strong><small>{new Intl.DateTimeFormat(undefined, { month: "short" }).format(new Date(booking.startsAt))}</small></div><div><strong>{booking.memberFirstName} {booking.memberLastName}</strong><p>{dateLabel(booking.startsAt, booking.timeZone || pastor.timeZone)}</p></div><span className={`pastor-status pastor-status-${booking.status}`}>{statusLabel(booking.status)}</span></article>)}
+              {!upcoming.length ? <p className="pastor-muted">No upcoming appointments.</p> : upcoming.map((booking) => <article className="pastor-upcoming-row" key={booking.id}><div className="pastor-date-badge"><strong>{new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, day: "2-digit" }).format(new Date(booking.startsAt))}</strong><small>{new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, month: "short" }).format(new Date(booking.startsAt))}</small></div><div><strong>{booking.memberFirstName} {booking.memberLastName}</strong><p>{dateLabel(booking.startsAt, booking.timeZone || pastor.timeZone)}</p></div><span className={`pastor-status pastor-status-${booking.status}`}>{statusLabel(booking.status)}</span></article>)}
             </section>
           </div>
 

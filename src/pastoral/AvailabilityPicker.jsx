@@ -33,7 +33,7 @@ export function AvailabilityPicker({ pastor, revision, onChange }) {
         Availability for {pastor.firstName} {pastor.lastName}
       </h2>
       <p>
-        Next 30 days. Times shown in {pastor.timeZone}. A request holds its slot
+        Next 30 days. Times shown in UK time (GMT/BST). A request holds its slot
         until the pastor reviews it.
       </p>
       {message && <p role="status">{message}</p>}

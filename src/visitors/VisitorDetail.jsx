@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { hasCapability } from "../../js/access.js";
@@ -82,9 +83,9 @@ export function VisitorDetail({ id, onChange, onDenied }) {
             <dt>Phone</dt>
             <dd>{data.phone || "Not provided"}</dd>
             <dt>Consent received</dt>
-            <dd>{new Date(data.createdAt).toLocaleString()}</dd>
+            <dd>{new Date(data.createdAt).toLocaleString("en-GB", { timeZone: UK_TIME_ZONE })}</dd>
             <dt>Contact expiry</dt>
-            <dd>{new Date(data.expiresAt).toLocaleString()}</dd>
+            <dd>{new Date(data.expiresAt).toLocaleString("en-GB", { timeZone: UK_TIME_ZONE })}</dd>
           </dl>
           <p>{data.consentText}</p>
           {canManage && <VisitorAssignmentPanel visitor={data} onAssigned={onChange} onError={setError} />}

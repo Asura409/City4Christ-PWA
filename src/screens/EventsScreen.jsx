@@ -15,13 +15,14 @@ import {
   localDateKey,
 } from "@/events/date";
 import { EventManager } from "@/events/EventManager";
+import { UK_TIME_ZONE, ukDateKey } from "../../js/time.js";
 
-const TODAY = new Date();
+const TODAY = new Date(ukDateKey() + "T00:00:00");
 TODAY.setHours(0, 0, 0, 0);
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const addDays = (date, count) =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate() + count);
-const eventDay = (event) => dateKeyInZone(event.startsAt, event.timeZone);
+const eventDay = (event) => dateKeyInZone(event.startsAt, UK_TIME_ZONE);
 
 const calendarURL = (eventId) => {
   const base =
@@ -84,11 +85,11 @@ export default function EventsScreen({ groupId = "" }) {
   const weekEnd = addDays(weekBase, 6);
   const monthTitle =
     weekBase.getMonth() === weekEnd.getMonth()
-      ? weekBase.toLocaleDateString(undefined, {
+      ? weekBase.toLocaleDateString("en-GB", {
           month: "long",
           year: "numeric",
         })
-      : `${weekBase.toLocaleDateString(undefined, { month: "short" })} – ${weekEnd.toLocaleDateString(undefined, { month: "short", year: "numeric" })}`;
+      : `${weekBase.toLocaleDateString("en-GB", { month: "short" })} – ${weekEnd.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`;
   const selectedEvents = useMemo(
     () => events.filter((event) => eventDay(event) === selectedDay),
     [events, selectedDay],
@@ -201,7 +202,7 @@ export default function EventsScreen({ groupId = "" }) {
                 className={`day${key === localDateKey(TODAY) ? " today" : ""}${hasEvent ? " has" : ""}`}
                 aria-pressed={key === selectedDay}
                 aria-label={
-                  date.toLocaleDateString(undefined, {
+                  date.toLocaleDateString("en-GB", {
                     weekday: "long",
                     month: "long",
                     day: "numeric",
@@ -218,7 +219,7 @@ export default function EventsScreen({ groupId = "" }) {
 
       <div className="sh">
         <h2>
-          {dateFromKey(selectedDay).toLocaleDateString(undefined, {
+          {dateFromKey(selectedDay).toLocaleDateString("en-GB", {
             weekday: "long",
             month: "long",
             day: "numeric",
@@ -244,15 +245,15 @@ export default function EventsScreen({ groupId = "" }) {
                 <div className="t-top">
                   <div className="dt">
                     <small>
-                      {new Intl.DateTimeFormat(undefined, {
+                      {new Intl.DateTimeFormat("en-GB", {
                         month: "short",
-                        timeZone: event.timeZone,
+                        timeZone: UK_TIME_ZONE,
                       }).format(new Date(event.startsAt))}
                     </small>
                     <b>
-                      {new Intl.DateTimeFormat(undefined, {
+                      {new Intl.DateTimeFormat("en-GB", {
                         day: "numeric",
-                        timeZone: event.timeZone,
+                        timeZone: UK_TIME_ZONE,
                       }).format(new Date(event.startsAt))}
                     </b>
                   </div>
@@ -275,7 +276,7 @@ export default function EventsScreen({ groupId = "" }) {
                       </span>
                     </p>
                   </div>
-                  <span className="when">{event.timeZone}</span>
+                  <span className="when">UK time (GMT/BST)</span>
                 </div>
                 {event.description && (
                   <p className="event-description">{event.description}</p>

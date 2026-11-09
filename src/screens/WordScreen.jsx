@@ -1,4 +1,6 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { api } from "@/auth/session";
 import { useSession } from "@/auth/session";
 import { safeImageUrl, safeUrl, youtubeEmbedUrl } from "@/lib/sanitize";
@@ -28,8 +30,10 @@ function AttachmentList({ items = [], resumeAt = 0, onPlaybackPosition = () => {
   })}</div>;
 }
 export default function WordScreen() {
+  const [searchParams] = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
   const { profile } = useSession();
-  const [query, setQuery] = useState(""),
+  const [query, setQuery] = useState(initialQuery),
     [seriesFilter, setSeriesFilter] = useState(""),
     [seriesOptions, setSeriesOptions] = useState([]),
     [seriesError, setSeriesError] = useState(""),
@@ -46,11 +50,11 @@ export default function WordScreen() {
     [memberStatus, setMemberStatus] = useState(""),
     [canManageSermons, setCanManageSermons] = useState(false);
   const lastProgressWrite = useRef({ seconds: 0, at: 0 });
-  async function load(next = "") {
+  async function load(next = "", searchQuery = query) {
     setBusy(true);
     setError("");
     try {
-      const qs = new URLSearchParams({ limit: "20", query });
+      const qs = new URLSearchParams({ limit: "20", query: searchQuery });
       if (seriesFilter) qs.set("series", seriesFilter);
       if (next) qs.set("cursor", next);
       const result = await api.request("/api/v1/sermons?" + qs, {
@@ -65,8 +69,10 @@ export default function WordScreen() {
     }
   }
   useEffect(() => {
-    void load();
-  }, []);
+    setQuery(initialQuery);
+    setSelected(null);
+    void load("", initialQuery);
+  }, [initialQuery]);
   useEffect(() => {
     let live = true;
     api.request("/api/v1/me/access")
@@ -180,6 +186,7 @@ export default function WordScreen() {
             Back to sermons
           </button>
           <h2>{selected.title}</h2>
+          <SermonDate value={selected.preachedAt} />
           {safeImageUrl(selected.imageUrl) && <img className="sermon-image sermon-detail-image" src={safeImageUrl(selected.imageUrl)} alt={selected.title} loading="lazy" referrerPolicy="no-referrer" />}
           <p>{selected.summary}</p>
           <p>{selected.speaker}</p>
@@ -246,6 +253,7 @@ export default function WordScreen() {
               <div className="sermon-card-body">
                 <div className="sermon-card-meta"><span>{s.speaker || "City4Christ teaching team"}</span>{s.attachments?.length > 0 && <span>{s.attachments.some((item) => item.contentType?.startsWith("video/")) ? "Video" : "Audio"}</span>}</div>
                 <h2>{s.title}</h2>
+                <SermonDate value={s.preachedAt} />
                 <p>{s.summary || "A message to help you grow in faith and walk with Christ."}</p>
                 <div className="sermon-card-footer"><span>{s.attachments?.length || 0} media {s.attachments?.length === 1 ? "item" : "items"}</span><button className="btn gold" disabled={busy} onClick={() => open(s.id)}>Open sermon <span aria-hidden="true">→</span></button></div>
               </div>
@@ -265,4 +273,9 @@ export default function WordScreen() {
       {busy && <p role="status">Loading sermons…</p>}
     </section>
   );
+}
+
+function SermonDate({ value }) {
+  if (!value || !Number.isFinite(Date.parse(value))) return null;
+  return <time className="sermon-date" dateTime={value}>Preached {new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "long" }).format(new Date(value))}</time>;
 }

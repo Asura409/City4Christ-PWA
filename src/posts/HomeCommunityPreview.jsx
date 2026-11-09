@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Avatar } from "@/components/Avatar";
@@ -11,7 +12,7 @@ function authorName(post) {
 
 function dateLabel(value) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? "Recently" : new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(date);
+  return Number.isNaN(date.getTime()) ? "Recently" : new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "medium" }).format(date);
 }
 
 export function HomeCommunityPreview() {
@@ -31,7 +32,7 @@ export function HomeCommunityPreview() {
   return (
     <section className="home-community-preview" aria-label="Community highlights">
       <div className="home-community-heading">
-        <div><span className="eyebrow">COMMUNITY HIGHLIGHTS</span><h2>Faith moments</h2></div>
+        <div><span className="eyebrow">COMMUNITY HIGHLIGHTS</span><h2>Testimonies</h2></div>
         <button className="link" type="button" onClick={() => navigate("/posts")}>View all</button>
       </div>
       {loading ? <p className="home-community-muted">Loading community highlights…</p> : posts.length === 0 ? <div className="home-community-empty"><p>No community posts yet.</p><button className="btn soft" type="button" onClick={() => navigate("/posts")}>Visit Community</button></div> : <div className="home-community-list">

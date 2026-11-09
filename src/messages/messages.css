@@ -83,6 +83,9 @@
 .message-row.group-continued { margin-top: -7px; }
 .message-bubble { width: fit-content; max-width: 75%; padding: 5px 10px; border-radius: 14px; word-break: normal; overflow-wrap: anywhere; font-size: 14px; line-height: 1.35; }
 .message-bubble p { margin: 0; white-space: pre-wrap; }
+.message-edit-form { display: grid; gap: 8px; min-width: min(260px, 70vw); }
+.message-edit-form textarea { min-height: 70px; resize: vertical; }
+.message-edit-form > div { display: flex; justify-content: flex-end; gap: 6px; }
 .message-text { display: inline; margin: 0; }
 .message-meta { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: currentColor; font-size: 9px; line-height: 1; opacity: .7; white-space: nowrap; vertical-align: baseline; }
 .group-message-author { display: flex; align-items: center; gap: 6px; margin: 0 0 4px; color: var(--purple); font-size: 11px; font-weight: 800; }

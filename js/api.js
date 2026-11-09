@@ -1,3 +1,4 @@
+import { parseAccess } from "./access.js";
 // Access credentials stay in this module's memory; refresh credentials are HttpOnly cookies.
 export class APIError extends Error {
   constructor(
@@ -118,6 +119,10 @@ export function createClient({
           requestId: result.error?.requestId || "",
         },
       );
+    if (path === "/api/v1/me/access") {
+      try { result.data = parseAccess(result.data); }
+      catch { throw new APIError("Current permissions could not be loaded. Refresh to try again.", { status: response.status, code: "invalid_response" }); }
+    }
     return result;
   }
   function refresh() {

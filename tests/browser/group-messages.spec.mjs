@@ -147,7 +147,7 @@ test("current group members can search messages in their group chat", async ({ p
   await page.getByRole("button", { name: "Group chats", exact: true }).click();
   await page.getByRole("button", { name: "Open group conversation Choir" }).click();
   await page.getByRole("searchbox", { name: "Search group messages" }).fill("choir");
-  await page.getByRole("button", { name: "Search", exact: true }).click();
+  await page.getByRole("search", { name: "Search this group chat" }).getByRole("button", { name: "Search", exact: true }).click();
   await expect(page.getByText("Search results for “choir”")).toBeVisible();
   expect(fixture.calls.some((call) => call.method === "GET" && call.path === `/api/v1/groups/${GROUP}/messages` && call.query.includes("query=choir"))).toBe(true);
 });

@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useRef, useState } from "react";
 import { hasCapability } from "../../js/access.js";
 import { api } from "@/auth/session";
@@ -94,7 +95,7 @@ export function EditorialSermonList({ refreshKey = 0 }) {
           <article className="editorial-sermon-item" key={item.id}>
             <div>
               <h3>{item.title}</h3>
-              <p>{item.speaker} · {new Date(item.preachedAt).toLocaleDateString()}</p>
+              <p>{item.speaker} · {new Date(item.preachedAt).toLocaleDateString("en-GB", { timeZone: UK_TIME_ZONE })}</p>
             </div>
             <span className={`editorial-sermon-status status-${item.status}`}>{displayStatus(item.status)}</span>
             <small>Version {item.version}</small>

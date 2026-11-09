@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE, ukDateTimeInput } from "./time.js";
 export const $ = (selector, root = document) => root.querySelector(selector);
 export function element(tag, attributes = {}, children = []) {
   const node = document.createElement(tag);
@@ -92,13 +93,10 @@ export function onClick(button, operation) {
 }
 export const value = (form, name) => form.elements.namedItem(name).value;
 export function localDateInput(raw) {
-  const d = new Date(raw);
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
-    .toISOString()
-    .slice(0, 19);
+  return ukDateTimeInput(raw);
 }
 export function dateLabel(raw) {
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(
+  return new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "medium" }).format(
     new Date(raw),
   );
 }

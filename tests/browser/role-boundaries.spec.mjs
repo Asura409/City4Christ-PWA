@@ -1,8 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { mocked, GROUP } from "./fixtures/api.mjs";
 
-test("staff with obsolete capabilities cannot open member or group administration", async ({page}) => {
-  const {calls} = await mocked(page, {signedIn:true, access:{roles:[{role:"staff",scope:""}], capabilities:["members.records.read","roles.manage","roles.read","roles.operational.manage","groups.manage","groups.members.manage","visitors.follow_up"].map(permission=>({permission,scope:""}))}});
+test("staff without server grants cannot open member or group administration", async ({page}) => {
+  const {calls} = await mocked(page, {signedIn:true, access:{roles:[{role:"staff",scope:""}], capabilities:[{permission:"visitors.follow_up",scope:""}]}});
   await page.goto("/#/admin");
   await expect(page.getByRole("region",{name:"Admin dashboard"})).toBeVisible();
   await expect(page.getByRole("button",{name:"Members",exact:true})).toHaveCount(0);

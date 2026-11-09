@@ -1,4 +1,5 @@
 import { churchRoleAppointments } from "../components/church-role-appointments.js";
+import { ukInputToInstant } from "../time.js";
 import { roleAppointments } from "../components/role-appointments.js";
 import {
   $,
@@ -91,7 +92,7 @@ export async function staffPage({ api, access, session }) {
         status("Choose a future publication time.", "error");
         return;
       }
-      body.publishAt = new Date(input.value).toISOString();
+      body.publishAt = ukInputToInstant(input.value);
     }
     const { data } = await api.request("/api/v1/admin/sermons/" + current.id, {
       method: "PATCH",

@@ -1271,6 +1271,40 @@
 }
 
 /* Keep the app viewport fixed while making the content pane reliably wheel-scrollable. */
+.app > .nav,
+.app:has(.topbar) > .nav {
+  position: fixed;
+  left: 50%;
+  right: auto;
+  bottom: 0;
+  width: min(1600px, 100%);
+  transform: translateX(-50%);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+  padding: 0 8px env(safe-area-inset-bottom, 0px);
+  border-radius: 0;
+  border-top: 1px solid rgba(255,255,255,.2);
+  box-shadow: 0 -4px 18px rgba(61,24,88,.12);
+}
+.home-screen .welcome-card {
+  background: linear-gradient(120deg, #f0e5fb, #fff5df);
+  border: 1px solid #e8d6f4;
+  border-left: 5px solid #7540a7;
+  border-radius: 18px;
+  padding: 22px;
+}
+.home-screen .welcome-card h1 { color: #4c1d6f; }
+.home-screen .welcome-card p { color: #66566c; }
+.home-screen .reference-quick-card:nth-child(3n+1) .reference-quick-icon { color: #68328e; background: #eee0fa; }
+.home-screen .reference-quick-card:nth-child(3n+2) .reference-quick-icon { color: #87601c; background: #fff0c9; }
+.home-screen .reference-quick-card:nth-child(3n) .reference-quick-icon { color: #25674e; background: #e0f3e9; }
+.home-screen .home-community-heading { border-left: 4px solid #b68a30; padding-left: 12px; }
+.community-resource-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.platform-search { display: grid; grid-template-columns: minmax(120px, .4fr) minmax(0, 1fr) auto; align-items: end; gap: 12px; margin-block: 24px; }
+.platform-search label { display: grid; gap: 8px; min-width: 0; }
+.platform-search input, .platform-search select { box-sizing: border-box; width: 100%; min-width: 0; min-height: 48px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); color: var(--text); font: inherit; }
+.platform-search .btn { min-height: 48px; }
+.sermon-date { display: block; margin-block: 8px; color: var(--muted); font-size: 13px; }
+@media (max-width: 600px) { .platform-search { grid-template-columns: minmax(0, 1fr); } }
 .app { height: 100dvh; overflow: hidden; }
 .screens { min-height: 0; overflow-x: hidden; overflow-y: auto; overscroll-behavior-y: contain; -webkit-overflow-scrolling: touch; }
 @media (min-width: 1024px) {

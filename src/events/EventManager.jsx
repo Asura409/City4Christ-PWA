@@ -11,8 +11,9 @@ import {
 } from "@/events/api";
 import { instantToLocalDateTime, localDateTimeToInstant } from "@/events/date";
 import { listGroupMembers, listGroups } from "@/groups/api";
+import { UK_TIME_ZONE } from "../../js/time.js";
 
-const eventTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+const eventTimeZone = UK_TIME_ZONE;
 const canManageEvents = (access, groupId = "") =>
   (access?.capabilities || []).some(
     (item) =>
@@ -208,7 +209,7 @@ export function EventManager({ profile, groupId = "" }) {
         description: item.description,
         location: item.location,
         startsAt: item.startsAt,
-        timeZone: item.timeZone,
+        timeZone: eventTimeZone,
         capacity: item.capacity,
         status,
         version: item.version,

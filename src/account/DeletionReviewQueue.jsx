@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { SessionConfirmation } from "@/auth/SessionConfirmation";
 import { listDeletionRequests, isConfirmationError } from "./api";
@@ -92,7 +93,7 @@ export function DeletionReviewQueue() {
           </h2>
           <p>
             {item.status} · Received{" "}
-            {new Date(item.createdAt).toLocaleDateString()}
+            {new Date(item.createdAt).toLocaleDateString("en-GB", { timeZone: UK_TIME_ZONE })}
           </p>
           <button
             className="btn soft"

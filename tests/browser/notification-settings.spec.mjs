@@ -193,6 +193,9 @@ test("device opt-in requests permission after a click and registers through the 
       configurable: true,
     });
   });
+  await page.route("**/api/v1/notifications/push/config", (route) =>
+    route.fulfill({ json: { data: { enabled: true, publicKey: "BABA" } } }),
+  );
   let subscribed = 0;
   await page.route("**/api/v1/notifications/push/subscriptions", (r) => {
     subscribed++;

@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import { NotificationSettings } from "@/notifications/NotificationSettings";
 import { BroadcastPanel } from "@/notifications/BroadcastPanel";
 import React, { useCallback, useEffect, useState } from "react";
@@ -11,7 +12,7 @@ function createdLabel(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? "Recently"
-    : new Intl.DateTimeFormat(undefined, {
+    : new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE,
         dateStyle: "medium",
         timeStyle: "short",
       }).format(date);

@@ -19,17 +19,17 @@ test("church roles and capabilities parse without losing exact scope checks", as
     false,
   );
 });
-test("only the Super Admin boundary can offer ministry appointments", () => {
+test("ministry appointment controls follow the server grant", () => {
   assert.deepEqual(
     churchRolesFor({
       capabilities: [{ permission: "roles.operational.manage", scope: "" }],
     }),
-    [],
+    ["ministry_leader"],
   );
   assert.ok(churchRolesFor(snapshot).includes("finance_officer"));
   assert.deepEqual(churchRolesFor(null), []);
 });
-test("appointment validation rejects self, missing MFA and scope inflation", () => {
+test("appointment validation checks form structure and leaves eligibility to the server", () => {
   const target = {
     id: "22222222-2222-4222-8222-222222222222",
     mfaEnabled: true,
@@ -46,7 +46,7 @@ test("appointment validation rejects self, missing MFA and scope inflation", () 
     }),
     null,
   );
-  assert.match(
+  assert.equal(
     validateAppointment({
       target,
       actor: target.id,
@@ -55,9 +55,9 @@ test("appointment validation rejects self, missing MFA and scope inflation", () 
       reason: "Approved",
       snapshot,
     }),
-    /own/i,
+    null,
   );
-  assert.match(
+  assert.equal(
     validateAppointment({
       target: { ...target, mfaEnabled: false },
       actor,
@@ -66,7 +66,7 @@ test("appointment validation rejects self, missing MFA and scope inflation", () 
       reason: "Approved",
       snapshot,
     }),
-    /authenticator/i,
+    null,
   );
   assert.match(
     validateAppointment({
@@ -80,7 +80,7 @@ test("appointment validation rejects self, missing MFA and scope inflation", () 
     /scope/i,
   );
 });
-test("Super Admin may resign only their own Super Admin role", () => {
+test("self appointment policy is evaluated by the server", () => {
   const target = {
     id: "11111111-1111-4111-8111-111111111111",
     mfaEnabled: true,
@@ -97,13 +97,13 @@ test("Super Admin may resign only their own Super Admin role", () => {
     validateAppointment({ ...common, role: "super_administrator" }),
     null,
   );
-  assert.match(validateAppointment({ ...common, role: "staff" }), /own/i);
-  assert.match(
+  assert.equal(validateAppointment({ ...common, role: "staff" }), null);
+  assert.equal(
     validateAppointment({
       ...common,
       role: "super_administrator",
       revoke: false,
     }),
-    /own/i,
+    null,
   );
 });

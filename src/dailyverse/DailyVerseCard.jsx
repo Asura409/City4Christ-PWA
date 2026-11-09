@@ -10,7 +10,7 @@ export function DailyVerseCard() {
         <Icon name="sun" />
         Daily bread
       </span>
-      <p className="daily-home-date"><small>{data?.date ? data.date + " · " : ""}GMT+1</small></p>
+      <p className="daily-home-date"><small>{data?.date ? data.date + " · " : ""}UK time (GMT/BST)</small></p>
       {error ? (
         <p role="alert">{error}</p>
       ) : !data ? (

@@ -1,12 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Avatar } from "@/components/Avatar";
 import { listMembers } from "@/members/directoryApi";
 import "@/members/member-directory.css";
 
 export default function MemberDirectoryScreen() {
   const navigate = useNavigate();
-  const [query, setQuery] = useState("");
+  const [searchParams] = useSearchParams();
+  const initialQuery = searchParams.get("q") || "";
+  const [query, setQuery] = useState(initialQuery);
+  useEffect(() => { setQuery(initialQuery); }, [initialQuery]);
   const [members, setMembers] = useState([]);
   const [cursor, setCursor] = useState("");
   const [loading, setLoading] = useState(true);

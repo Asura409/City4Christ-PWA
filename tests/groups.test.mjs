@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { canManageGroup, canViewLeadershipGroup, canManageChurchGroups, canRemoveGroupMember } from "../src/groups/access.js";
+import { canManageGroup, canManageChurchGroups, canRemoveGroupMember } from "../src/groups/access.js";
 import { hasCapability } from "../js/access.js";
 
 const churchGroup = { id: "group-a", audience: "church" };
@@ -15,7 +15,7 @@ test("group manager capabilities are limited to their exact group scope", () => 
   assert.equal(canManageGroup(leader, { id: "group-b", audience: "church" }), false);
 });
 
-test("only Super Admins, Assistant Pastors and Ministry Leaders can view leadership groups", () => {
+test("group management follows server grants regardless of audience and role", () => {
   const staff = {
     roles: [{ role: "staff", scope: "" }],
     capabilities: [{ permission: "groups.members.manage", scope: "" }],
@@ -24,28 +24,26 @@ test("only Super Admins, Assistant Pastors and Ministry Leaders can view leaders
     roles: [{ role: "ministry_leader", scope: "group-a" }],
     capabilities: [{ permission: "ministry.members.manage", scope: "group-a" }],
   };
-  assert.equal(canViewLeadershipGroup(staff), false);
-  assert.equal(canManageGroup(staff, leadershipGroup), false);
-  assert.equal(canViewLeadershipGroup(leader), true);
+  assert.equal(canManageGroup(staff, leadershipGroup), true);
   assert.equal(canManageGroup(leader, leadershipGroup), false);
 });
 
-test("pastors cannot manage groups using obsolete global permissions", () => {
+test("the client does not override server group grants for pastors", () => {
   const pastor = {
     roles: [{ role: "assistant_pastor", scope: "" }],
     capabilities: [{ permission: "groups.members.manage", scope: "" }],
   };
-  assert.equal(canManageGroup(pastor, churchGroup), false);
-  assert.equal(canManageGroup(pastor, leadershipGroup), false);
+  assert.equal(canManageGroup(pastor, churchGroup), true);
+  assert.equal(canManageGroup(pastor, leadershipGroup), true);
 });
 
-test("staff cannot use legacy permissions for members, roles or global group management", () => {
+test("server capabilities are authoritative without a local staff deny list", () => {
   const access = { roles: [{ role: "staff", scope: "" }], capabilities: [
     "roles.manage", "roles.operational.manage", "roles.privileged.manage", "members.records.read", "members.records.manage", "groups.manage", "groups.members.manage",
   ].map(permission => ({permission, scope:""})) };
-  for (const permission of ["roles.manage", "roles.operational.manage", "roles.privileged.manage", "members.records.read", "members.records.manage"]) assert.equal(hasCapability(access, permission), false);
-  assert.equal(canManageGroup(access, churchGroup), false);
-  assert.equal(canManageChurchGroups(access), false);
+  for (const permission of ["roles.manage", "roles.operational.manage", "roles.privileged.manage", "members.records.read", "members.records.manage"]) assert.equal(hasCapability(access, permission), true);
+  assert.equal(canManageGroup(access, churchGroup), true);
+  assert.equal(canManageChurchGroups(access), true);
   assert.equal(canRemoveGroupMember(access, churchGroup, {accountId:"creator"}, "staff"), false);
 });
 
@@ -57,10 +55,10 @@ test("scoped removals fail closed without a server target decision", () => {
   assert.equal(canRemoveGroupMember(access, {...churchGroup,id:"other"}, {accountId:"target",canRemove:true}, "leader"), false);
 });
 
-test("Super Admin still requires capabilities and cannot edit member names", () => {
+test("role labels do not substitute for server grants", () => {
   const access = {roles:[{role:"super_administrator",scope:""}],capabilities:[{permission:"roles.manage",scope:""},{permission:"groups.manage",scope:""},{permission:"members.records.manage",scope:""}]};
   assert.equal(hasCapability(access,"roles.manage"),true);
   assert.equal(canManageChurchGroups(access),true);
-  assert.equal(hasCapability(access,"members.records.manage"),false);
+  assert.equal(hasCapability(access,"members.records.manage"),true);
   assert.equal(canManageGroup(access,churchGroup),false);
 });

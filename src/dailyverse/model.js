@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE, ukDateKey, ukInputToInstant } from "../../js/time.js";
 export function parseTodayVerse(data) {
   const invalid = () => {
     throw new Error("Daily verse response is invalid. Refresh to try again.");
@@ -6,7 +7,7 @@ export function parseTodayVerse(data) {
     !data ||
     typeof data.date !== "string" ||
     !/^\d{4}-\d{2}-\d{2}$/.test(data.date) ||
-    data.timeZone !== "UTC+01:00" ||
+    data.timeZone !== UK_TIME_ZONE ||
     typeof data.serverTime !== "string" ||
     typeof data.nextDayAt !== "string"
   )
@@ -17,8 +18,8 @@ export function parseTodayVerse(data) {
     !Number.isFinite(now) ||
     !Number.isFinite(end) ||
     end <= now ||
-    end !== Date.parse(data.date + "T23:00:00Z") ||
-    new Date(now + 3600000).toISOString().slice(0, 10) !== data.date
+    ukDateKey(now) !== data.date ||
+    end !== Date.parse(ukInputToInstant(new Date(Date.parse(data.date + "T12:00:00Z") + 86400000).toISOString().slice(0, 10) + "T00:00"))
   )
     invalid();
   if (data.verse !== null) {

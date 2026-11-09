@@ -37,9 +37,9 @@ export async function dailyVerseMock(
         const next = rollover && reads > 1,
           date = next ? "2026-11-01" : "2026-10-31",
           serverTime = next
-            ? "2026-10-31T23:00:00Z"
+            ? "2026-11-01T00:00:00Z"
             : rollover
-              ? "2026-10-31T22:59:59Z"
+              ? "2026-10-31T23:59:59Z"
               : "2026-10-31T10:00:00Z";
         const verse =
           entry?.status === "published" && entry.displayDate === date
@@ -55,9 +55,9 @@ export async function dailyVerseMock(
           json: {
             data: {
               date,
-              timeZone: "UTC+01:00",
+              timeZone: "Europe/London",
               serverTime,
-              nextDayAt: date + "T23:00:00Z",
+              nextDayAt: next ? "2026-11-02T00:00:00Z" : "2026-11-01T00:00:00Z",
               verse,
             },
           },

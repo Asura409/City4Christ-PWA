@@ -1,8 +1,9 @@
+import { ukDateKey } from "../../js/time.js";
 function dayKey(value) {
   const date = new Date(value);
   return Number.isNaN(date.getTime())
     ? ""
-    : `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+    : ukDateKey(date);
 }
 
 export function sameMessageGroup(previous, current) {

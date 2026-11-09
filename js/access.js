@@ -1,50 +1,11 @@
 // This is display state only. Protected API actions authorize in PostgreSQL.
-const globalPermissions = new Set([
-  "accounts.deletion.review",
-  "members.records.read",
-  "members.records.audit.read",
-  "members.records.manage",
-  "visitors.follow_up",
-  "sermons.manage",
-  "devotionals.manage",
-  "roles.manage",
-  "roles.read",
-  "roles.privileged.manage",
-  "roles.operational.manage",
-]);
-const globalRoles = new Set([
-  "super_administrator",
-  "assistant_pastor",
-  "staff",
-  "finance_officer",
-  "content_editor",
-  "system_administrator",
-  "access_administrator",
-]);
-const ministryID = (value) =>
-  typeof value === "string" &&
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(
-    value,
-  ) &&
-  value !== "00000000-0000-0000-0000-000000000000";
+const validIdentifier = (value) => typeof value === "string" && value.length > 0 && value.length <= 200 && value.trim() === value;
+const validScope = (value) => typeof value === "string" && value.length <= 200 && value.trim() === value;
 function validCapability({ permission, scope } = {}) {
-  return (
-    (globalPermissions.has(permission) && scope === "") ||
-    (permission === "ministry.members.manage" && ministryID(scope))
-  );
+  return validIdentifier(permission) && validScope(scope);
 }
-export function isSuperAdmin(snapshot) {
-  return (snapshot?.roles || []).some((role) => role.role === "super_administrator" && role.scope === "");
-}
-
-const superAdminOnly = new Set([
-  "roles.manage", "roles.read", "roles.privileged.manage", "roles.operational.manage",
-  "members.records.read", "members.records.audit.read", "accounts.deletion.review",
-]);
 
 export function hasCapability(snapshot, permission, scope = "") {
-  if (permission === "members.records.manage") return false;
-  if (superAdminOnly.has(permission) && !isSuperAdmin(snapshot)) return false;
   return (
     validCapability({ permission, scope }) &&
     Array.isArray(snapshot?.capabilities) &&
@@ -53,15 +14,13 @@ export function hasCapability(snapshot, permission, scope = "") {
     )
   );
 }
-function parseAccess(data) {
+export function parseAccess(data) {
   if (
     !Array.isArray(data?.roles) ||
     !Array.isArray(data?.capabilities) ||
     !data.roles.every(
       (r) =>
-        r &&
-        ((globalRoles.has(r.role) && r.scope === "") ||
-          (r.role === "ministry_leader" && ministryID(r.scope))),
+        r && validIdentifier(r.role) && validScope(r.scope),
     ) ||
     !data.capabilities.every((c) => c && validCapability(c))
   ) {

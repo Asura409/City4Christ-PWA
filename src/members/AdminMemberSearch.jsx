@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
@@ -58,8 +59,7 @@ export function AdminMemberSearch() {
       .then(({ data }) => {
         if (active) {
           setAllowed(hasCapability(data, "members.records.read"));
-          const systemAuditRole = (data.roles || []).some(({ role, scope }) => ["super_administrator", "system_administrator"].includes(role) && scope === "");
-          setAuditAllowed(systemAuditRole && hasCapability(data, "members.records.audit.read"));
+          setAuditAllowed(hasCapability(data, "members.records.audit.read"));
           const privileged = hasCapability(data, "roles.privileged.manage");
           setPrivilegedRoleAllowed(privileged);
           setRoleManageAllowed(privileged || hasCapability(data, "roles.operational.manage") || hasCapability(data, "roles.manage"));
@@ -137,15 +137,6 @@ export function AdminMemberSearch() {
   async function updateRole(event, revoke = false) {
     event.preventDefault();
     if (!selected || !roleReason.trim()) return;
-    if (!roleProofReady) {
-      setRoleError("");
-      setRoleConfirmOpen(true);
-      return;
-    }
-    if (!revoke && ["super_administrator", "assistant_pastor", "staff", "finance_officer"].includes(roleToAssign) && !selected.mfaEnabled) {
-      setRoleError("This member must enable authenticator protection before receiving a protected church role.");
-      return;
-    }
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
     try {
       await changeChurchRole(selected.id, { role: roleToAssign, reason: roleReason.trim(), revoke });
@@ -168,11 +159,6 @@ export function AdminMemberSearch() {
   async function revokeRole(role, scope = "") {
     if (!selected || !roleReason.trim()) {
       setRoleError("Enter a reason before revoking a role.");
-      return;
-    }
-    if (!roleProofReady) {
-      setRoleError("");
-      setRoleConfirmOpen(true);
       return;
     }
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
@@ -232,7 +218,7 @@ export function AdminMemberSearch() {
                 <td>
                   <div className="admin-member-identity">
                     <Avatar name={`${member.firstName} ${member.lastName}`} src={member.avatar?.url || member.avatarUrl} size={44} />
-                    <div><strong>{member.firstName} {member.lastName}</strong><small>{member.joinedAt ? `Joined ${new Date(member.joinedAt).toLocaleDateString()}` : "Church member"}</small></div>
+                    <div><strong>{member.firstName} {member.lastName}</strong><small>{member.joinedAt ? `Joined ${new Date(member.joinedAt).toLocaleDateString("en-GB", { timeZone: UK_TIME_ZONE })}` : "Church member"}</small></div>
                   </div>
                 </td>
                 <td><div className="admin-member-role-list">{rolesForMember.length ? rolesForMember.map((role) => <span className="admin-member-role" key={role}>{role}</span>) : <span className="admin-member-role member">Member</span>}</div></td>
@@ -249,7 +235,7 @@ export function AdminMemberSearch() {
             <dt>Email</dt>
             <dd>{selected.email}</dd>
             <dt>Joined</dt>
-            <dd>{new Date(selected.joinedAt).toLocaleDateString()}</dd>
+            <dd>{new Date(selected.joinedAt).toLocaleDateString("en-GB", { timeZone: UK_TIME_ZONE })}</dd>
           </dl>
           <p>Members manage their own names from My account.</p>
           {roleManageAllowed && <section className="admin-member-roles" aria-label="Assign church role">
@@ -280,7 +266,7 @@ export function AdminMemberSearch() {
                     <td><code>{event.actorId}</code></td>
                     <td><div className="admin-audit-fields">{event.sensitiveFields.map((field) => <span key={field}>{field}</span>)}</div></td>
                     <td>{event.reason || "—"}</td>
-                    <td><time dateTime={event.occurredAt}>{new Date(event.occurredAt).toLocaleString()}</time></td>
+                    <td><time dateTime={event.occurredAt}>{new Date(event.occurredAt).toLocaleString("en-GB", { timeZone: UK_TIME_ZONE })}</time></td>
                   </tr>)}</tbody>
                 </table>
               </div>

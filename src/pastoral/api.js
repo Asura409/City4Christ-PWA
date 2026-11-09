@@ -1,4 +1,5 @@
 import { api } from "@/auth/session";
+import { UK_TIME_ZONE } from "../../js/time.js";
 export const requestAppointment = (slotId) =>
   api.request("/api/v1/pastor-bookings", { method: "POST", body: { slotId } });
 export const cancelAppointment = (id) =>
@@ -26,9 +27,9 @@ export function nextMonthRange() {
   }).toString();
 }
 export function dateLabel(value, timeZone) {
-  return new Intl.DateTimeFormat(undefined, {
+  return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
-    timeZone,
+    timeZone: UK_TIME_ZONE,
   }).format(new Date(value));
 }

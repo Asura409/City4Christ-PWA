@@ -3,6 +3,7 @@ import { hasCapability } from "../../js/access.js";
 import { api } from "@/auth/session";
 import { uploadMedia } from "@/posts/api";
 import { createSermonDraft, publishSermon } from "@/sermons/api";
+import { ukDateTimeInput, ukInputToInstant } from "../../js/time.js";
 
 export function SermonComposer({ onPublished, onChanged }) {
   const [allowed, setAllowed] = useState(false);
@@ -11,7 +12,7 @@ export function SermonComposer({ onPublished, onChanged }) {
   const [summary, setSummary] = useState("");
   const [preachedAt, setPreachedAt] = useState(() => {
     const now = new Date();
-    return new Date(now.getTime() - now.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+    return ukDateTimeInput(now);
   });
   const [files, setFiles] = useState([]);
   const [draft, setDraft] = useState(null);
@@ -35,7 +36,7 @@ export function SermonComposer({ onPublished, onChanged }) {
     try {
       const attachmentIds = [];
       for (const file of files) attachmentIds.push(await uploadMedia(file, "sermon_attachment", { onStatus: setStatus }));
-      const created = await createSermonDraft({ title: title.trim(), speaker: speaker.trim(), summary: summary.trim(), preachedAt: new Date(preachedAt).toISOString(), ...(attachmentIds.length ? { attachmentIds } : {}) });
+      const created = await createSermonDraft({ title: title.trim(), speaker: speaker.trim(), summary: summary.trim(), preachedAt: ukInputToInstant(preachedAt), ...(attachmentIds.length ? { attachmentIds } : {}) });
       setDraft(created); setStatus("Draft created. Publish it when you are ready.");
       onChanged?.();
     } catch (e) { setError(e.message || "Could not create the sermon draft."); }
@@ -72,7 +73,7 @@ export function SermonComposer({ onPublished, onChanged }) {
       <label className="auth-field">Sermon title<input aria-label="Sermon title" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
       <label className="auth-field">Speaker<input aria-label="Speaker" required maxLength={200} value={speaker} onChange={(e) => setSpeaker(e.target.value)} /></label>
       <label className="auth-field">Summary<textarea maxLength={10000} value={summary} onChange={(e) => setSummary(e.target.value)} /></label>
-      <label className="auth-field">Preached at<input type="datetime-local" required value={preachedAt} onChange={(e) => setPreachedAt(e.target.value)} /></label>
+      <label className="auth-field">Preached at (UK time)<input type="datetime-local" required value={preachedAt} onChange={(e) => setPreachedAt(e.target.value)} /></label>
       <label className="auth-field">Photos, audio, or video<input type="file" multiple accept="image/jpeg,image/png,image/webp,image/gif,audio/mpeg,audio/mp4,audio/wav,audio/x-wav,audio/ogg,video/mp4,video/webm" onChange={selectFiles} /></label>
       {files.length > 0 && <p>{files.map((file) => file.name).join(", ")}</p>}
       <button className="btn gold" disabled={busy || !title.trim() || !speaker.trim()}>{busy ? "Creating…" : "Create draft"}</button>

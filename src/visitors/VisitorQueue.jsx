@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { listVisitors } from "./api";
 import { VisitorDetail } from "./VisitorDetail";
@@ -87,7 +88,7 @@ export function VisitorQueue() {
           <article className="auth-card" key={v.id}>
             <h2>{v.fullName}</h2>
             <p>
-              {v.status} · Received {new Date(v.createdAt).toLocaleDateString()}{v.assignedTo ? " · Assigned to a volunteer" : " · Unassigned"}
+              {v.status} · Received {new Date(v.createdAt).toLocaleDateString("en-GB", { timeZone: UK_TIME_ZONE })}{v.assignedTo ? " · Assigned to a volunteer" : " · Unassigned"}
             </p>
             <button
               className="btn soft"

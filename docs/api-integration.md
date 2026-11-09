@@ -275,10 +275,10 @@ Stale versions keep the unsaved form intact and require an explicit latest-versi
 reload. Source components and transport/list helpers are split in `src/devotionals`.
 
 
-### Daily Verse (fixed GMT+1)
+### Daily Verse (UK time)
 
 Home reads `GET /api/v1/daily-verse`. The server chooses the church date in fixed
-UTC+01:00 and returns date, timeZone, serverTime, nextDayAt and a nullable verse.
+Europe/London (GMT/BST) and returns date, timeZone, serverTime, nextDayAt and a nullable verse.
 Use the server timestamps for rollover timing; do not select a verse from the
 phone date or carry yesterday into an empty day. Home clears old data before a
 refresh and distinguishes empty, loading and unavailable states.

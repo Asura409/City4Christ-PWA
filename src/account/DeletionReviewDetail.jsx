@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import {
   deletionDetail,
@@ -75,7 +76,7 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
             <dt>Status</dt>
             <dd>{data.status}</dd>
             <dt>Requested</dt>
-            <dd>{new Date(data.createdAt).toLocaleString()}</dd>
+            <dd>{new Date(data.createdAt).toLocaleString("en-GB", { timeZone: UK_TIME_ZONE })}</dd>
             <dt>Consent policy</dt>
             <dd>{data.policyVersion}</dd>
           </dl>

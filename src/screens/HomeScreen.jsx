@@ -8,7 +8,7 @@ export default function HomeScreen() {
   const { profile } = useSession(),
     navigate = useNavigate();
   return (
-    <section className="screen active" aria-label="Home">
+    <section className="screen active home-screen" aria-label="Home">
       <section className="welcome-card fade-up">
         <h1>Welcome, {profile.firstName} 🙏</h1>
         <p>Welcome back to your faith community</p>
@@ -28,12 +28,9 @@ export default function HomeScreen() {
           ["/giving", "heart", "Giving", "Tithe, offering & more"],
           ["/word", "book", "Word", "Sermons and media"],
           ["/prayer", "flame", "Prayer", "Pray with the community"],
-          ["/groups", "users", "Groups", "Find your ministry group"],
           ["/bible", "book", "Bible", "Read the Word together"],
-          ["/community", "chat", "Community", "Find people and ministries"],
+          ["/community", "chat", "Community", "Chats, members and ministry groups"],
           ["/live", "play", "Live", "Join worship online"],
-          ["/chat", "chat", "Messages", "Stay connected with members"],
-          ["/members", "users", "Members", "Find people in the church"],
           ["/get-app", "download", "Get the App", "Keep City4Christ close"],
         ].map(([path, icon, label, description]) => (
           <button key={path} className="reference-quick-card" type="button" onClick={() => navigate(path)}>

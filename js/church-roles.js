@@ -26,19 +26,7 @@ export function validateAppointment({
   revoke = false,
 }) {
   if (!target) return "Select a member first.";
-  if (
-    target.id === actor &&
-    !(
-      revoke &&
-      role === "super_administrator" &&
-      hasCapability(snapshot, "roles.privileged.manage")
-    )
-  )
-    return "You cannot change your own appointments, except resigning as Super Admin.";
-  if (!churchRolesFor(snapshot).includes(role))
-    return "This role is not available to you.";
-  if (!revoke && role !== "ministry_leader" && !target.mfaEnabled)
-    return "This member must enable authenticator protection first.";
+  if (typeof role !== "string" || !role.trim()) return "Select a role first.";
   if (
     role === "ministry_leader"
       ? !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(

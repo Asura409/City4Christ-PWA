@@ -1,3 +1,4 @@
+import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useState } from "react";
 import { useSession } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
@@ -18,7 +19,7 @@ import {
 function dateLabel(value) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "Recently";
-  return new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(date);
+  return new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "medium", timeStyle: "short" }).format(date);
 }
 
 function visibilityLabel(visibility) {
@@ -339,7 +340,7 @@ export default function PrayerScreen() {
               <div className="prayer-card-heading">
                 <div className="who">
                   <Avatar name={item.author || "Church member"} src={item.isOwner ? accountAvatar : item.authorAvatar?.url} size={42} />
-                  <div><b>{item.author || "Church member"}</b><span>{dateLabel(item.createdAt)} · {visibilityLabel(item.visibility)}</span><small>Expires {new Intl.DateTimeFormat(undefined, { dateStyle: "medium" }).format(new Date(item.expiresAt))}</small></div>
+                  <div><b>{item.author || "Church member"}</b><span>{dateLabel(item.createdAt)} · {visibilityLabel(item.visibility)}</span><small>Expires {new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "medium" }).format(new Date(item.expiresAt))}</small></div>
                 </div>
                 {item.status === "answered" && <span className="prayer-answered">Answered</span>}
               </div>

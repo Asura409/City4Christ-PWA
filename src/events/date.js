@@ -1,4 +1,5 @@
-export function dateKeyInZone(value, timeZone = "UTC") {
+import { UK_TIME_ZONE, ukDateTimeInput, ukInputToInstant } from "../../js/time.js";
+export function dateKeyInZone(value, timeZone = UK_TIME_ZONE) {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone,
     year: "numeric",
@@ -14,22 +15,17 @@ export function localDateKey(date) {
 }
 
 export function formatEventDateTime(event) {
-  return new Intl.DateTimeFormat(undefined, {
-    timeZone: event.timeZone,
+  return new Intl.DateTimeFormat("en-GB", {
+    timeZone: UK_TIME_ZONE,
     dateStyle: "full",
     timeStyle: "short",
   }).format(new Date(event.startsAt));
 }
 
 export function localDateTimeToInstant(value) {
-  const date = new Date(value);
-  if (!value || Number.isNaN(date.getTime())) throw new Error("Choose a valid event date and time.");
-  return date.toISOString();
+  return ukInputToInstant(value);
 }
 
 export function instantToLocalDateTime(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const pad = (part) => String(part).padStart(2, "0");
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+  return ukDateTimeInput(value);
 }

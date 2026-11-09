@@ -15,7 +15,7 @@ export function PastorDirectory({ revision, onSelect }) {
               {p.firstName} {p.lastName}
             </h3>
             <p>{p.bio}</p>
-            <p>Time zone: {p.timeZone}</p>
+            <p>Time zone: UK (GMT/BST)</p>
             <button className="btn soft" onClick={() => onSelect(p)}>
               View availability for {p.firstName} {p.lastName}
             </button>

@@ -12,7 +12,11 @@ export default function CommunityScreen() {
           <h1>Community chats</h1>
           <p>Connect with members, groups, and ministries in one shared space.</p>
         </div>
-        <button className="btn gold" type="button" onClick={() => navigate("/posts")}>Community posts</button>
+        <div className="community-resource-links" aria-label="Community resources">
+          <button className="btn gold" type="button" onClick={() => navigate("/posts")}>Community posts</button>
+          <button className="btn soft" type="button" onClick={() => navigate("/members")}>Members</button>
+          <button className="btn soft" type="button" onClick={() => navigate("/groups")}>Groups</button>
+        </div>
       </header>
       <MessagesScreen embedded />
     </section>

@@ -49,6 +49,7 @@ import CommunityScreen from "@/screens/CommunityScreen";
 import LiveScreen from "@/screens/LiveScreen";
 import GetAppScreen from "@/screens/GetAppScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
+import SearchScreen from "@/screens/SearchScreen";
 import PastorDashboardScreen from "@/screens/PastorDashboardScreen";
 
 const AUTH_ROUTES = [
@@ -115,7 +116,7 @@ export default function App() {
             <b>City4Christ</b>
           </a>
           <div className="header-actions">
-            <button className="header-btn" type="button" aria-label="Search" onClick={() => window.dispatchEvent(new CustomEvent("global-search"))}>
+            <button className="header-btn" type="button" aria-label="Search" onClick={() => navigate("/search")}>
               <Icon name="search" />
             </button>
             <NotificationButton />
@@ -132,6 +133,7 @@ export default function App() {
 
         <main className="screens">
           <Routes>
+            <Route path="/search" element={<ProtectedRoute><SearchScreen /></ProtectedRoute>} />
             <Route path="/visitors" element={<ProtectedRoute><AdminShell><VisitorsScreen/></AdminShell></ProtectedRoute>}/>
             <Route path="/account-deletion-requests" element={<ProtectedRoute><AdminShell><DeletionRequestsScreen /></AdminShell></ProtectedRoute>} />
             <Route path="/admin/members" element={<ProtectedRoute><AdminShell><AdminMemberSearch /></AdminShell></ProtectedRoute>} />

@@ -2,8 +2,9 @@ import React, { useEffect, useState } from "react";
 import { PassageLookup } from "@/bible/PassageLookup";
 import { formatPassageText } from "@/bible/formatPassageText";
 import { createVerse, updateVerse } from "./api";
+import { ukDateKey } from "../../js/time.js";
 
-const empty = { displayDate: new Date(Date.now() + 3600000).toISOString().slice(0, 10), text: "", scriptureReference: "", translation: "" };
+const empty = { displayDate: ukDateKey(), text: "", scriptureReference: "", translation: "" };
 function shortDate(value) {
   if (!value) return "the selected date";
   const date = new Date(`${value}T12:00:00Z`);
@@ -42,11 +43,11 @@ export function DailyVerseForm({ entry, existingEntries = [], onSaved, onReload,
       {feedback && <div className={`daily-verse-feedback is-${feedback.tone}`} role={feedback.tone === "error" ? "alert" : "status"} aria-live="polite"><span className="daily-verse-feedback-icon" aria-hidden="true">{feedback.tone === "success" ? "✓" : "×"}</span><span>{feedback.message}</span><button type="button" aria-label="Dismiss message" onClick={() => setFeedback(null)}>×</button></div>}
       {error && !feedback && <p className="daily-verse-error" role="alert">{error}</p>}
       {conflict && <div className="daily-verse-conflict" role="status"><strong>This date already has a published verse.</strong><span>Choose another date or open the existing entry.</span>{existingPublished && <button type="button" className="btn soft" onClick={() => onOpenExisting?.(existingPublished.id)}>Open existing entry</button>}</div>}
-      <label className="daily-date-field">Display date (GMT+1)<input type="date" required min="0001-01-01" max="9999-12-31" {...field("displayDate")} />{existingPublished && <span className="daily-date-warning">A published verse already exists for this date. <button type="button" onClick={() => onOpenExisting?.(existingPublished.id)}>Open it</button> or choose another date.</span>}</label>
+      <label className="daily-date-field">Display date (UK time)<input type="date" required min="0001-01-01" max="9999-12-31" {...field("displayDate")} />{existingPublished && <span className="daily-date-warning">A published verse already exists for this date. <button type="button" onClick={() => onOpenExisting?.(existingPublished.id)}>Open it</button> or choose another date.</span>}</label>
       <section className="daily-passage-section" aria-label="Choose Bible passage"><h4>Choose Bible passage</h4><p className="daily-passage-help">Look up a passage and it will be added to the verse text automatically.</p><PassageLookup embedded autoUse onUse={usePassage} autoLookup={false} initialReference={entry?.scriptureReference || ""} initialTranslationName={entry?.translation || ""} /></section>
       {fields.text && <section className="daily-passage-preview" aria-label="Passage preview"><p className="devotionals-eyebrow">PASSAGE PREVIEW</p><strong>{fields.scriptureReference || "Selected passage"}</strong><span>{fields.translation || "Translation not specified"}</span><p>{fields.text}</p></section>}
       <div className="daily-verse-fields"><label>Verse text<textarea required rows={6} maxLength={4000} {...field("text")} /></label><label>Scripture reference<input required maxLength={200} {...field("scriptureReference")} /></label><label>Translation / attribution<input maxLength={100} {...field("translation")} /></label></div>
-      <p className="daily-verse-home-note">Appears on Home on {shortDate(fields.displayDate)} (GMT+1).</p>
+      <p className="daily-verse-home-note">Appears on Home on {shortDate(fields.displayDate)} (UK time, GMT/BST).</p>
       <div className="daily-verse-actions"><button className="btn soft" type="submit" value="draft" disabled={busy}>Save draft</button><button className="btn gold" type="submit" value="published" disabled={busy || !entry}>{entry ? `Publish for ${shortDate(fields.displayDate)}` : "Publish verse"}</button>{!entry && <span>Save a draft before publishing.</span>}</div>
     </form>
   );
