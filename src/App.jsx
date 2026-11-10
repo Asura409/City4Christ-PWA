@@ -8,6 +8,7 @@ import {
 import React, { useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ToastProvider } from "@/components/Toast";
+import { IdentityConfirmationProvider } from "@/auth/identityConfirmation";
 import { Nav } from "@/components/Nav";
 import HomeScreen from "@/screens/HomeScreen";
 import DevotionalsScreen from "@/screens/DevotionalsScreen";
@@ -51,6 +52,9 @@ import GetAppScreen from "@/screens/GetAppScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import SearchScreen from "@/screens/SearchScreen";
 import PastorDashboardScreen from "@/screens/PastorDashboardScreen";
+import PastorAvailabilityScreen from "@/screens/PastorAvailabilityScreen";
+import AdminEventsScreen from "@/screens/AdminEventsScreen";
+import EventDetailScreen from "@/screens/EventDetailScreen";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -108,8 +112,9 @@ export default function App() {
 
   return (
     <ToastProvider>
-      <div className="app">
-        <NotificationToast />
+      <IdentityConfirmationProvider>
+        <div className="app">
+          <NotificationToast />
         <header className="topbar">
           <a className="brand" href="#/home" aria-label="City4Christ home">
             <img className="logo" src="/assets/images/logo.jpeg" alt="City4Christ logo" />
@@ -139,7 +144,9 @@ export default function App() {
             <Route path="/admin/members" element={<ProtectedRoute><AdminShell><AdminMemberSearch /></AdminShell></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/sermons" element={<ProtectedRoute><AdminShell><SermonPublishingScreen /></AdminShell></ProtectedRoute>} />
+            <Route path="/admin/events" element={<ProtectedRoute><AdminShell><AdminEventsScreen /></AdminShell></ProtectedRoute>} />
             <Route path="/pastor-dashboard" element={<ProtectedRoute><PastorDashboardScreen /></ProtectedRoute>} />
+            <Route path="/pastor-availability" element={<ProtectedRoute><PastorAvailabilityScreen /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><CommunityScreen /></ProtectedRoute>} />
             <Route path="/live" element={<ProtectedRoute><LiveScreen /></ProtectedRoute>} />
             <Route path="/get-app" element={<ProtectedRoute><GetAppScreen /></ProtectedRoute>} />
@@ -269,6 +276,7 @@ export default function App() {
               }
             />
             <Route path="/events" element={<EventsScreen />} />
+            <Route path="/events/:eventId" element={<EventDetailScreen />} />
             <Route
               path="/profile"
               element={
@@ -315,7 +323,8 @@ export default function App() {
             setPostsVersion((value) => value + 1);
           }}
         />
-      </div>
+        </div>
+      </IdentityConfirmationProvider>
     </ToastProvider>
   );
 }

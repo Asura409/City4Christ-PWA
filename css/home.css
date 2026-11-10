@@ -49,7 +49,7 @@ CITY4CHRIST HOME PAGE
 .banner-card {
     position: relative;
     width: 100%;
-    aspect-ratio: 16 / 6.2;
+    aspect-ratio: 16 / 9;
 
     overflow: hidden;
     border-radius: 24px;
@@ -490,7 +490,7 @@ CITY4CHRIST HOME PAGE
     }
 
     .banner-card {
-        aspect-ratio: 16 / 5.6;
+        aspect-ratio: 16 / 9;
     }
 
     .post-image {
@@ -533,7 +533,7 @@ CITY4CHRIST HOME PAGE
     }
 
     .banner-card {
-        aspect-ratio: 16 / 8.4;
+        aspect-ratio: 16 / 9;
     }
 
     .banner-overlay {

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
+import { TimedMessage } from "@/components/TimedMessage";
 import { api } from "@/auth/session";
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState(""),
@@ -29,8 +30,8 @@ export default function ForgotPasswordScreen() {
   }
   return (
     <AuthLayout title="Reset your password">
-      {message && <p role="status">{message}</p>}
-      {error && <p role="alert">{error}</p>}
+      <TimedMessage message={message} />
+      <TimedMessage tone="error" message={error} />
       <form aria-label="Request password reset" onSubmit={submit}>
         <div className="auth-field">
           <label htmlFor="recovery-email">Email</label>

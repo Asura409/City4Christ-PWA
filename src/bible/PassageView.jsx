@@ -1,23 +1,28 @@
 import React from "react";
 import { safeUrl } from "../lib/sanitize.js";
 export function PassageView({ passage, onChapter, onUse }) {
-  const first = passage.verses[0],
+  const verses = Array.isArray(passage.verses) ? passage.verses : [],
+    first = verses[0],
     canUse =
       passage.translation.canImport && Array.from(passage.text).length <= 4000;
   return (
     <section className="bible-passage" aria-label="Bible passage">
       <h3>{passage.reference}</h3>
       <p>{passage.translation.name}</p>
-      <ol className="bible-verses">
-        {passage.verses.map((v) => (
-          <li key={`${v.bookId}/${v.chapter}/${v.number}`} value={v.number}>
-            <small>
-              {v.bookName} {v.chapter}:{v.number}
-            </small>
-            <p>{v.text}</p>
-          </li>
-        ))}
-      </ol>
+      {verses.length > 0 ? (
+        <ol className="bible-verses">
+          {verses.map((v) => (
+            <li key={`${v.bookId}/${v.chapter}/${v.number}`} value={v.number}>
+              <small>
+                {v.bookName} {v.chapter}:{v.number}
+              </small>
+              <p>{v.text}</p>
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="bible-text-fallback">{passage.text}</p>
+      )}
       <p className="bible-credit">
         {passage.translation.license} ·{" "}
         <a
@@ -29,7 +34,7 @@ export function PassageView({ passage, onChapter, onUse }) {
         </a>
       </p>
       <div className="devotional-actions">
-        <button
+        {first && <button
           type="button"
           className="btn soft"
           onClick={() =>
@@ -40,7 +45,7 @@ export function PassageView({ passage, onChapter, onUse }) {
           }
         >
           Read full chapter
-        </button>
+        </button>}
         {onUse && (
           <button
             type="button"

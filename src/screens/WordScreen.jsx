@@ -1,5 +1,6 @@
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useRef, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { useSearchParams } from "react-router-dom";
 import { api } from "@/auth/session";
 import { useSession } from "@/auth/session";
@@ -192,8 +193,8 @@ export default function WordScreen() {
           <p>{selected.speaker}</p>
           {profile && <section className="sermon-member-tools" aria-label="Your sermon progress and notes">
             <h3>Your sermon notes</h3>
-            {memberError && <p role="alert">{memberError}</p>}
-            {memberStatus && <p role="status">{memberStatus}</p>}
+            <TimedMessage tone="error" message={memberError} />
+            <TimedMessage message={memberStatus} />
             {memberProgress > 0 && <p>Resume at {formatPlaybackTime(memberProgress)}</p>}
             <form onSubmit={saveNote}>
               <label htmlFor="private-sermon-notes">Private sermon notes</label>
@@ -242,7 +243,7 @@ export default function WordScreen() {
               {seriesOptions.map((series) => <option key={series.name} value={series.name}>{series.name} ({series.sermonCount})</option>)}
             </select></div>
           </form>
-          {seriesError && <p role="status">{seriesError}</p>}
+          {seriesError && <p role="alert">{seriesError}</p>}
           {!busy && !items.length && <p>No published sermons yet.</p>}
           {items.map((s) => (
             <article key={s.id} className="card sermon sermon-library-card">

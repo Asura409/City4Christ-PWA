@@ -39,6 +39,4 @@ export async function restoreDeletionRequest(id, version, reason) {
     )
   ).data;
 }
-export function isConfirmationError(error) {
-  return ["reauthentication_required", "mfa_required"].includes(error.code);
-}
+export { isConfirmationError } from "@/auth/confirmation";

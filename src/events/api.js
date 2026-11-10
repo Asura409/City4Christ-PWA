@@ -1,14 +1,28 @@
 import { api } from "@/auth/session";
 
-export async function listEvents({ signal, groupId = "" } = {}) {
+export function eventCalendarURL(eventId) {
+  const base =
+    globalThis.City4ChristConfig?.API_URL || globalThis.location?.origin || "";
+  return `${base.replace(/\/$/, "")}/api/v1/events/${encodeURIComponent(eventId)}/calendar.ics`;
+}
+
+export async function listEvents({ signal, groupId = "", signedIn = api.isSignedIn() } = {}) {
   const result = await api.request(
     "/api/v1/events" + (groupId ? "?" + new URLSearchParams({ groupId }) : ""),
     {
       signal,
-      public: !api.isSignedIn(),
+      public: !signedIn,
     },
   );
   return Array.isArray(result.data) ? result.data : [];
+}
+
+export async function getEvent(eventId, { signedIn = api.isSignedIn() } = {}) {
+  return (
+    await api.request(`/api/v1/events/${encodeURIComponent(eventId)}`, {
+      public: !signedIn,
+    })
+  ).data;
 }
 
 export async function listManagedEvents(groupId = "") {

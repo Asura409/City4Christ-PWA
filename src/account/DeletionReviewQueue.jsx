@@ -1,10 +1,12 @@
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
-import { SessionConfirmation } from "@/auth/SessionConfirmation";
-import { listDeletionRequests, isConfirmationError } from "./api";
+import { useConfirmedAction } from "@/auth/identityConfirmation";
+import { TimedMessage } from "@/components/TimedMessage";
+import { listDeletionRequests } from "./api";
 import { DeletionReviewDetail } from "./DeletionReviewDetail";
 
 export function DeletionReviewQueue() {
+  const runConfirmed = useConfirmedAction();
   const [status, setStatus] = useState("requested"),
     [items, setItems] = useState([]);
   const [cursor, setCursor] = useState(""),
@@ -12,14 +14,12 @@ export function DeletionReviewQueue() {
   const [error, setError] = useState(""),
     [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState("");
-  const [revision, setRevision] = useState(0),
-    [proofRevision, setProofRevision] = useState(0);
+  const [revision, setRevision] = useState(0);
   function denied(e) {
     setItems([]);
     setCursor("");
     setSelected("");
     setError(e.message);
-    if (isConfirmationError(e)) setProofRevision((x) => x + 1);
   }
   useEffect(() => {
     const c = new AbortController();
@@ -28,7 +28,7 @@ export function DeletionReviewQueue() {
     setSelected("");
     setError("");
     setBusy(true);
-    listDeletionRequests({ status, signal: c.signal })
+    runConfirmed(() => listDeletionRequests({ status, signal: c.signal }))
       .then((p) => {
         if (!c.signal.aborted) {
           setItems(p.items);
@@ -47,7 +47,9 @@ export function DeletionReviewQueue() {
     setBusy(true);
     setError("");
     try {
-      const p = await listDeletionRequests({ status, cursor });
+      const p = await runConfirmed(() =>
+        listDeletionRequests({ status, cursor }),
+      );
       setItems((x) => [...x, ...p.items]);
       setCursor(p.nextCursor);
     } catch (e) {
@@ -63,7 +65,6 @@ export function DeletionReviewQueue() {
         Restricted, audited review. Marking a request as reviewing does not
         delete records or restore access.
       </p>
-      <SessionConfirmation requireMFA revision={proofRevision} />
       <label>
         Show requests
         <select
@@ -83,7 +84,7 @@ export function DeletionReviewQueue() {
         Refresh requests
       </button>
       {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
+      <TimedMessage message={notice} />
       {busy && !items.length && <p role="status">Loading deletion requests…</p>}
       {!busy && !error && !items.length && <p>No requests in this queue.</p>}
       {items.map((item) => (

@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { removeProfilePhoto, setProfilePhoto, uploadProfilePhoto } from "@/profiles/api";
 
 const maxPhotoBytes = 5 * 1024 * 1024;
@@ -18,6 +19,7 @@ export default function ProfilePhotoPanel({ profile, setProfile, compact = false
   const [file, setFile] = useState(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
   const photoURL = safePhotoURL(profile.avatar?.url);
 
@@ -25,6 +27,7 @@ export default function ProfilePhotoPanel({ profile, setProfile, compact = false
     const selected = event.target.files?.[0] || null;
     setError("");
     setStatus("");
+    setProgress("");
     if (selected && !photoTypes.has(selected.type)) {
       setFile(null);
       event.target.value = "";
@@ -46,14 +49,17 @@ export default function ProfilePhotoPanel({ profile, setProfile, compact = false
     setBusy(true);
     setError("");
     setStatus("");
+    setProgress("");
     try {
-      const uploadId = await uploadProfilePhoto(file, { onStatus: setStatus });
+      const uploadId = await uploadProfilePhoto(file, { onStatus: setProgress });
       const updated = await setProfilePhoto(uploadId);
       setProfile(updated);
       setFile(null);
       if (input.current) input.current.value = "";
+      setProgress("");
       setStatus("Profile photo updated.");
     } catch (cause) {
+      setProgress("");
       setError(cause.message || "Could not update your profile photo.");
     } finally {
       setBusy(false);
@@ -65,6 +71,7 @@ export default function ProfilePhotoPanel({ profile, setProfile, compact = false
     setBusy(true);
     setError("");
     setStatus("");
+    setProgress("");
     try {
       setProfile(await removeProfilePhoto());
       setStatus("Profile photo removed.");
@@ -107,8 +114,9 @@ export default function ProfilePhotoPanel({ profile, setProfile, compact = false
           </button>
           {profile.avatar && <button className="btn soft" type="button" onClick={remove} disabled={busy}>Remove photo</button>}
         </div>
-        {status && <p role="status">{status}</p>}
-        {error && <p role="alert">{error}</p>}
+        {progress && <p role="status">{progress}</p>}
+        <TimedMessage message={status} />
+        <TimedMessage tone="error" message={error} />
       </form>
       </details>
     </section>

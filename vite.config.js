@@ -8,7 +8,19 @@ export default defineConfig(({ mode }) => {
   const apiURL = process.env.API_URL || environment.API_URL || "/";
   const apiOrigin = apiURL === "/" ? "" : validateAPIURL(apiURL);
   const allowedHost = process.env.VITE_ALLOWED_HOST || environment.VITE_ALLOWED_HOST;
-  const allowedHosts = [allowedHost, "blustery-uninjured-antler.ngrok-free.dev"].filter(Boolean);
+  const tunnelURL = process.env.NGROK_URL || environment.NGROK_URL || "";
+  let hmr;
+  if (tunnelURL) {
+    const tunnel = new URL(tunnelURL);
+    if (!tunnel.hostname || !["http:", "https:"].includes(tunnel.protocol))
+      throw new Error("NGROK_URL must be an HTTP(S) URL.");
+    hmr = {
+      host: tunnel.hostname,
+      protocol: tunnel.protocol === "https:" ? "wss" : "ws",
+      clientPort: tunnel.protocol === "https:" ? 443 : tunnel.port || 5173,
+    };
+  }
+  const allowedHosts = [allowedHost, hmr?.host, "blustery-uninjured-antler.ngrok-free.dev"].filter(Boolean);
   const mediaOrigin = process.env.MEDIA_ORIGIN || environment.MEDIA_ORIGIN || "https:";
   return {
     plugins: [
@@ -37,6 +49,7 @@ export default defineConfig(({ mode }) => {
     resolve: { alias: { "@": resolve(import.meta.dirname, "src") } },
     server: {
       allowedHosts,
+      ...(hmr ? { hmr } : {}),
       proxy: process.env.VITE_API_PROXY_TARGET
         ? {
             "/api": { target: process.env.VITE_API_PROXY_TARGET, changeOrigin: false, ws: true },

@@ -1,5 +1,6 @@
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { useSession } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
 import { listGroups } from "@/groups/api";
@@ -318,7 +319,7 @@ export default function PrayerScreen() {
         </button>
       </form>
 
-      {notice && <p className="prayer-notice" role="status">{notice}</p>}
+      <TimedMessage message={notice} className="prayer-notice" />
       {error && <div className="prayer-error" role="alert"><span>{error}</span><button className="btn soft" onClick={() => void load()} type="button">Try again</button></div>}
 
       <div className="tabs prayer-tabs" role="tablist" aria-label="Prayer wall views">
@@ -375,7 +376,7 @@ export default function PrayerScreen() {
                 <textarea id={`report-details-${item.id}`} maxLength={1000} value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} />
                 <button className="btn soft" type="submit" disabled={busy}>Submit report</button>
               </form>}
-              {reportedIds.has(item.id) && <p className="prayer-notice" role="status">Report submitted for review.</p>}
+              {reportedIds.has(item.id) && <TimedMessage message="Report submitted for review." className="prayer-notice" />}
             </article>
           );
         })}

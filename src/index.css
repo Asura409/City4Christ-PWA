@@ -68,6 +68,39 @@ a { color: inherit; }
 }
 [role="alert"] button { margin-left: auto; }
 
+/* Consistent success feedback: green communicates the outcome and the tick
+   keeps it readable without relying on color alone. */
+[role="status"].message-success {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 10px 12px;
+  border: 1px solid #a9d9bb;
+  border-radius: 12px;
+  color: #19643d;
+  background: #e9f8ee;
+  line-height: 1.45;
+}
+[role="status"].message-success::before {
+  content: "✓";
+  display: inline-grid;
+  flex: none;
+  width: 21px;
+  height: 21px;
+  place-items: center;
+  margin-top: 1px;
+  border-radius: 50%;
+  color: #fff;
+  background: #2f9a58;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+}
+[role="status"].message-success button { margin-left: auto; }
+
+@keyframes feedback-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.timed-message { animation: feedback-in .2s ease-out both; }
+
 /* Reference site visual language: City4Christ purple, gold and white. */
 :root {
   color-scheme: light;

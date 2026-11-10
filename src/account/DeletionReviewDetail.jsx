@@ -1,5 +1,6 @@
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
+import { useConfirmedAction } from "@/auth/identityConfirmation";
 import {
   deletionDetail,
   markDeletionReviewing,
@@ -7,6 +8,7 @@ import {
 } from "./api";
 
 export function DeletionReviewDetail({ id, onChanged, onDenied }) {
+  const runConfirmed = useConfirmedAction();
   const [data, setData] = useState(null),
     [error, setError] = useState("");
   const [reason, setReason] = useState("");
@@ -16,7 +18,7 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
     const c = new AbortController();
     setData(null);
     setError("");
-    deletionDetail(id, c.signal)
+    runConfirmed(() => deletionDetail(id, c.signal))
       .then((d) => {
         if (!c.signal.aborted) setData(d);
       })
@@ -31,7 +33,7 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
     setBusy(true);
     setError("");
     try {
-      await markDeletionReviewing(id, data.version);
+      await runConfirmed(() => markDeletionReviewing(id, data.version));
       setData(null);
       onChanged();
     } catch (e) {
@@ -47,7 +49,9 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
     setBusy(true);
     setError("");
     try {
-      await restoreDeletionRequest(id, data.version, reason);
+      await runConfirmed(() =>
+        restoreDeletionRequest(id, data.version, reason),
+      );
       onChanged("Account sign-in restored. The member must sign in again; their directory profile remains hidden.");
     } catch (e) {
       if ([401, 403, 404].includes(e.status)) {

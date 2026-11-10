@@ -1,5 +1,6 @@
 import "./notifications.css";
 import React, { useEffect, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import {
   getNotificationPreferences,
   saveNotificationPreferences,
@@ -104,8 +105,8 @@ export function NotificationSettings() {
         Your in-app inbox stays available. These preferences control push
         notifications; previews contain no private details.
       </p>
-      {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
+      <TimedMessage tone="error" message={error} />
+      <TimedMessage message={notice} />
       {prefs ? (
         <form aria-label="Notification preferences" onSubmit={save}>
           <label>

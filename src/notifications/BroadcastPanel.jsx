@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { getAccess, listGroups } from "@/groups/api";
 import {
   listBroadcasts,
@@ -44,8 +45,8 @@ function BroadcastAudience({ audience, groupId, label }) {
         Audience: {label}. Drafts are reviewed before sending. In-app delivery
         does not mean a push was received.
       </p>
-      {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
+      <TimedMessage tone="error" message={error} />
+      <TimedMessage message={notice} />
       <form
         aria-label="Broadcast draft"
         onSubmit={(e) => {

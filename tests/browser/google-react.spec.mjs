@@ -46,11 +46,24 @@ test("Google linking errors are actionable in the React interface", async ({
     page.getByRole("link", { name: "Back to sign in" }),
   ).toHaveAttribute("href", "#/login");
 });
-test("React Google linking lets an expired confirmation be renewed without leaving the app", async ({
+test("React Google linking renews an expired confirmation in a popup and continues", async ({
   page,
 }) => {
   await mocked(page, { signedIn: true });
+  const freshUntil = new Date(Date.now() + 300000).toISOString();
   let fresh = false;
+  await page.route("**/api/v1/auth/reauthentication", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          fresh,
+          freshUntil: fresh ? freshUntil : null,
+          passwordAvailable: true,
+          googleAvailable: false,
+        },
+      },
+    }),
+  );
   await page.route("**/api/v1/auth/google/link?**", (route) =>
     route.fulfill(
       fresh
@@ -60,9 +73,12 @@ test("React Google linking lets an expired confirmation be renewed without leavi
             },
           }
         : {
-            status: 401,
+            status: 403,
             json: {
-              error: { code: "invalid_session", message: "Sign in again." },
+              error: {
+                code: "reauthentication_required",
+                message: "Confirm your identity again.",
+              },
             },
           },
     ),
@@ -72,7 +88,7 @@ test("React Google linking lets an expired confirmation be renewed without leavi
       password: "synthetic linking confirmation",
     });
     fresh = true;
-    return route.fulfill({ json: { data: { fresh: true } } });
+    return route.fulfill({ json: { data: { fresh: true, freshUntil } } });
   });
   await page.route("https://accounts.google.com/**", (r) =>
     r.fulfill({
@@ -83,33 +99,40 @@ test("React Google linking lets an expired confirmation be renewed without leavi
   await page.goto("/#/profile");
   await page.locator(".account-option > summary").filter({ hasText: /^Google account/ }).click();
   await page.getByRole("button", { name: "Link Google", exact: true }).click();
-  await expect(page.getByRole("alert")).toContainText("Confirm your identity");
-  await page
-    .getByRole("region", { name: "Google account linking" })
+  const confirm = page.getByRole("dialog", {
+    name: "Confirm sensitive action",
+  });
+  await confirm
     .getByLabel("Current password", { exact: true })
     .fill("synthetic linking confirmation");
-  await page
-    .getByRole("button", { name: "Confirm identity", exact: true })
+  await confirm
+    .getByRole("button", { name: "Confirm with password", exact: true })
     .click();
   await expect(
-    page
-      .getByRole("region", { name: "Google account linking" })
-      .getByRole("status"),
-  ).toContainText("Identity confirmed");
+    page.getByRole("heading", { name: "Google test consent" }),
+  ).toBeVisible();
   expect(
     await page.evaluate(() =>
       JSON.stringify({ ...localStorage, ...sessionStorage }),
     ),
   ).not.toContain("synthetic linking confirmation");
-  await page.getByRole("button", { name: "Link Google", exact: true }).click();
-  await expect(
-    page.getByRole("heading", { name: "Google test consent" }),
-  ).toBeVisible();
 });
-test("React Google linking retains MFA confirmation requirements", async ({
+test("React Google linking retains MFA confirmation in a popup", async ({
   page,
 }) => {
   await mocked(page, { signedIn: true });
+  await page.route("**/api/v1/auth/mfa", (route) =>
+    route.fulfill({
+      json: {
+        data: {
+          enabled: true,
+          pending: false,
+          freshUntil: null,
+          recoveryCodesRemaining: 5,
+        },
+      },
+    }),
+  );
   await page.route("**/api/v1/auth/google/link?**", (route) =>
     route.fulfill({
       status: 403,
@@ -121,8 +144,11 @@ test("React Google linking retains MFA confirmation requirements", async ({
   await page.goto("/#/profile");
   await page.locator(".account-option > summary").filter({ hasText: /^Google account/ }).click();
   await page.getByRole("button", { name: "Link Google", exact: true }).click();
+  const confirm = page.getByRole("dialog", {
+    name: "Confirm sensitive action",
+  });
   await expect(
-    page.getByLabel("Authenticator code", { exact: true }),
+    confirm.getByLabel("Authenticator code", { exact: true }),
   ).toBeVisible();
   expect(page.url()).toContain("/#/profile");
 });

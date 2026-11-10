@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
+import { TimedMessage } from "@/components/TimedMessage";
 import { Icon } from "@/lib/icons";
 import { api, useSession } from "@/auth/session";
 import {googleReturnURL} from '@/auth/google';
@@ -56,7 +57,7 @@ export default function LoginScreen() {
       title="Welcome back"
       subtitle={location.state?.from?.pathname === "/admin" ? "Sign in to open church administration" : "Sign in to your church account"}
     >
-      {sessionNotice && <p role="status">{sessionNotice}</p>}
+      <TimedMessage message={sessionNotice} />
       <form aria-label="Sign in" onSubmit={handleSubmit} noValidate autoComplete="on">
         {error && (
           <div

@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { TimedMessage } from "@/components/TimedMessage";
 import { useWelcomeForm } from "./useWelcomeForm";
 import "./visitors.css";
 export function WelcomeForm() {
@@ -7,7 +8,7 @@ export function WelcomeForm() {
   if (s.submitted)
     return (
       <div className="visitor-confirmation">
-        <p role="status">Your welcome form has been received.</p>
+        <TimedMessage message="Your welcome form has been received." />
         <p>Our welcome team can now review your form.</p>
         <Link to="/login" className="btn soft">
           Back to sign in

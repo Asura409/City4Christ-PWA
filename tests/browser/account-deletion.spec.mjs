@@ -168,6 +168,26 @@ test("password and enrolled MFA confirmation never automatically submit deletion
   });
   await page.route("**/api/v1/me", (r) => {
     if (r.request().method() !== "DELETE") return r.fallback();
+    if (!primary)
+      return r.fulfill({
+        status: 403,
+        json: {
+          error: {
+            code: "reauthentication_required",
+            message: "Confirm your identity again.",
+          },
+        },
+      });
+    if (!factor)
+      return r.fulfill({
+        status: 403,
+        json: {
+          error: {
+            code: "mfa_required",
+            message: "Confirm your authenticator.",
+          },
+        },
+      });
     writes++;
     return r.fulfill({
       status: 409,
@@ -185,13 +205,14 @@ test("password and enrolled MFA confirmation never automatically submit deletion
     name: "Request account deletion",
     exact: true,
   });
-  const confirmation = panel.getByRole("region", {
-    name: "Confirm sensitive action",
-  });
   await panel.getByRole("checkbox").check();
   await panel
     .getByRole("button", { name: "Request account deletion", exact: true })
     .click();
+  const confirmation = page.getByRole("dialog", {
+    name: "Confirm sensitive action",
+  });
+  expect(writes).toBe(0);
   await confirmation
     .getByLabel("Current password", { exact: true })
     .fill("synthetic current password");
@@ -203,14 +224,6 @@ test("password and enrolled MFA confirmation never automatically submit deletion
     .fill("123456");
   await confirmation
     .getByRole("button", { name: "Confirm authenticator", exact: true })
-    .click();
-  expect(writes).toBe(0);
-  await expect(
-    confirmation.getByLabel("Current password", { exact: true }),
-  ).toHaveCount(0);
-  await panel.getByRole("checkbox").check();
-  await panel
-    .getByRole("button", { name: "Request account deletion", exact: true })
     .click();
   await expect(panel.getByRole("alert")).toContainText(
     "Appoint another Super Admin first",
@@ -244,14 +257,19 @@ test("Google-only confirmation returns to profile without submitting a request",
     }),
   );
   await page.route("**/api/v1/me", (r) => {
-    if (r.request().method() === "DELETE") writes++;
-    return r.fallback();
+    if (r.request().method() !== "DELETE") return r.fallback();
+    return r.fulfill({
+      status: 403,
+      json: {
+        error: {
+          code: "reauthentication_required",
+          message: "Confirm your identity again.",
+        },
+      },
+    });
   });
   await page.goto("/#/profile");
   await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
-  const confirmation = page
-    .getByRole("region", { name: "Request account deletion", exact: true })
-    .getByRole("region", { name: "Confirm sensitive action" });
   const panel = page.getByRole("region", {
     name: "Request account deletion",
     exact: true,
@@ -260,6 +278,9 @@ test("Google-only confirmation returns to profile without submitting a request",
   await panel
     .getByRole("button", { name: "Request account deletion", exact: true })
     .click();
+  const confirmation = page.getByRole("dialog", {
+    name: "Confirm sensitive action",
+  });
   await expect(
     confirmation.getByLabel("Current password", { exact: true }),
   ).toHaveCount(0);
@@ -437,7 +458,7 @@ test("reviewer permission loss clears disclosed contact and queue data", async (
     page.getByRole("button", { name: "Open Synthetic Member", exact: true }),
   ).toHaveCount(0);
 });
-test("expired deletion proof is renewed explicitly and a rate limit is not retried", async ({
+test("expired deletion proof opens a popup, resumes once, and a rate limit is not retried", async ({
   page,
 }) => {
   await setup(page);
@@ -489,12 +510,7 @@ test("expired deletion proof is renewed explicitly and a rate limit is not retri
   });
   await expect(submit).toBeEnabled();
   await submit.click();
-  await expect(panel.getByRole("alert").first()).toContainText(
-    "Confirm your identity again",
-  );
-  await expect(submit).toBeEnabled();
-  await submit.click();
-  const confirm = panel.getByRole("region", {
+  const confirm = page.getByRole("dialog", {
     name: "Confirm sensitive action",
   });
   await confirm
@@ -503,15 +519,12 @@ test("expired deletion proof is renewed explicitly and a rate limit is not retri
   await confirm
     .getByRole("button", { name: "Confirm with password", exact: true })
     .click();
-  await expect(submit).toBeEnabled();
-  expect(writes).toBe(1);
-  await submit.click();
   await expect(panel.getByRole("alert").first()).toContainText(
     "Wait before trying again",
   );
   expect(writes).toBe(2);
 });
-test("admin proof renewal requires an explicit queue refresh", async ({
+test("admin proof renewal resumes the queue automatically after confirmation", async ({
   page,
 }) => {
   await setup(page, { admin: true, fresh: false });
@@ -566,10 +579,7 @@ test("admin proof renewal requires an explicit queue refresh", async ({
     );
   });
   await page.goto("/#/account-deletion-requests");
-  await expect(page.getByRole("alert").first()).toContainText(
-    "Confirm your identity and authenticator",
-  );
-  const confirm = page.getByRole("region", {
+  const confirm = page.getByRole("dialog", {
     name: "Confirm sensitive action",
   });
   await confirm
@@ -583,10 +593,6 @@ test("admin proof renewal requires an explicit queue refresh", async ({
     .fill("123456");
   await confirm
     .getByRole("button", { name: "Confirm authenticator", exact: true })
-    .click();
-  expect(reads).toBe(1);
-  await page
-    .getByRole("button", { name: "Refresh requests", exact: true })
     .click();
   await expect(
     page.getByRole("button", { name: "Open Synthetic Member", exact: true }),

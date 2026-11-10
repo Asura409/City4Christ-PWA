@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { hasCapability } from "../../js/access.js";
 import { api } from "@/auth/session";
 import { uploadMedia } from "@/posts/api";
@@ -18,6 +19,7 @@ export function SermonComposer({ onPublished, onChanged }) {
   const [draft, setDraft] = useState(null);
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
+  const [progress, setProgress] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -32,14 +34,14 @@ export function SermonComposer({ onPublished, onChanged }) {
 
   async function create(event) {
     event.preventDefault();
-    setBusy(true); setError(""); setStatus("");
+    setBusy(true); setError(""); setStatus(""); setProgress("");
     try {
       const attachmentIds = [];
-      for (const file of files) attachmentIds.push(await uploadMedia(file, "sermon_attachment", { onStatus: setStatus }));
+      for (const file of files) attachmentIds.push(await uploadMedia(file, "sermon_attachment", { onStatus: setProgress }));
       const created = await createSermonDraft({ title: title.trim(), speaker: speaker.trim(), summary: summary.trim(), preachedAt: ukInputToInstant(preachedAt), ...(attachmentIds.length ? { attachmentIds } : {}) });
-      setDraft(created); setStatus("Draft created. Publish it when you are ready.");
+      setProgress(""); setDraft(created); setStatus("Draft created. Publish it when you are ready.");
       onChanged?.();
-    } catch (e) { setError(e.message || "Could not create the sermon draft."); }
+    } catch (e) { setProgress(""); setError(e.message || "Could not create the sermon draft."); }
     finally { setBusy(false); }
   }
 
@@ -67,8 +69,9 @@ export function SermonComposer({ onPublished, onChanged }) {
 
   return <form className="sermon-composer card" aria-label="Create a sermon" onSubmit={create}>
     <h2>Share a sermon</h2>
-    {error && <p role="alert">{error}</p>}
-    {status && <p role="status">{status}</p>}
+    <TimedMessage tone="error" message={error} />
+    {progress && <p role="status">{progress}</p>}
+    <TimedMessage message={status} />
     {!draft && <>
       <label className="auth-field">Sermon title<input aria-label="Sermon title" required maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} /></label>
       <label className="auth-field">Speaker<input aria-label="Speaker" required maxLength={200} value={speaker} onChange={(e) => setSpeaker(e.target.value)} /></label>

@@ -1,6 +1,12 @@
 import React, { useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { cancelAppointment, decideAppointment, dateLabel } from "./api";
 import { usePastoralList, ListState } from "./usePastoralList";
+
+function initials(first, last) {
+  return `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase() || "•";
+}
+
 export function BookingList({ assigned = false, revision, onChange }) {
   const state = usePastoralList(
     assigned ? "/api/v1/me/pastoral/bookings" : "/api/v1/me/pastor-bookings",
@@ -8,12 +14,13 @@ export function BookingList({ assigned = false, revision, onChange }) {
   );
   const [busy, setBusy] = useState(false),
     [error, setError] = useState("");
-  async function change(b, status) {
+
+  async function change(booking, status) {
     setBusy(true);
     setError("");
     try {
-      if (assigned) await decideAppointment(b.id, status, b.version);
-      else await cancelAppointment(b.id);
+      if (assigned) await decideAppointment(booking.id, status, booking.version);
+      else await cancelAppointment(booking.id);
       onChange();
     } catch (e) {
       setError(e.message);
@@ -22,60 +29,51 @@ export function BookingList({ assigned = false, revision, onChange }) {
       setBusy(false);
     }
   }
+
   return (
-    <section
-      aria-label={assigned ? "Assigned appointments" : "My appointments"}
-    >
-      <h2>{assigned ? "Assigned appointments" : "My appointments"}</h2>
-      {error && <p role="alert">{error}</p>}
+    <section className="pastoral-bookings" aria-label={assigned ? "Assigned appointments" : "My appointments"}>
+      <div className="pastor-directory-head">
+        <div>
+          <p className="pastoral-eyebrow">{assigned ? "ASSIGNED TO YOU" : "YOUR REQUESTS"}</p>
+          <h2>{assigned ? "Assigned appointments" : "My appointments"}</h2>
+        </div>
+        <span className="pastoral-count">{state.items.length}</span>
+      </div>
+      <TimedMessage tone="error" message={error} />
       {!state.busy && !state.error && !state.items.length && (
-        <p>No appointments yet.</p>
+        <p className="pastor-muted">No appointments yet.</p>
       )}
-      {state.items.map((b) => (
-        <article className="auth-card" key={b.id}>
-          <h3>
-            {assigned
-              ? b.memberFirstName + " " + b.memberLastName
-              : b.pastorFirstName + " " + b.pastorLastName}
-          </h3>
-          <p>
-            {dateLabel(b.startsAt, b.timeZone)} –{" "}
-            {dateLabel(b.endsAt, b.timeZone)}
-          </p>
-          <p>
-            Status: <strong>{b.status}</strong>
-          </p>
-          <div className="wrap">
-            {assigned && b.status === "pending" && (
-              <>
-                <button
-                  className="btn gold"
-                  disabled={busy}
-                  onClick={() => change(b, "approved")}
-                >
-                  Approve
-                </button>
-                <button
-                  className="btn soft"
-                  disabled={busy}
-                  onClick={() => change(b, "declined")}
-                >
-                  Decline
-                </button>
-              </>
-            )}
-            {["pending", "approved"].includes(b.status) && (
-              <button
-                className="btn soft"
-                disabled={busy}
-                onClick={() => change(b, "cancelled")}
-              >
-                Cancel appointment
-              </button>
-            )}
-          </div>
-        </article>
-      ))}
+      {state.items.map((booking) => {
+        const first = assigned ? booking.memberFirstName : booking.pastorFirstName;
+        const last = assigned ? booking.memberLastName : booking.pastorLastName;
+        return (
+          <article className="pastoral-appt" key={booking.id}>
+            <div className="pastoral-appt-top">
+              <span className="pastor-card-avatar" aria-hidden="true">{initials(first, last)}</span>
+              <div className="pastoral-appt-copy">
+                <strong>{first} {last}</strong>
+                <span>Pastoral appointment</span>
+              </div>
+              <span className={`pastoral-status is-${booking.status}`}>{booking.status}</span>
+            </div>
+            <div className="pastoral-appt-date">
+              <span aria-hidden="true">▣</span>
+              <span>{dateLabel(booking.startsAt, booking.timeZone)} – {dateLabel(booking.endsAt, booking.timeZone)}</span>
+            </div>
+            <div className="pastoral-appt-actions">
+              {assigned && booking.status === "pending" && (
+                <>
+                  <button className="btn soft" type="button" disabled={busy} onClick={() => change(booking, "declined")}>Decline</button>
+                  <button className="btn gold" type="button" disabled={busy} onClick={() => change(booking, "approved")}>Approve</button>
+                </>
+              )}
+              {["pending", "approved"].includes(booking.status) && (
+                <button className="btn soft" type="button" disabled={busy} onClick={() => change(booking, "cancelled")}>Cancel appointment</button>
+              )}
+            </div>
+          </article>
+        );
+      })}
       <ListState state={state} />
     </section>
   );

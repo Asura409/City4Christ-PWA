@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
+import { TimedMessage } from "@/components/TimedMessage";
 import { api } from "@/auth/session";
 
 export default function ResetPasswordScreen() {
@@ -49,7 +50,7 @@ export default function ResetPasswordScreen() {
     <AuthLayout title="Choose a new password" subtitle="Secure your City4Christ account">
       {done ? (
         <>
-          <p role="status">Your password has been updated. Sign in with your new password.</p>
+          <TimedMessage message="Your password has been updated. Sign in with your new password." />
           <Link className="btn gold block" to="/login">Back to sign in</Link>
         </>
       ) : (

@@ -23,18 +23,17 @@ function sampleEvent(overrides = {}) {
 test("public event page loads published events from the API", async ({ page }) => {
   await mocked(page);
   const event = sampleEvent();
-  await page.route("**/api/v1/events", (route) =>
-    route.fulfill({ json: { data: [event] } }),
-  );
+  await page.route("**/api/v1/events", (route) => route.fulfill({ json: { data: [event] } }));
+  await page.route(`**/api/v1/events/${event.id}`, (route) => route.fulfill({ json: { data: event } }));
 
   await page.goto("/#/events");
 
-  await expect(
-    page.getByRole("heading", { name: "Church Family Picnic", exact: true }),
-  ).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Church Family Picnic", exact: true, level: 3 })).toBeVisible();
   await expect(page.getByText("Lunch and fellowship on the church grounds.")).toBeVisible();
-  await expect(page.getByText("1 / 5 seats reserved")).toBeVisible();
+  await expect(page.getByText("4 left", { exact: true })).toBeVisible();
   await expect(page.getByText("Design preview", { exact: false })).toHaveCount(0);
+
+  await page.getByRole("link", { name: "Church Family Picnic", exact: true }).click();
   await expect(page.getByRole("link", { name: "Add to calendar" })).toHaveAttribute(
     "href",
     `/api/v1/events/${event.id}/calendar.ics`,
@@ -45,60 +44,49 @@ test("member RSVP sends attendeeCount and reflects the saved guest count", async
   await mocked(page, { signedIn: true });
   const event = sampleEvent({ capacity: 6 });
   let saved = null;
-  await page.route("**/api/v1/events", (route) =>
-    route.fulfill({ json: { data: [saved ? { ...event, ...saved } : event] } }),
-  );
+  await page.route("**/api/v1/events", (route) => route.fulfill({ json: { data: [event] } }));
+  await page.route(`**/api/v1/events/${event.id}`, (route) => route.fulfill({ json: { data: event } }));
+  await page.route("**/api/v1/events/*/coordinators", (route) => route.fulfill({ json: { data: [] } }));
   await page.route("**/api/v1/events/*/rsvp", async (route) => {
     if (route.request().method() !== "POST") return route.continue();
     const { attendeeCount } = route.request().postDataJSON();
-    saved = { attendeeCount: attendeeCount + 1, myAttendeeCount: attendeeCount };
-    await route.fulfill({
-      json: {
-        data: {
-          eventId: event.id,
-          attendeeCount,
-          updatedAt: new Date().toISOString(),
-        },
-      },
-    });
+    saved = { attendeeCount, myAttendeeCount: attendeeCount };
+    await route.fulfill({ json: { data: { eventId: event.id, attendeeCount, updatedAt: new Date().toISOString() } } });
   });
 
   await page.goto("/#/events");
+  await page.getByRole("link", { name: "Church Family Picnic", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Church Family Picnic" })).toBeVisible();
-  await page.getByLabel("You and your guests").selectOption("3");
-  await page.getByRole("button", { name: "RSVP", exact: true }).click();
+  await page.getByRole("button", { name: "Add a guest" }).click();
+  await page.getByRole("button", { name: "Add a guest" }).click();
+  await page.getByRole("button", { name: "Reserve 3 seats", exact: true }).click();
 
-  await expect(page.getByText("Your RSVP: 3 attendees")).toBeVisible();
-  await expect(page.getByText("4 / 6 seats reserved")).toBeVisible();
+  await expect(page.getByText("You’re going")).toBeVisible();
+  await expect(page.getByText("4 of 6 seats reserved")).toBeVisible();
+  expect(saved.myAttendeeCount).toBe(3);
 });
 
 test("a capacity conflict stays visible and does not show a false RSVP success", async ({ page }) => {
   await mocked(page, { signedIn: true });
   const event = sampleEvent({ capacity: 1, attendeeCount: 0 });
-  await page.route("**/api/v1/events", (route) =>
-    route.fulfill({ json: { data: [event] } }),
-  );
+  await page.route("**/api/v1/events", (route) => route.fulfill({ json: { data: [event] } }));
+  await page.route(`**/api/v1/events/${event.id}`, (route) => route.fulfill({ json: { data: event } }));
+  await page.route("**/api/v1/events/*/coordinators", (route) => route.fulfill({ json: { data: [] } }));
   await page.route("**/api/v1/events/*/rsvp", (route) =>
     route.fulfill({
       status: 409,
-      json: {
-        error: {
-          code: "event_full",
-          message: "The event has no remaining capacity for that RSVP.",
-          fields: {},
-          requestId: "event-full-test",
-        },
-      },
+      json: { error: { code: "event_full", message: "The event has no remaining capacity for that RSVP.", fields: {}, requestId: "event-full-test" } },
     }),
   );
 
   await page.goto("/#/events");
+  await page.getByRole("link", { name: "Church Family Picnic", exact: true }).click();
   await expect(page.getByRole("heading", { name: "Church Family Picnic" })).toBeVisible();
-  await page.getByRole("button", { name: "RSVP", exact: true }).click();
+  await page.getByRole("button", { name: "Reserve 1 seat", exact: true }).click();
 
   await expect(page.getByRole("alert")).toContainText("no remaining capacity");
-  await expect(page.getByRole("button", { name: "RSVP", exact: true })).toBeVisible();
-  await expect(page.getByText("Your RSVP:")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Reserve 1 seat", exact: true })).toBeVisible();
+  await expect(page.getByText("You’re going")).toHaveCount(0);
 });
 
 test("event managers can create a draft and publish it", async ({ page }) => {
@@ -125,7 +113,7 @@ test("event managers can create a draft and publish it", async ({ page }) => {
     return route.fulfill({ json: { data: managed[0] } });
   });
 
-  await page.goto("/#/events");
+  await page.goto("/#/admin/events");
   await expect(page.getByRole("heading", { name: "Manage church events" })).toBeVisible();
   await page.getByLabel("Title", { exact: true }).fill("Community service day");
   await page.getByLabel(/Start time/).fill("2027-01-15T10:00");
@@ -163,7 +151,7 @@ test("event managers can assign and remove an eligible group coordinator", async
     return route.fulfill({ status: 204, body: "" });
   });
 
-  await page.goto("/#/events");
+  await page.goto("/#/admin/events");
   await page.getByLabel("Coordinator group").selectOption("33333333-3333-4333-8333-333333333333");
   await page.getByLabel("Event coordinator").selectOption("11111111-1111-4111-8111-111111111111");
   await page.getByRole("button", { name: "Assign coordinator" }).click();

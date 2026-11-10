@@ -3,7 +3,8 @@ import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
 import { hasCapability } from "../../js/access.js";
-import { SessionConfirmation } from "@/auth/SessionConfirmation";
+import { useConfirmedAction } from "@/auth/identityConfirmation";
+import { TimedMessage } from "@/components/TimedMessage";
 import { changeChurchRole, getAdminMember, getAdminMemberAccessAudit, getChurchRoles, searchAdminMembers } from "./adminApi";
 import { listMembers } from "./directoryApi";
 import "./admin-members.css";
@@ -26,6 +27,7 @@ function memberRoleLabels(member, roleByMember) {
 }
 
 export function AdminMemberSearch() {
+  const runConfirmed = useConfirmedAction();
   const [allowed, setAllowed] = useState(null);
   const [auditAllowed, setAuditAllowed] = useState(false);
   const [roleManageAllowed, setRoleManageAllowed] = useState(false);
@@ -49,9 +51,6 @@ export function AdminMemberSearch() {
   const [roleNotice, setRoleNotice] = useState("");
   const [roleToAssign, setRoleToAssign] = useState("staff");
   const [roleReason, setRoleReason] = useState("");
-  const [roleProofReady, setRoleProofReady] = useState(false);
-  const [roleProofRevision, setRoleProofRevision] = useState(0);
-  const [roleConfirmOpen, setRoleConfirmOpen] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -119,8 +118,6 @@ export function AdminMemberSearch() {
     setDetailBusy(true); setDetailError(""); setSelected(null);
     setAuditEvents([]); setAuditCursor(""); setAuditError("");
     setRoles([]); setRoleError(""); setRoleNotice(""); setRoleReason("");
-    setRoleProofReady(false);
-    setRoleConfirmOpen(false);
     try {
       const detail = await getAdminMember(id);
       setSelected(detail);
@@ -139,19 +136,16 @@ export function AdminMemberSearch() {
     if (!selected || !roleReason.trim()) return;
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
     try {
-      await changeChurchRole(selected.id, { role: roleToAssign, reason: roleReason.trim(), revoke });
-      const currentRoles = await getChurchRoles(selected.id);
+      const currentRoles = await runConfirmed(async () => {
+        await changeChurchRole(selected.id, { role: roleToAssign, reason: roleReason.trim(), revoke });
+        return getChurchRoles(selected.id);
+      });
       setRoles(currentRoles);
       setRoleByMember((current) => ({ ...current, [selected.id]: currentRoles }));
       setRoleReason("");
       setRoleNotice(revoke ? "Role revoked." : "Role assigned.");
     } catch (e) {
       setRoleError(e.message);
-      if (["reauthentication_required", "mfa_required"].includes(e.code)) {
-        setRoleProofReady(false);
-        setRoleProofRevision((value) => value + 1);
-        setRoleConfirmOpen(true);
-      }
     }
     finally { setRoleBusy(false); }
   }
@@ -163,19 +157,16 @@ export function AdminMemberSearch() {
     }
     setRoleBusy(true); setRoleError(""); setRoleNotice("");
     try {
-      await changeChurchRole(selected.id, { role, scope, reason: roleReason.trim(), revoke: true });
-      const currentRoles = await getChurchRoles(selected.id);
+      const currentRoles = await runConfirmed(async () => {
+        await changeChurchRole(selected.id, { role, scope, reason: roleReason.trim(), revoke: true });
+        return getChurchRoles(selected.id);
+      });
       setRoles(currentRoles);
       setRoleByMember((current) => ({ ...current, [selected.id]: currentRoles }));
       setRoleReason("");
       setRoleNotice("Role revoked.");
     } catch (e) {
       setRoleError(e.message);
-      if (["reauthentication_required", "mfa_required"].includes(e.code)) {
-        setRoleProofReady(false);
-        setRoleProofRevision((value) => value + 1);
-        setRoleConfirmOpen(true);
-      }
     }
     finally { setRoleBusy(false); }
   }
@@ -246,10 +237,9 @@ export function AdminMemberSearch() {
               <label htmlFor="admin-member-role-reason">Reason<input id="admin-member-role-reason" required maxLength={500} value={roleReason} onChange={(event) => setRoleReason(event.target.value)} placeholder="Why is this role needed?" /></label>
               <button className="btn gold" disabled={roleBusy || !roleReason.trim()}>{roleBusy ? "Saving…" : "Assign role"}</button>
             </form>
-            {roleNotice && <p role="status">{roleNotice}</p>}
-            {roleError && <p role="alert">{roleError}</p>}
-            <SessionConfirmation modal open={roleConfirmOpen} onClose={() => setRoleConfirmOpen(false)} requireMFA revision={roleProofRevision} onReady={(ready) => { setRoleProofReady(ready); if (ready) { setRoleConfirmOpen(false); setRoleNotice("Identity confirmed. You can now submit the role change."); } }} />
-            <small>Protected roles also require the selected member to have verified MFA. Confirmation applies only to this session and does not submit the role change.</small>
+            <TimedMessage message={roleNotice} />
+            <TimedMessage tone="error" message={roleError} />
+            <small>Protected roles also require the selected member to have verified MFA. You will be asked to confirm when you save.</small>
           </section>}
           {auditAllowed && <>
             <button className="btn soft" disabled={auditBusy} onClick={() => showAudit(selected.id)}>Review member record history</button>

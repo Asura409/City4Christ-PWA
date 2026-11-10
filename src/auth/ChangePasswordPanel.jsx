@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { TimedMessage } from "@/components/TimedMessage";
 import { api, useSession } from "./session";
 
 export function ChangePasswordPanel({ hasPassword }) {
@@ -57,7 +58,7 @@ export function ChangePasswordPanel({ hasPassword }) {
             Use at least 15 characters for your new password, up to 1,024 UTF-8
             bytes.
           </p>
-          {error && <p role="alert">{error}</p>}
+          <TimedMessage tone="error" message={error} />
           <form ref={formRef} onSubmit={submit} aria-label="Change password">
             {[
               ["currentPassword", "Current password", "current-password"],

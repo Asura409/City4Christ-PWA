@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { api } from "@/auth/session";
+import { useConfirmedAction } from "@/auth/identityConfirmation";
 import {
   canCreateLeadershipGroup,
   canManageChurchGroups,
@@ -166,6 +166,7 @@ function GroupLifecycle() {
 
 function GroupLeaders({ groupId }) {
   const navigate = useNavigate();
+  const runConfirmed = useConfirmedAction();
   const [access, setAccess] = useState(null);
   const [group, setGroup] = useState(null);
   const [leaders, setLeaders] = useState([]);
@@ -177,10 +178,6 @@ function GroupLeaders({ groupId }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pendingChange, setPendingChange] = useState(null);
-  const [reauth, setReauth] = useState(null);
-  const [password, setPassword] = useState("");
-  const [mfaCode, setMfaCode] = useState("");
-  const [mfaRequired, setMfaRequired] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -217,8 +214,6 @@ function GroupLeaders({ groupId }) {
   async function prepareChange(accountId, revoke) {
     setError("");
     setPendingChange({ accountId, revoke });
-    setReauth(null);
-    setMfaRequired(false);
   }
 
   async function submitChange(change = pendingChange) {
@@ -230,40 +225,18 @@ function GroupLeaders({ groupId }) {
     setBusy(true);
     setError("");
     try {
-      if (password) await api.reauthenticatePassword(password);
-      if (mfaCode.trim()) await api.verifyMFA(mfaCode.trim());
-      await changeGroupLeader(change.accountId, groupId, reason.trim(), change.revoke);
+      await runConfirmed(() =>
+        changeGroupLeader(change.accountId, groupId, reason.trim(), change.revoke),
+      );
       setReason("");
-      setPassword("");
-      setMfaCode("");
       setPendingChange(null);
-      setReauth(null);
       setSelected(null);
       setCandidates([]);
       setLeaders(await listGroupLeaders(groupId));
     } catch (e) {
-      if (e.code === "reauthentication_required") {
-        try { setReauth((await api.reauthenticationStatus()).data); }
-        catch { setReauth(null); }
-      }
-      if (e.code === "mfa_required") setMfaRequired(true);
       setError(e.message);
     } finally {
       setBusy(false);
-    }
-  }
-
-  async function beginGoogleConfirmation() {
-    setBusy(true);
-    setError("");
-    try {
-      const { data } = await api.beginGoogleReauthentication(window.location.href);
-      const destination = new URL(data.url);
-      if (destination.protocol !== "https:" || destination.hostname !== "accounts.google.com") throw new Error("Invalid Google confirmation destination.");
-      window.location.assign(destination.href);
-    } catch (e) {
-      setBusy(false);
-      setError(e.message);
     }
   }
 
@@ -283,10 +256,8 @@ function GroupLeaders({ groupId }) {
           {candidates.length > 0 && <div className="group-list" aria-label="Eligible members">{candidates.map((candidate) => <button type="button" className={`group-candidate ${selected?.id === candidate.id ? "selected" : ""}`} key={candidate.id} onClick={() => setSelected(candidate)}><b>{candidate.firstName} {candidate.lastName}</b><span>{candidate.email}{candidate.mfaEnabled ? " · Authenticator ready" : " · Authenticator required"}</span></button>)}</div>}
           {selected && <div className="group-appointment-form"><p>Appoint <b>{selected.firstName} {selected.lastName}</b> as a leader of this group only.</p><button className="btn gold" disabled={busy} onClick={() => void prepareChange(selected.id, false)}>Appoint leader</button></div>}
         </section>
-        {pendingChange && <section className="group-panel" aria-label="Confirm sensitive appointment"><h2>Confirm this change</h2><p className="lead">Review the change and enter a reason. Additional confirmation may be requested when you submit.</p>
-          {reauth && !reauth.fresh && <>{reauth.passwordAvailable && <label className="auth-field">Password<input type="password" autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} /></label>}{reauth.googleAvailable && <button type="button" className="btn dark" disabled={busy} onClick={beginGoogleConfirmation}>Confirm with Google</button>}</>}
+        {pendingChange && <section className="group-panel" aria-label="Confirm sensitive appointment"><h2>Confirm this change</h2><p className="lead">Review the change and enter a reason. A confirmation popup will ask for your password or authenticator code when you submit.</p>
           <label className="auth-field">Reason<input required minLength={1} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} /></label>
-          {mfaRequired && <label className="auth-field">Authenticator code<input inputMode="numeric" autoComplete="one-time-code" maxLength={12} value={mfaCode} onChange={(e) => setMfaCode(e.target.value)} /></label>}
           <button type="button" className="btn gold" disabled={busy} onClick={() => void submitChange()}>{pendingChange.revoke ? "Confirm removal" : "Confirm appointment"}</button>
         </section>}
       </>}

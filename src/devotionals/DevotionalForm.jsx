@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { createDraft, updateDraft } from "./api";
 const empty = {
   title: "",
@@ -86,8 +87,8 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden, onDirty 
       {entry && (
         <p className="devotional-version">Version {entry.version}</p>
       )}
-      {error && <p role="alert">{error}</p>}
-      {notice && <p role="status">{notice}</p>}
+      <TimedMessage tone="error" message={error} />
+      <TimedMessage message={notice} />
       {conflict && (
         <button
           className="btn soft"

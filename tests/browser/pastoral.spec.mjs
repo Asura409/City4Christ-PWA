@@ -31,7 +31,7 @@ test("member requests a slot pending pastor approval and cancels their appointme
 });
 test("assigned pastor approves with the current version", async ({ page }) => {
   const { calls } = await pastoralMock(page, { pastor: true });
-  await page.goto("/#/pastors");
+  await page.goto("/#/pastor-availability");
   const assigned = page.getByRole("region", { name: "Assigned appointments" });
   await assigned.getByRole("button", { name: "Approve" }).click();
   await expect(assigned).toContainText("approved");
@@ -43,6 +43,6 @@ test("assigned pastor approves with the current version", async ({ page }) => {
 test('stale pastor decisions show the conflict and do not pretend approval succeeded',async({page})=>{
  await pastoralMock(page,{pastor:true});let writes=0;
  await page.route('**/api/v1/me/pastoral/bookings/'+BOOKING,route=>{writes++;return route.fulfill({status:409,json:{error:{code:'appointment_conflict',message:'Appointment changed. Reload before retrying.'}}});});
- await page.goto('/#/pastors');const assigned=page.getByRole('region',{name:'Assigned appointments'});await assigned.getByRole('button',{name:'Approve'}).click();
+ await page.goto('/#/pastor-availability');const assigned=page.getByRole('region',{name:'Assigned appointments'});await assigned.getByRole('button',{name:'Approve'}).click();
  await expect(assigned.getByRole('alert')).toContainText('Reload');await expect(assigned).toContainText('pending');expect(writes).toBe(1);
 });

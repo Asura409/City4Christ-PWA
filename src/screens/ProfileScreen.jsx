@@ -1,5 +1,6 @@
 import { hasCapability } from "../../js/access.js";
 import React, { useEffect, useRef, useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
 import {GoogleLinkPanel} from '@/auth/GoogleLinkPanel';
@@ -37,6 +38,7 @@ export default function ProfileScreen() {
   const [access, setAccess] = useState(null);
   const [pastorProfile, setPastorProfile] = useState(null);
   const [googleLinked, setGoogleLinked] = useState(false);
+  const [authenticatorEnabled, setAuthenticatorEnabled] = useState(false);
   const [accessLoading, setAccessLoading] = useState(true);
   const [accessError, setAccessError] = useState("");
 
@@ -90,6 +92,10 @@ export default function ProfileScreen() {
       .reauthenticationStatus()
       .then(({ data }) => { if (live) setGoogleLinked(data.googleAvailable === true); })
       .catch(() => { if (live) setGoogleLinked(false); });
+    api
+      .mfaStatus()
+      .then(({ data }) => { if (live) setAuthenticatorEnabled(Boolean(data?.enabled)); })
+      .catch(() => { if (live) setAuthenticatorEnabled(false); });
     return () => {
       mounted.current = false;
       live = false;
@@ -144,8 +150,8 @@ export default function ProfileScreen() {
             <label className="auth-field" htmlFor="first">First name<input id="first" required maxLength={100} value={firstName} disabled={busy} onChange={(e) => { setFirst(e.target.value); setMessage(""); }} /></label>
             <label className="auth-field" htmlFor="last">Last name<input id="last" required maxLength={100} value={lastName} disabled={busy} onChange={(e) => { setLast(e.target.value); setMessage(""); }} /></label>
             <div className="account-email"><span>Email address</span><strong>{profile.email}</strong><small>Your email is used to sign in.</small></div>
-            {message && <p role="status">{message}</p>}
-            {error && <p role="alert">{error}</p>}
+            <TimedMessage message={message} />
+            <TimedMessage tone="error" message={error} />
             <div className="account-save-row"><small>Your name and photo appear in the member directory.</small><button className="btn gold" disabled={busy}>{busy ? "Saving…" : "Save profile"}</button></div>
           </form>
         </section>
@@ -153,8 +159,8 @@ export default function ProfileScreen() {
         <section id="security-tools" className="account-card" aria-labelledby="security-heading">
           <div className="account-section-heading"><h2 id="security-heading">Sign-in and security</h2><p>Your sign-in options and an extra layer of protection.</p></div>
           <AccountOption title="Password" description={profile.hasPassword ? "Change your current password" : "You use Google to sign in"}><ChangePasswordPanel hasPassword={profile.hasPassword} /></AccountOption>
-          <AccountOption title="Google account" description={googleLinked ? "✓ Connected to Google" : "Manage your Google sign-in connection"}><GoogleLinkPanel hasPassword={profile.hasPassword} googleLinked={googleLinked} /></AccountOption>
-          <AccountOption title="Authenticator protection" description="Set up an authenticator app or manage recovery codes"><MFASettings /></AccountOption>
+          <AccountOption title="Google account" description={googleLinked ? "✓ Connected to Google" : "Not connected"}><GoogleLinkPanel googleLinked={googleLinked} /></AccountOption>
+          <AccountOption title="Authenticator protection" description={authenticatorEnabled ? "✓ Enabled" : "Not enabled"}><MFASettings onStatus={(status) => setAuthenticatorEnabled(Boolean(status?.enabled))} /></AccountOption>
         </section>
 
         <section className="account-card" aria-labelledby="preferences-heading">
@@ -171,6 +177,7 @@ export default function ProfileScreen() {
           {(pastorProfile || canManagePastors || canFollowUp || canReviewDeletion || canSearchMembers || staff || canManageSermons) && <div className="account-workspace">
             {[
               [pastorProfile, "Pastor dashboard", "/pastor-dashboard"],
+              [pastorProfile, "Manage availability", "/pastor-availability"],
               [canManagePastors, "Create pastor profile", "/pastors"],
               [canFollowUp, "Visitor follow-up", "/visitors"],
               [canReviewDeletion, "Account deletion requests", "/account-deletion-requests"],

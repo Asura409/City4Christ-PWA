@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { TimedMessage } from "@/components/TimedMessage";
 import { searchAdminMembers } from "@/members/adminApi";
 import { assignVisitor } from "./api";
 
@@ -53,6 +54,6 @@ export function VisitorAssignmentPanel({ visitor, onAssigned, onError }) {
       <input id="visitor-unassign-reason" maxLength={500} value={removeReason} onChange={(e) => setRemoveReason(e.target.value)} />
       <button className="btn soft" disabled={busy || removeReason.trim().length < 3} onClick={() => save("", removeReason)}>Unassign follow-up</button>
     </>}
-    {message && <p role="status">{message}</p>}
+    <TimedMessage message={message} />
   </section>;
 }

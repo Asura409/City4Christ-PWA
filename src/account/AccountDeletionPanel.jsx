@@ -1,18 +1,17 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
-import { SessionConfirmation } from "@/auth/SessionConfirmation";
-import { deletionStatus, isConfirmationError } from "./api";
+import { useConfirmedAction } from "@/auth/identityConfirmation";
+import { TimedMessage } from "@/components/TimedMessage";
+import { deletionStatus } from "./api";
 
 export function AccountDeletionPanel() {
+  const runConfirmed = useConfirmedAction();
   const [metadata, setMetadata] = useState(null),
     [error, setError] = useState("");
-  const [consent, setConsent] = useState(false),
-    [ready, setReady] = useState(false);
+  const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false),
-    [revision, setRevision] = useState(0),
-    [proofRevision, setProofRevision] = useState(0);
-  const [confirmationOpen, setConfirmationOpen] = useState(false);
+    [revision, setRevision] = useState(0);
   const { clearSession } = useSession();
   const navigate = useNavigate();
   useEffect(() => {
@@ -40,27 +39,21 @@ export function AccountDeletionPanel() {
   async function submit(event) {
     event.preventDefault();
     if (!consent || !metadata || busy) return;
-    if (!ready) {
-      setConfirmationOpen(true);
-      return;
-    }
     setBusy(true);
     setError("");
     try {
-      await api.requestAccountDeletion({
-        confirm: true,
-        policyVersion: metadata.policyVersion,
-      });
+      await runConfirmed(() =>
+        api.requestAccountDeletion({
+          confirm: true,
+          policyVersion: metadata.policyVersion,
+        }),
+      );
       clearSession(
         "Deletion request received. Your account is disabled while it is reviewed. This is not confirmation of permanent deletion.",
       );
       navigate("/login", { replace: true });
     } catch (e) {
       setError(e.message);
-      if (isConfirmationError(e)) {
-        setReady(false);
-        setProofRevision((x) => x + 1);
-      }
     } finally {
       setBusy(false);
     }
@@ -68,7 +61,7 @@ export function AccountDeletionPanel() {
   return (
     <section className="auth-card" aria-label="Request account deletion">
       <h2>Request account deletion</h2>
-      {error && <p role="alert">{error}</p>}
+      <TimedMessage tone="error" message={error} />
       {!metadata && !error && <p role="status">Loading deletion policy…</p>}
       {metadata && (
         <>
@@ -81,27 +74,21 @@ export function AccountDeletionPanel() {
           {metadata.requested ? (
             <p role="status">A deletion request is already pending review.</p>
           ) : (
-            <>
-              <SessionConfirmation modal open={confirmationOpen} onClose={() => setConfirmationOpen(false)} revision={proofRevision} onReady={(value) => { setReady(value); if (value) setConfirmationOpen(false); }} />
-              <form aria-label="Request account deletion" onSubmit={submit}>
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={consent}
-                    disabled={busy}
-                    onChange={(e) => setConsent(e.target.checked)}
-                  />
-                  I understand this disables my account and signs out every
-                  session while the deletion request is reviewed.
-                </label>
-                <button
-                  className="btn soft block"
-                  disabled={busy || !consent}
-                >
-                  {busy ? "Submitting request…" : "Request account deletion"}
-                </button>
-              </form>
-            </>
+            <form aria-label="Request account deletion" onSubmit={submit}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  disabled={busy}
+                  onChange={(e) => setConsent(e.target.checked)}
+                />
+                I understand this disables my account and signs out every
+                session while the deletion request is reviewed.
+              </label>
+              <button className="btn soft block" disabled={busy || !consent}>
+                {busy ? "Submitting request…" : "Request account deletion"}
+              </button>
+            </form>
           )}
         </>
       )}

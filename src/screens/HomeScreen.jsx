@@ -14,11 +14,7 @@ export default function HomeScreen() {
         <p>Welcome back to your faith community</p>
       </section>
       <section className="banner-card fade-up">
-        <img src="/assets/images/banner.jpeg" alt="City4Christ event" />
-        <div className="banner-overlay">
-          <h2>2026 Year of Enlargement</h2>
-          <button className="reference-gold-btn" type="button" onClick={() => navigate("/events")}>View Programme</button>
-        </div>
+        <img src="/assets/images/home-welcome-couple.jpeg" alt="Welcome to City4Christ. We’re glad you are here." />
       </section>
       <DailyVerseCard />
       <div className="reference-quick-links">
