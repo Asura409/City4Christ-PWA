@@ -4,7 +4,8 @@ import { mocked } from "./fixtures/api.mjs";
 test("members are sent to Give A Little to choose their own donation without app-supplied amount data", async ({ page }) => {
   const fixture = await mocked(page, { signedIn: true });
   await page.goto("/#/home");
-  await page.getByRole("button", { name: "Give to City4Christ" }).click();
+  await page.getByRole("button", { name: "Open Stay connected" }).click();
+  await page.getByRole("dialog", { name: "Follow City4Christ" }).getByRole("link", { name: /Give to City4Christ/ }).click();
 
   await expect(page.getByRole("heading", { name: "Give to City4Christ" })).toBeVisible();
   const checkout = new URL(await page.getByRole("link", { name: "Continue to Give A Little" }).getAttribute("href"));

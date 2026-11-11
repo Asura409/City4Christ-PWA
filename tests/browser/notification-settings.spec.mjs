@@ -189,6 +189,8 @@ test("device opt-in requests permission after a click and registers through the 
         register: async () => registration,
         ready: Promise.resolve(registration),
         getRegistration: async () => registration,
+        addEventListener() {},
+        removeEventListener() {},
       },
       configurable: true,
     });

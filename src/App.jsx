@@ -5,7 +5,7 @@ import {
   GroupPostsScreen,
   GroupEventsScreen,
 } from "./groups/GroupContentScreens";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ToastProvider } from "@/components/Toast";
 import { IdentityConfirmationProvider } from "@/auth/identityConfirmation";
@@ -55,6 +55,7 @@ import PastorDashboardScreen from "@/screens/PastorDashboardScreen";
 import PastorAvailabilityScreen from "@/screens/PastorAvailabilityScreen";
 import AdminEventsScreen from "@/screens/AdminEventsScreen";
 import EventDetailScreen from "@/screens/EventDetailScreen";
+import { ConnectDrawer } from "@/connect/ConnectDrawer";
 
 const AUTH_ROUTES = [
  "/welcome",
@@ -71,6 +72,8 @@ export default function App() {
   const [createOpen, setCreateOpen] = useState(false);
   const [createAudienceGroup, setCreateAudienceGroup] = useState("");
   const [postsVersion, setPostsVersion] = useState(0);
+  const [connectOpen, setConnectOpen] = useState(false);
+  const closeConnect = useCallback(() => setConnectOpen(false), []);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const { profile } = useSession();
@@ -84,6 +87,10 @@ export default function App() {
     navigator.serviceWorker?.addEventListener("message", onServiceWorkerMessage);
     return () => navigator.serviceWorker?.removeEventListener("message", onServiceWorkerMessage);
   }, [navigate]);
+
+  useEffect(() => {
+    setConnectOpen(false);
+  }, [pathname]);
 
   if (isAuth) {
     return (
@@ -116,10 +123,15 @@ export default function App() {
         <div className="app">
           <NotificationToast />
         <header className="topbar">
-          <a className="brand" href="#/home" aria-label="City4Christ home">
-            <img className="logo" src="/assets/images/logo.jpeg" alt="City4Christ logo" />
-            <b>City4Christ</b>
-          </a>
+          <div className="brand-wrap">
+            <a className="brand" href="#/home" aria-label="City4Christ home">
+              <img className="logo" src="/assets/images/logo.jpeg" alt="City4Christ logo" />
+              <b>City4Christ</b>
+            </a>
+            <button className="brand-menu" type="button" aria-label="Open Stay connected" aria-haspopup="dialog" aria-controls="connect-drawer" aria-expanded={connectOpen} onClick={() => setConnectOpen(true)}>
+              <span aria-hidden="true">⌄</span>
+            </button>
+          </div>
           <div className="header-actions">
             <button className="header-btn" type="button" aria-label="Search" onClick={() => navigate("/search")}>
               <Icon name="search" />
@@ -135,6 +147,7 @@ export default function App() {
             </button>
           </div>
         </header>
+        <ConnectDrawer open={connectOpen} onClose={closeConnect} />
 
         <main className="screens">
           <Routes>
