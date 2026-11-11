@@ -4,6 +4,7 @@ import { DailyVerseCard } from "@/dailyverse/DailyVerseCard";
 import { Icon } from "@/lib/icons";
 import { useSession } from "@/auth/session";
 import { HomeCommunityPreview } from "@/posts/HomeCommunityPreview";
+import { SocialLinks } from "@/components/SocialLinks";
 export default function HomeScreen() {
   const { profile } = useSession(),
     navigate = useNavigate();
@@ -42,6 +43,7 @@ export default function HomeScreen() {
         <span className="home-giving-copy"><b>Give to City4Christ</b><small>Support the church through Give A Little</small></span>
         <Icon name="next" />
       </button>
+      <SocialLinks />
     </section>
   );
 }

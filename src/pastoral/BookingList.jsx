@@ -23,8 +23,20 @@ export function BookingList({ assigned = false, revision, onChange }) {
       else await cancelAppointment(booking.id);
       onChange();
     } catch (e) {
-      setError(e.message);
-      if (e.status === 401 || e.status === 403) onChange();
+      const started = new Date(booking.startsAt).getTime() <= Date.now();
+      if (e.code === "appointment_conflict") {
+        setError(
+          started
+            ? assigned
+              ? "This appointment has already started; it can no longer be approved or declined."
+              : "This appointment has already started; it can no longer be cancelled."
+            : "This appointment changed. Reloaded the latest status; review it before retrying.",
+        );
+        onChange();
+      } else {
+        setError(e.message);
+        if (e.status === 401 || e.status === 403) onChange();
+      }
     } finally {
       setBusy(false);
     }
@@ -46,6 +58,8 @@ export function BookingList({ assigned = false, revision, onChange }) {
       {state.items.map((booking) => {
         const first = assigned ? booking.memberFirstName : booking.pastorFirstName;
         const last = assigned ? booking.memberLastName : booking.pastorLastName;
+        const started = new Date(booking.startsAt).getTime() <= Date.now();
+        const actionable = ["pending", "approved"].includes(booking.status) && !started;
         return (
           <article className="pastoral-appt" key={booking.id}>
             <div className="pastoral-appt-top">
@@ -61,14 +75,17 @@ export function BookingList({ assigned = false, revision, onChange }) {
               <span>{dateLabel(booking.startsAt, booking.timeZone)} – {dateLabel(booking.endsAt, booking.timeZone)}</span>
             </div>
             <div className="pastoral-appt-actions">
-              {assigned && booking.status === "pending" && (
+              {assigned && booking.status === "pending" && !started && (
                 <>
                   <button className="btn soft" type="button" disabled={busy} onClick={() => change(booking, "declined")}>Decline</button>
                   <button className="btn gold" type="button" disabled={busy} onClick={() => change(booking, "approved")}>Approve</button>
                 </>
               )}
-              {["pending", "approved"].includes(booking.status) && (
+              {!assigned && actionable && (
                 <button className="btn soft" type="button" disabled={busy} onClick={() => change(booking, "cancelled")}>Cancel appointment</button>
+              )}
+              {started && ["pending", "approved"].includes(booking.status) && (
+                <span className="pastoral-appt-closed">Started · changes closed</span>
               )}
             </div>
           </article>

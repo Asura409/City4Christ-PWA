@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { pastoralMock, SLOT, BOOKING } from "./fixtures/pastoral.mjs";
+import { ID } from "./fixtures/api.mjs";
 test("member requests a slot pending pastor approval and cancels their appointment", async ({
   page,
 }) => {
@@ -39,6 +40,31 @@ test("assigned pastor approves with the current version", async ({ page }) => {
     calls.find((c) => c.path.endsWith("/" + BOOKING) && c.method === "PATCH")
       .body,
   ).toEqual({ status: "approved", version: 1 });
+});
+test("started appointments cannot be cancelled from the member list", async ({ page }) => {
+  await pastoralMock(page);
+  const started = {
+    id: BOOKING,
+    slotId: SLOT,
+    pastorId: "88888888-8888-4888-8888-888888888888",
+    memberId: ID,
+    pastorFirstName: "Joy",
+    pastorLastName: "Pastor",
+    memberFirstName: "Grace",
+    memberLastName: "Member",
+    startsAt: new Date(Date.now() - 3600000).toISOString(),
+    endsAt: new Date(Date.now() - 1800000).toISOString(),
+    timeZone: "UTC",
+    status: "approved",
+    version: 1,
+  };
+  await page.route("**/api/v1/me/pastor-bookings**", (route) =>
+    route.fulfill({ json: { data: [started], meta: { nextCursor: "" } } }),
+  );
+  await page.goto("/#/pastors");
+  const mine = page.getByRole("region", { name: "My appointments" });
+  await expect(mine).toContainText("Started · changes closed");
+  await expect(mine.getByRole("button", { name: "Cancel appointment" })).toHaveCount(0);
 });
 test('stale pastor decisions show the conflict and do not pretend approval succeeded',async({page})=>{
  await pastoralMock(page,{pastor:true});let writes=0;

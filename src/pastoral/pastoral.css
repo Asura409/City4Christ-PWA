@@ -295,6 +295,7 @@
 .pastoral-appt-date span:first-child { color: #7b3fa6; font-size: 13px; }
 .pastoral-appt-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
 .pastoral-appt-actions .btn { min-height: 38px; font-size: 12px; }
+.pastoral-appt-closed { margin-left: auto; color: var(--muted); font-size: 10px; font-weight: 750; }
 
 /* Status pills */
 .pastoral-status, .pastor-status {
