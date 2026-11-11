@@ -22,6 +22,13 @@ export const TRANSLATIONS = [
     license: "Public domain",
     canImport: true,
   },
+  {
+    id: "kjv",
+    name: "King James Version",
+    language: "English",
+    license: "Public domain",
+    canImport: true,
+  },
 ];
 export async function bibleMock(
   page,
@@ -58,7 +65,7 @@ export async function bibleMock(
         text: translation.name + " synthetic passage.",
       },
     ];
-    if (reference === "John 3")
+    if (reference === "John 3" || reference === "John 3:16-17")
       verses.push({
         bookId: "JHN",
         bookName: "John",

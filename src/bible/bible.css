@@ -62,13 +62,21 @@
   font-size: clamp(1.35rem, 2vw, 1.8rem);
 }
 .bible-verses {
-  padding-left: 28px;
+  margin: 12px 0 0;
+  line-height: 1.9;
+  white-space: pre-wrap;
 }
-.bible-verses li {
-  padding: 8px 0;
-  line-height: 1.8;
+.bible-verse {
+  display: inline;
 }
-.bible-verses p {
+.bible-verse-number {
+  color: #6b2d8f;
+  font-size: 0.8em;
+  font-weight: 800;
+  margin-right: 2px;
+  vertical-align: 0.12em;
+}
+.bible-text-fallback {
   white-space: pre-wrap;
 }
 .bible-credit {

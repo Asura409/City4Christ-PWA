@@ -10,16 +10,13 @@ export function PassageView({ passage, onChapter, onUse }) {
       <h3>{passage.reference}</h3>
       <p>{passage.translation.name}</p>
       {verses.length > 0 ? (
-        <ol className="bible-verses">
+        <p className="bible-verses">
           {verses.map((v) => (
-            <li key={`${v.bookId}/${v.chapter}/${v.number}`} value={v.number}>
-              <small>
-                {v.bookName} {v.chapter}:{v.number}
-              </small>
-              <p>{v.text}</p>
-            </li>
+            <span className="bible-verse" key={`${v.bookId}/${v.chapter}/${v.number}`}>
+              <span className="bible-verse-number">[{v.number}]</span> {v.text}{" "}
+            </span>
           ))}
-        </ol>
+        </p>
       ) : (
         <p className="bible-text-fallback">{passage.text}</p>
       )}

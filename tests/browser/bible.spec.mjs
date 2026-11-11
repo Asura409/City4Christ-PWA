@@ -20,8 +20,17 @@ test("Bible reader looks up a passage, changes version and opens its chapter", a
     "American Standard Version (1901) synthetic passage.",
   );
   await result.getByRole("button", { name: "Read full chapter" }).click();
-  await expect(result.locator("li")).toHaveCount(2);
+  await expect(result.locator(".bible-verse-number")).toHaveText(["[16]", "[17]"]);
   expect(requests.at(-1)).toEqual({ reference: "John 3", translation: "asv" });
+});
+test("KJV passages render inline verse markers", async ({ page }) => {
+  await bibleMock(page);
+  await page.goto("/#/bible?reference=John+3%3A16-17&translation=kjv");
+  const result = page.getByRole("region", { name: "Bible passage" });
+  await expect(result.locator(".bible-verse-number")).toHaveText(["[16]", "[17]"]);
+  await expect(result).toContainText("[16] King James Version synthetic passage.");
+  await expect(result).toContainText("[17] Synthetic next verse.");
+  await expect(result.locator("li")).toHaveCount(0);
 });
 test("Bible lookup failure clears an old result without a fallback version", async ({
   page,
@@ -59,7 +68,7 @@ test("Daily Bread lookup fills a reviewed draft without automatically saving or 
   if ((page.viewportSize()?.width ?? 1024) < 900)
     await page.getByRole("button", { name: /New verse/ }).click();
   const draft = page.getByRole("form", { name: "Daily verse editor" });
-  await draft.getByLabel("Display date (GMT+1)").fill("2026-11-01");
+  await draft.getByLabel("Display date (UK time)").fill("2026-11-01");
   const lookup = page.getByRole("form", { name: "Bible lookup" });
   await lookup.locator("label").filter({ hasText: /^Book/ }).locator("select").selectOption({ label: "John" });
   await lookup.locator("label").filter({ hasText: /^Chapter/ }).locator("select").selectOption("3");
@@ -75,7 +84,7 @@ test("Daily Bread lookup fills a reviewed draft without automatically saving or 
   await expect(draft.getByLabel("Translation / attribution")).toHaveValue(
     "World English Bible",
   );
-  await expect(draft.getByLabel("Display date (GMT+1)")).toHaveValue(
+  await expect(draft.getByLabel("Display date (UK time)")).toHaveValue(
     "2026-11-01",
   );
   expect(
