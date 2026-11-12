@@ -1668,3 +1668,133 @@
 .screen h1, .screen h2, .screen h3 { color: var(--ink); }
 .screen { color: var(--ink); }
 
+
+/* ── Desktop sidebar layout ── */
+.app {
+  display: flex;
+  align-items: stretch;
+  min-height: 100dvh;
+}
+
+.side {
+  display: none;
+  flex-direction: column;
+  width: 248px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--glass-bar);
+  backdrop-filter: blur(30px) saturate(190%);
+  border-right: 1px solid var(--edge);
+  padding: 20px 12px 32px;
+  gap: 0;
+  z-index: 20;
+}
+
+@media (min-width: 900px) {
+  .side { display: flex; }
+  .nav { display: none !important; }
+  .col .screens { padding-bottom: 24px; }
+}
+
+.col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.side-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px 20px;
+  text-decoration: none;
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.side-brand img {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 20px;
+}
+
+.side-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 10px 6px;
+  margin: 0;
+}
+
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 12px;
+  border-radius: var(--r-sm);
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  transition: background .15s, color .15s;
+}
+
+.side-link:hover {
+  background: var(--surface-2);
+  color: var(--ink);
+}
+
+.side-link.is-active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.side-link svg { width: 18px; height: 18px; flex-shrink: 0; }
+
+/* ── Desktop global search in topbar ── */
+.gsearch-wrap {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 6px 12px;
+}
+
+@media (min-width: 900px) {
+  .gsearch-wrap { display: flex; }
+  /* hide the mobile search icon button on desktop */
+  .header-btn[aria-label="Search"] { display: none; }
+}
+
+.gsearch-wrap svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+
+.gsearch {
+  border: none;
+  background: transparent;
+  outline: none;
+  font-size: 14px;
+  color: var(--ink);
+  width: 200px;
+}
+
+.gsearch::placeholder { color: var(--muted); }

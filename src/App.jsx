@@ -117,11 +117,79 @@ export default function App() {
     );
   }
 
+  const isAdmin = !!profile?.access?.some?.((r) => !r.scope);
+  const isStaff = !!profile?.access?.length;
+
+  const SideLink = ({ to, icon, children }) => {
+    const active = pathname === to || pathname.startsWith(to + "/");
+    return (
+      <a className={`side-link${active ? " is-active" : ""}`} href={`#${to}`}>
+        <Icon name={icon} />
+        <span>{children}</span>
+      </a>
+    );
+  };
+
   return (
     <ToastProvider>
       <IdentityConfirmationProvider>
         <div className="app">
           <NotificationToast />
+
+          <aside className="side" aria-label="Site navigation">
+            <a className="side-brand" href="#/home">
+              <img src="/assets/images/logo.jpeg" alt="" />
+              <span>City4Christ</span>
+            </a>
+
+            <nav className="side-nav" aria-label="Main">
+              <p className="side-label">Main</p>
+              <SideLink to="/home" icon="home">Home</SideLink>
+              <SideLink to="/community" icon="users">Community</SideLink>
+              <SideLink to="/word" icon="book">Word</SideLink>
+              <SideLink to="/devotionals" icon="star">Devotionals</SideLink>
+              <SideLink to="/bible" icon="book">Bible</SideLink>
+              <SideLink to="/prayer" icon="flame">Prayer</SideLink>
+              <SideLink to="/events" icon="cal">Events</SideLink>
+              <SideLink to="/groups" icon="users">Groups</SideLink>
+              <SideLink to="/pastors" icon="users">Pastors</SideLink>
+              <SideLink to="/giving" icon="heart">Giving</SideLink>
+              <SideLink to="/live" icon="play">Live</SideLink>
+            </nav>
+
+            <nav className="side-nav" aria-label="Account">
+              <p className="side-label">Account</p>
+              <SideLink to="/chat" icon="message">Messages</SideLink>
+              <SideLink to="/notifications" icon="bell">Notifications</SideLink>
+              <SideLink to="/members" icon="users">Members</SideLink>
+              <SideLink to="/profile" icon="user">Profile</SideLink>
+              <SideLink to="/settings" icon="settings">Settings</SideLink>
+              <SideLink to="/get-app" icon="phone">Get App</SideLink>
+            </nav>
+
+            {isStaff && (
+              <nav className="side-nav" aria-label="Staff">
+                <p className="side-label">Staff</p>
+                <SideLink to="/pastor-dashboard" icon="home">Pastor Dashboard</SideLink>
+                <SideLink to="/pastor-availability" icon="cal">Availability</SideLink>
+                <SideLink to="/posts" icon="edit">Posts</SideLink>
+              </nav>
+            )}
+
+            {isAdmin && (
+              <nav className="side-nav" aria-label="Admin">
+                <p className="side-label">Admin</p>
+                <SideLink to="/admin" icon="shield">Admin</SideLink>
+                <SideLink to="/admin/events" icon="cal">Events</SideLink>
+                <SideLink to="/admin/sermons" icon="book">Sermons</SideLink>
+                <SideLink to="/admin/members" icon="users">Members</SideLink>
+                <SideLink to="/visitors" icon="users">Visitors</SideLink>
+                <SideLink to="/account-deletion-requests" icon="trash">Deletions</SideLink>
+              </nav>
+            )}
+          </aside>
+
+          <div className="col">
         <header className="topbar">
           <div className="brand-wrap">
             <a className="brand" href="#/home" aria-label="City4Christ home">
@@ -133,6 +201,16 @@ export default function App() {
             </button>
           </div>
           <div className="header-actions">
+            <div className="gsearch-wrap">
+              <Icon name="search" />
+              <input
+                className="gsearch"
+                type="search"
+                placeholder="Search City4Christ…"
+                aria-label="Search"
+                onKeyDown={(e) => { if (e.key === "Enter") navigate("/search?q=" + encodeURIComponent(e.target.value)); }}
+              />
+            </div>
             <button className="header-btn" type="button" aria-label="Search" onClick={() => navigate("/search")}>
               <Icon name="search" />
             </button>
@@ -336,7 +414,8 @@ export default function App() {
             setPostsVersion((value) => value + 1);
           }}
         />
-        </div>
+          </div>{/* .col */}
+        </div>{/* .app */}
       </IdentityConfirmationProvider>
     </ToastProvider>
   );
