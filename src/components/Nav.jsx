@@ -51,7 +51,7 @@ export function Nav({ onFab }) {
             onClick={() => navigate(item.path)}
           >
             <Icon name={item.icon} />
-            {item.label}
+            <span className="lbl">{item.label}</span>
           </button>
         );
       })}
