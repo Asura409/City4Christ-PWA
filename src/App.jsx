@@ -78,7 +78,8 @@ export default function App() {
   const navigate = useNavigate();
   const { profile } = useSession();
   const accountName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "Your profile";
-  const isAuth = AUTH_ROUTES.some((r) => pathname.startsWith(r));
+  const BYPASS = import.meta.env.VITE_BYPASS_AUTH === "true";
+  const isAuth = !BYPASS && AUTH_ROUTES.some((r) => pathname.startsWith(r));
 
   useEffect(() => {
     const onServiceWorkerMessage = (event) => {
