@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
@@ -92,13 +93,11 @@ export function AccountDeletionPanel() {
           )}
         </>
       )}
-      <button
+      <RefreshButton
         className="btn soft"
         disabled={busy}
         onClick={() => setRevision((x) => x + 1)}
-      >
-        Reload deletion policy
-      </button>
+       label="Reload deletion policy" />
     </section>
   );
 }

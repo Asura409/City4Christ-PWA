@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "@/auth/session";
@@ -62,7 +63,7 @@ export default function PastorsScreen() {
           <p>Connect with a pastor for prayer, guidance, and a personal conversation.</p>
         </div>
         <div className="pastoral-hero-actions">
-          <button className="btn soft" type="button" onClick={reload}>Reload</button>
+          <RefreshButton className="btn soft" type="button" onClick={reload} label="Reload" />
           {pastor && <button className="btn soft" type="button" onClick={() => navigate("/pastor-availability")}>Manage availability</button>}
           {pastor && <button className="btn gold" type="button" onClick={() => navigate("/pastor-dashboard")}>Pastor dashboard</button>}
         </div>

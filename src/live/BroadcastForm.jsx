@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useRef, useState } from "react";
 import { createBroadcast, updateBroadcast } from "./api";
 import { BroadcastVideo } from "./BroadcastVideo";
@@ -60,7 +61,7 @@ export function BroadcastForm({ initial, featured, onSaved, onForbidden, onReloa
       {entry?.status === "published" && entry.broadcastStatus === "live" && <button className="btn soft" type="button" onClick={endLive}>End live & keep replay</button>}
     </fieldset>
     {busy && <p role="status">Saving broadcast…</p>}{error && <p className="broadcast-error" role="alert">{error}</p>}
-    {conflict && <button className="btn soft" type="button" onClick={() => onReload(entry.id)}>Reload latest version</button>}
+    {conflict && <RefreshButton className="btn soft" type="button" onClick={() => onReload(entry.id)} label="Reload latest version" />}
     <TimedMessage message={notice} />
     {review && <div className="broadcast-modal-backdrop"><section className="broadcast-modal broadcast-panel" role="dialog" aria-modal="true" aria-labelledby="broadcast-review-title" onKeyDown={(event) => { if (event.key === "Escape" && !busy) setReview(null); if (event.key === "Tab") { const controls = [...event.currentTarget.querySelectorAll('button:not(:disabled)')]; const first = controls[0], last = controls.at(-1); if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); } } }}>
       <h2 id="broadcast-review-title">Publish “{review.title}”?</h2><p>{entry?.status === "published" && !(review.broadcastStatus === "live" && entry.broadcastStatus !== "live") ? "Changes will be visible to viewers immediately." : featured && featured.id !== entry?.id ? `This will replace “${featured.title}” as the latest broadcast. The previous broadcast will stay in Past broadcasts.` : "This will become the latest broadcast for viewers."}</p><p>When you publish a replacement or mark a broadcast live, the previous live broadcast is kept as a replay.</p><div className="broadcast-actions"><button autoFocus type="button" className="btn soft" disabled={busy} onClick={() => setReview(null)}>Keep editing</button><button className="btn gold" type="button" disabled={busy} onClick={() => save(review, "published")}>Confirm publication</button></div>

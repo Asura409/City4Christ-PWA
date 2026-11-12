@@ -313,3 +313,11 @@ html[data-theme="dark"] {
   display: block;
   margin-block: 1rem;
 }
+
+/* Icon-only access refresh; retain its accessible name and keyboard focus. */
+button.refresh-icon-button { display:inline-flex; align-items:center; justify-content:center; width:44px; height:44px; padding:0; border:1px solid var(--c4c-line); border-radius:50%; background:var(--c4c-card); color:var(--c4c-purple); cursor:pointer; }
+button.refresh-icon-button svg { width:20px; height:20px; }
+button.refresh-icon-button:focus-visible { outline:3px solid #d4af37; outline-offset:3px; }
+button.refresh-icon-button[aria-busy="true"] svg { animation:c4c-refresh-spin .8s linear infinite; }
+@keyframes c4c-refresh-spin { to { transform:rotate(360deg); } }
+@media(prefers-reduced-motion:reduce) { button.refresh-icon-button[aria-busy="true"] svg { animation:none; } }

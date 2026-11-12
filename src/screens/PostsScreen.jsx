@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
@@ -550,14 +551,12 @@ export default function PostsScreen({
                   Load older reports
                 </button>
               )}
-              <button
+              <RefreshButton
                 className="btn soft"
                 type="button"
                 disabled={moderationLoading}
-                onClick={() => void loadModerationReports()}
-              >
-                Refresh reports
-              </button>
+                onClick={() => loadModerationReports()}
+               label="Refresh reports" />
             </div>
           )}
         </section>

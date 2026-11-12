@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React from "react";
 import { Link } from "react-router-dom";
 import { TimedMessage } from "@/components/TimedMessage";
@@ -85,9 +86,7 @@ export function WelcomeForm() {
         </form>
       )}
       {s.error && (!s.config || s.fields.policyVersion) && (
-        <button className="btn soft" onClick={s.reload}>
-          Reload welcome form
-        </button>
+        <RefreshButton className="btn soft" onClick={s.reload} label="Reload welcome form" />
       )}
       <p>
         <Link to="/login">Sign in</Link> ·{" "}

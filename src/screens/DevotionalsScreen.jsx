@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
 import { hasCapability } from "../../js/access.js";
@@ -57,9 +58,7 @@ export default function DevotionalsScreen() {
           <h1>Devotionals</h1>
           <p>Read and reflect on messages from City4Christ.</p>
         </div>
-        <button className="btn soft devotional-refresh" onClick={reload}>
-          <span aria-hidden="true">↻</span> Refresh
-        </button>
+        <RefreshButton className="btn soft devotional-refresh" onClick={reload} label="Refresh" />
       </header>
       {error && <p role="alert">{error}</p>}
       {editor && (

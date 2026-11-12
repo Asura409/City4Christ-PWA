@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useContentList, ContentListState } from "../content/useContentList";
@@ -25,7 +26,7 @@ export default function LiveScreen() {
     return <button className="broadcast-archive-item" key={entry.id} onClick={() => open(entry.id)}><span className="broadcast-thumb" aria-hidden="true">▶</span><span><small><BroadcastDate value={entry.serviceAt} /></small><strong>{entry.title}</strong><BroadcastStatus entry={entry} /></span><span aria-hidden="true">→</span></button>;
   }
   return <section className="screen active broadcasts-screen" aria-label="Live and replays">
-    <header className="broadcast-heading"><div><p className="broadcast-eyebrow">WORSHIP ONLINE</p><h1>Live & replays</h1><p>Worship with us, wherever you are.</p></div><div className="broadcast-actions"><button className="btn soft" onClick={refresh}>Refresh</button>{access.allowed && <button className="btn soft" onClick={() => navigate("/admin/live")}>Manage broadcasts</button>}</div></header>
+    <header className="broadcast-heading"><div><p className="broadcast-eyebrow">WORSHIP ONLINE</p><h1>Live & replays</h1><p>Worship with us, wherever you are.</p></div><div className="broadcast-actions"><RefreshButton className="btn soft" busy={state.busy} onClick={refresh} label="Refresh" />{access.allowed && <button className="btn soft" onClick={() => navigate("/admin/live")}>Manage broadcasts</button>}</div></header>
     <div className="broadcast-tabs" aria-label="Broadcast views"><button aria-pressed={tab === "latest"} onClick={() => { setTab("latest"); setSelectedId(""); setDetail(null); }}>Latest broadcast</button><button aria-pressed={tab === "archive"} onClick={() => { setTab("archive"); setSelectedId(""); setDetail(null); }}>Past broadcasts</button></div>
     {state.error && <p className="broadcast-error" role="alert">{state.error} <button className="btn soft" onClick={refresh}>Retry</button></p>}
     {state.busy && !state.items.length && <p role="status">Loading broadcasts…</p>}

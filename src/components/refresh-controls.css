@@ -1,0 +1,11 @@
+.loading-indicator { display: inline-flex; justify-content: center; align-items: center; padding: 16px; color: var(--purple, #5b2c83); }
+.loading-spinner { display: inline-block; width: 25px; height: 25px; box-sizing: border-box; border: 3px solid color-mix(in srgb, currentColor 18%, transparent); border-top-color: currentColor; border-radius: 50%; animation: c4c-refresh-spin .8s linear infinite; }
+.session-loading-indicator { display: flex; width: 100%; min-height: 160px; }
+button.refresh-icon-button.refresh-icon-button { display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; width: 44px; min-width: 44px; max-width: 44px; height: 44px; min-height: 44px; padding: 0; margin: 0; border: 1px solid var(--line, #e5dbea); border-radius: 50%; background: var(--surface, #fff); color: var(--purple, #5b2c83); box-shadow: none; cursor: pointer; vertical-align: middle; }
+button.refresh-icon-button.refresh-icon-button:hover:not(:disabled) { background: var(--surface-2, #f2ebf8); }
+button.refresh-icon-button.refresh-icon-button:disabled { opacity: .55; cursor: default; }
+button.refresh-icon-button.refresh-icon-button:focus-visible { outline: 3px solid var(--gold, #f0c866); outline-offset: 3px; }
+button.refresh-icon-button.refresh-icon-button .ic { width: 20px; height: 20px; flex: none; }
+.refresh-icon-spinning { animation: c4c-refresh-spin .8s linear infinite; }
+@keyframes c4c-refresh-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .loading-spinner, .refresh-icon-spinning { animation: none; } }

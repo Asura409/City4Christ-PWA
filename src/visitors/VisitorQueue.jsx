@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { listVisitors } from "./api";
@@ -73,13 +74,11 @@ export function VisitorQueue() {
           <option value="closed">Closed</option>
         </select>
       </label>
-      <button
+      <RefreshButton
         className="btn soft"
         disabled={busy}
         onClick={() => setRevision((x) => x + 1)}
-      >
-        Refresh visitors
-      </button>
+       label="Refresh visitors" />
       {error && <p role="alert">{error}</p>}
       {busy && !items.length && <p role="status">Loading visitors…</p>}
       {!busy && !error && !items.length && <p>No visitors in this queue.</p>}

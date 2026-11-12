@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSession } from "@/auth/session";
@@ -232,7 +233,7 @@ export default function GroupMessagesPanel() {
   return (
     <section className={`group-chat-panel${selected ? " has-selection" : ""}`} aria-label="Group chats">
       <aside className="messages-list-panel" aria-label="Church group conversations">
-        <div className="messages-title-row"><div><p className="group-eyebrow">CHURCH GROUPS</p><h2>Group chats</h2><RealtimeStatus status={realtime.status} /></div><button className="btn soft" type="button" onClick={() => void refresh()} disabled={loading}>Refresh</button></div>
+        <div className="messages-title-row"><div><p className="group-eyebrow">CHURCH GROUPS</p><h2>Group chats</h2><RealtimeStatus status={realtime.status} /></div><RefreshButton className="btn soft" type="button" onClick={() => refresh()} disabled={loading} label="Refresh" /></div>
         {error && <p className="messages-error" role="alert">{error}</p>}
         {loading ? <p className="messages-state" role="status">Loading group chats…</p> : !error && groups.length === 0 ? <p className="messages-empty">No group chats are available. Join a church group to see its chat.</p> : null}
         <ul className="conversation-list">

@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
@@ -142,7 +143,7 @@ export default function PastorDashboardScreen() {
             </div>
             <div className="pastor-dashboard-header-actions">
               <span className="pastor-live-chip"><i /> {pastor.listed ? "Listed in directory" : "Not listed"}</span>
-              <button className="btn soft" type="button" onClick={() => void load()}>Refresh</button>
+              <RefreshButton className="btn soft" type="button" onClick={() => load()} label="Refresh" />
             </div>
           </header>
 

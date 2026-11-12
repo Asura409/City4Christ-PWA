@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "@/auth/session";
@@ -54,7 +55,7 @@ export default function PastorAvailabilityScreen() {
         </div>
         <div className="pastor-tools-actions">
           <span className="pastor-live-chip"><i /> {pastor.listed ? "Listed in directory" : "Not listed"}</span>
-          <button className="btn soft" type="button" onClick={reloadAll}>Reload</button>
+          <RefreshButton className="btn soft" type="button" onClick={reloadAll} label="Reload" />
           <Link className="btn soft" to="/pastor-dashboard">Dashboard</Link>
         </div>
       </header>

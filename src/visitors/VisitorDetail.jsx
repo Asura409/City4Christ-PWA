@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { api } from "@/auth/session";
@@ -60,13 +61,11 @@ export function VisitorDetail({ id, onChange, onDenied }) {
       {error && (
         <p role="alert">
           {error}{" "}
-          <button
+          <RefreshButton
             className="btn soft"
             disabled={busy}
             onClick={() => setRevision((x) => x + 1)}
-          >
-            Reload details
-          </button>
+           label="Reload details" />
         </p>
       )}
       {!data && !error && <p role="status">Loading contact details…</p>}

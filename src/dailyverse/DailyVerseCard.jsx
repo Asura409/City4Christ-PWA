@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React from "react";
 import { bibleLink } from "@/bible/api";
 import { Icon } from "@/lib/icons";
@@ -35,9 +36,7 @@ export function DailyVerseCard() {
         </a>
       )}
       <div className="devotional-actions">
-        <button className="btn soft" disabled={busy} onClick={refresh}>
-          Refresh daily verse
-        </button>
+        <RefreshButton className="btn soft" disabled={busy} onClick={refresh} label="Refresh daily verse" />
         <a className="btn soft" href="#/devotionals">
           Read devotionals
         </a>

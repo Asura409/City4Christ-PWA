@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { useConfirmedAction } from "@/auth/identityConfirmation";
@@ -130,13 +131,11 @@ export function DeletionReviewDetail({ id, onChanged, onDenied }) {
           )}
         </>
       )}
-      <button
+      <RefreshButton
         className="btn soft"
         disabled={busy}
         onClick={() => setRevision((x) => x + 1)}
-      >
-        Reload request details
-      </button>
+       label="Reload request details" />
     </section>
   );
 }

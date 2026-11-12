@@ -16,9 +16,12 @@ export function bindCurrentAccess(api, page) {
   if (["profile", "settings", "staff"].includes(page)) {
     summary = element("p", { class: "muted" });
     roles = element("ul", { id: "access-roles" });
-    const refresh = element("button", { type: "button", class: "secondary" }, [
-      "Refresh permissions",
-    ]);
+    const refresh = element("button", { type: "button", class: "refresh-icon-button", "aria-label": "Refresh permissions", title: "Refresh permissions" });
+    const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+    for (const [key, value] of Object.entries({ viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", "stroke-width": "1.9", "stroke-linecap": "round", "stroke-linejoin": "round", "aria-hidden": "true" })) svg.setAttribute(key, value);
+    const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+    path.setAttribute("d", "M20 7v5h-5M20 12a8 8 0 10-2.3 5.7");
+    svg.append(path); refresh.append(svg);
     panel = element(
       "section",
       {
@@ -33,8 +36,10 @@ export function bindCurrentAccess(api, page) {
     const firstPanel = $("main > section");
     main.insertBefore(panel, firstPanel);
     onClick(refresh, async () => {
-      await access.refresh();
-      status("Permissions updated.", "success");
+      refresh.disabled = true;
+      refresh.setAttribute("aria-busy", "true");
+      try { await access.refresh(); status("Permissions updated.", "success"); }
+      finally { refresh.disabled = false; refresh.setAttribute("aria-busy", "false"); }
     });
   }
   access.subscribe((snapshot) => {

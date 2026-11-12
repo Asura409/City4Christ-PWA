@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useRef } from "react";
 import { useBibleLookup } from "./useBibleLookup";
 import { PassageView } from "./PassageView";
@@ -53,9 +54,7 @@ export function PassageLookup({
       {s.notice && <p role="status">{s.notice}</p>}
       {s.error && <p role="alert">{s.error}</p>}
       {!s.ready && s.error && (
-        <button type="button" className="btn soft" onClick={s.reload}>
-          Reload Bible versions
-        </button>
+        <RefreshButton type="button" className="btn soft" onClick={s.reload} label="Reload Bible versions" />
       )}
       {s.passage && (
         <PassageView

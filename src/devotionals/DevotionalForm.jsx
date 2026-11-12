@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import React, { useEffect, useState } from "react";
 import { TimedMessage } from "@/components/TimedMessage";
 import { createDraft, updateDraft } from "./api";
@@ -90,14 +91,12 @@ export function DevotionalForm({ entry, onSaved, onReload, onForbidden, onDirty 
       <TimedMessage tone="error" message={error} />
       <TimedMessage message={notice} />
       {conflict && (
-        <button
+        <RefreshButton
           className="btn soft"
           type="button"
           disabled={busy}
           onClick={onReload}
-        >
-          Reload latest version
-        </button>
+         label="Reload latest version" />
       )}
       <label className="devotional-title-field">
         Title

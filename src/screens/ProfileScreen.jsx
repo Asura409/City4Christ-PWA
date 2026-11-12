@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { hasCapability } from "../../js/access.js";
 import React, { useEffect, useRef, useState } from "react";
 import { TimedMessage } from "@/components/TimedMessage";
@@ -186,7 +187,7 @@ export default function ProfileScreen() {
               [canManageSermons, "Sermon publishing", "/admin/sermons"],
             ].filter(([allowed]) => allowed).map(([, title, path]) => <button className="account-destination" key={path} onClick={() => navigate(path)}><strong>{title}</strong><span aria-hidden="true">→</span></button>)}
           </div>}
-          <button className="account-refresh" type="button" onClick={() => void loadAccess()} disabled={accessLoading}>{accessLoading ? "Checking access…" : "Refresh account access"}</button>
+          <RefreshButton className="account-refresh" type="button" onClick={() => loadAccess()} disabled={accessLoading} label="Refresh account access" busy={accessLoading} />
           {access?.capabilities?.length > 0 && <details className="profile-access-details"><summary>View detailed permissions</summary><ul>{access.capabilities.map((capability) => <li key={`${capability.permission}:${capability.scope}`}><span>{capability.permission}</span><small>{capability.scope || "Church-wide"}</small></li>)}</ul></details>}
         </section>
 

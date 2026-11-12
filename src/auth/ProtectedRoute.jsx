@@ -1,10 +1,11 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSession } from "./session";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 export function ProtectedRoute({ children }) {
   const { profile, loading, error, restore } = useSession();
   const location = useLocation();
-  if (loading) return <p role="status">Checking your session…</p>;
+  if (loading) return <LoadingSpinner className="session-loading-indicator" label="Loading" />;
   if (error)
     return (
       <section>

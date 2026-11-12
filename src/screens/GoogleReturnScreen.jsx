@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AuthLayout } from "@/components/AuthLayout";
 import { useSession } from "@/auth/session";
 import { googleErrorMessage } from "@/auth/google";
+import { LoadingSpinner } from "../components/LoadingSpinner";
 
 export default function GoogleReturnScreen() {
   const { profile, loading } = useSession();
@@ -36,11 +37,7 @@ export default function GoogleReturnScreen() {
       {failure ? (
         <p role="alert">{googleErrorMessage(failure)}</p>
       ) : loading ? (
-        <p role="status">
-          {reauthenticated
-            ? "Completing Google identity confirmation…"
-            : "Completing Google sign-in…"}
-        </p>
+        <LoadingSpinner className="session-loading-indicator" label="Loading" />
       ) : !profile ? (
         <p role="alert">
           We could not restore your Google session. Please try signing in again.

@@ -1,3 +1,4 @@
+import { RefreshButton } from "@/components/RefreshButton";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useEffect, useState } from "react";
 import { useConfirmedAction } from "@/auth/identityConfirmation";
@@ -76,13 +77,11 @@ export function DeletionReviewQueue() {
           <option value="reviewing">Reviewing</option>
         </select>
       </label>
-      <button
+      <RefreshButton
         className="btn soft"
         disabled={busy}
         onClick={() => setRevision((x) => x + 1)}
-      >
-        Refresh requests
-      </button>
+       label="Refresh requests" />
       {error && <p role="alert">{error}</p>}
       <TimedMessage message={notice} />
       {busy && !items.length && <p role="status">Loading deletion requests…</p>}
