@@ -1,6 +1,7 @@
 import { test, expect } from "@playwright/test";
 import { mocked, MODERATOR_ACCESS } from "./fixtures/api.mjs";
 import { STAFF_ACCESS } from "./fixtures/api.mjs";
+import { bibleMock } from "./fixtures/bible.mjs";
 
 test("members read and publish church-wide posts", async ({ page }) => {
   const fixture = await mocked(page, { signedIn: true });
@@ -13,6 +14,35 @@ test("members read and publish church-wide posts", async ({ page }) => {
   await expect(page.getByText("Looking forward to worship together.")).toBeVisible();
   expect(fixture.calls.find((call) => call.path === "/api/v1/posts" && call.method === "POST")?.body)
     .toEqual({ body: "Looking forward to worship together." });
+});
+
+test("members choose a scripture from the Bible picker before it is added to a post", async ({
+  page,
+}) => {
+  const { calls } = await bibleMock(page, { signedIn: true });
+  await page.goto("/#/posts");
+  await page.getByRole("button", { name: "Create a post" }).click();
+  const message = page.getByLabel("Your message");
+  await page.getByRole("button", { name: "Add scripture" }).click();
+
+  const picker = page.getByRole("dialog", { name: "Add scripture" });
+  await expect(picker).toBeVisible();
+  await expect(message).toHaveValue("");
+
+  const lookup = picker.getByRole("form", { name: "Bible lookup" });
+  await lookup.locator("label").filter({ hasText: /^Book/ }).locator("select").selectOption({ label: "John" });
+  await lookup.locator("label").filter({ hasText: /^Chapter/ }).locator("select").selectOption("3");
+  await lookup.locator("label").filter({ hasText: /^Verse \(optional\)/ }).locator("select").selectOption("16");
+  await lookup.getByRole("button", { name: "Look up passage" }).click();
+  await picker.getByRole("button", { name: "Add to post" }).click();
+
+  await expect(picker).toHaveCount(0);
+  await expect(message).toHaveValue(
+    "[16] World English Bible synthetic passage.\n\n— John 3:16 (World English Bible)",
+  );
+  await page.getByRole("button", { name: "Share" }).click();
+  expect(calls.find((call) => call.path === "/api/v1/posts" && call.method === "POST")?.body.body)
+    .toContain("[16] World English Bible synthetic passage.");
 });
 
 test("post and comment authors show their profile photos", async ({ page }) => {
@@ -29,6 +59,7 @@ test("members can edit and delete only their own posts", async ({ page }) => {
   await page.goto("/#/posts");
   const ownPost = page.locator(".community-post").filter({ hasText: "Grace Member" });
   const otherPost = page.locator(".community-post").filter({ hasText: "A post from another member." });
+  await ownPost.getByLabel("Post options").click();
   await expect(ownPost.getByRole("button", { name: "Edit post" })).toBeVisible();
   await expect(ownPost.getByRole("button", { name: "Delete post" })).toBeVisible();
   await expect(otherPost.getByRole("button", { name: "Edit post" })).toHaveCount(0);
@@ -41,6 +72,7 @@ test("members can edit and delete only their own posts", async ({ page }) => {
   expect(fixture.calls.find((call) => call.path.endsWith("/99999999-9999-4999-8999-999999999999") && call.method === "PUT")?.body)
     .toEqual({ body: "Updated Sunday announcement.", attachmentIds: [] });
 
+  await ownPost.getByLabel("Post options").click();
   await ownPost.getByRole("button", { name: "Delete post" }).click();
   await expect(ownPost.getByText("Delete this post and its comments?", { exact: true })).toBeVisible();
   await ownPost.getByRole("button", { name: "Confirm delete" }).click();
@@ -48,6 +80,16 @@ test("members can edit and delete only their own posts", async ({ page }) => {
   expect(fixture.calls.some((call) => call.path.endsWith("/99999999-9999-4999-8999-999999999999") && call.method === "DELETE")).toBe(true);
 });
 
+test("Amen and comments respond on a phone", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await mocked(page, { signedIn: true });
+  await page.goto("/#/posts");
+  const post = page.locator(".community-post").filter({ hasText: "Welcome to church this Sunday." });
+  await post.getByRole("button", { name: "Say Amen (0)" }).click();
+  await expect(post.getByRole("button", { name: "Remove Amen (1)" })).toBeVisible();
+  await post.getByRole("button", { name: "View comments (0)" }).click();
+  await expect(post.getByLabel("Write a comment")).toBeVisible();
+});
 test("members can add and remove their Amen reaction", async ({ page }) => {
   const fixture = await mocked(page, { signedIn: true });
   await page.goto("/#/posts");
@@ -66,10 +108,12 @@ test("members can report posts and comments but not their own content", async ({
   const ownPost = page.locator(".community-post").filter({ hasText: "Welcome to church this Sunday." });
   const otherPost = page.locator(".community-post").filter({ hasText: "A post from another member." });
   await expect(ownPost.getByRole("button", { name: "Report post" })).toHaveCount(0);
+  await otherPost.getByLabel("Post options").click();
   await otherPost.getByRole("button", { name: "Report post" }).click();
   await page.getByLabel("Why are you reporting this post?").selectOption("harassment");
   await page.getByPlaceholder("Add details for the moderation team (optional).").first().fill("Targets a member.");
-  await otherPost.getByRole("button", { name: "Send report" }).click();
+  await page.getByRole("dialog", { name: "Report post" }).getByRole("button", { name: "Send report" }).click();
+  await otherPost.getByLabel("Post options").click();
   await expect(otherPost.getByRole("button", { name: "Post reported" })).toBeVisible();
   expect(fixture.calls.find((call) => call.path === "/api/v1/content-reports")?.body).toEqual({
     targetType: "post",
@@ -81,8 +125,8 @@ test("members can report posts and comments but not their own content", async ({
   await otherPost.getByRole("button", { name: "View comments (1)" }).click();
   const comment = otherPost.locator(".post-comment").filter({ hasText: "A comment for the church to review." });
   await comment.getByRole("button", { name: "Report comment" }).click();
-  await comment.getByLabel("Why are you reporting this comment?").selectOption("inappropriate");
-  await comment.getByRole("button", { name: "Send report" }).click();
+  await page.getByLabel("Why are you reporting this comment?").selectOption("inappropriate");
+  await page.getByRole("dialog", { name: "Report comment" }).getByRole("button", { name: "Send report" }).click();
   await expect(comment.getByRole("button", { name: "Reported" })).toBeVisible();
   expect(fixture.calls.filter((call) => call.path === "/api/v1/content-reports").map((call) => call.body.targetType)).toEqual(["post", "comment"]);
 });

@@ -1,6 +1,8 @@
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useState } from "react";
 import { Avatar } from "@/components/Avatar";
+import { Icon } from "@/lib/icons";
+import { TimedMessage } from "@/components/TimedMessage";
 import { useSession } from "@/auth/session";
 import {
   createPostComment,
@@ -51,7 +53,8 @@ export default function PostsScreen({
   const [postBusy, setPostBusy] = useState({});
   const [postErrors, setPostErrors] = useState({});
   const [confirmDeleteId, setConfirmDeleteId] = useState("");
-  const [reportingTarget, setReportingTarget] = useState("");
+  const [reportTarget, setReportTarget] = useState(null);
+  const [reportNotice, setReportNotice] = useState("");
   const [reportedTargets, setReportedTargets] = useState(() => new Set());
   const [reportBusy, setReportBusy] = useState({});
   const [reportErrors, setReportErrors] = useState({});
@@ -93,7 +96,19 @@ export default function PostsScreen({
 
   const toggleAmen = async (post) => {
     if (reactionBusy[post.id]) return;
+    const nextReacted = !post.reacted;
     setReactionBusy((current) => ({ ...current, [post.id]: true }));
+    setPosts((current) =>
+      current.map((item) =>
+        item.id === post.id
+          ? {
+              ...item,
+              reacted: nextReacted,
+              amenCount: Math.max(0, (item.amenCount || 0) + (nextReacted ? 1 : -1)),
+            }
+          : item,
+      ),
+    );
     try {
       const state = post.reacted
         ? await removePostAmen(post.id)
@@ -106,6 +121,13 @@ export default function PostsScreen({
         ),
       );
     } catch (err) {
+      setPosts((current) =>
+        current.map((item) =>
+          item.id === post.id
+            ? { ...item, amenCount: post.amenCount || 0, reacted: Boolean(post.reacted) }
+            : item,
+        ),
+      );
       setError(err.message || "Could not update your Amen reaction.");
     } finally {
       setReactionBusy((current) => ({ ...current, [post.id]: false }));
@@ -137,13 +159,43 @@ export default function PostsScreen({
     }
   };
 
+  function closePostOptions(event) {
+    event.currentTarget.closest("details")?.removeAttribute("open");
+  }
+
+  function openReport(type, item, postId) {
+    const key = `${type}:${item.id}`;
+    setReportTarget({ type, id: item.id, postId, content: item.body, key });
+    setReportErrors((current) => ({ ...current, [key]: "" }));
+  }
+
+  useEffect(() => {
+    if (!reportTarget) return undefined;
+    const previous = document.activeElement;
+    document.body.classList.add("post-report-open");
+    function onKeyDown(event) {
+      if (event.key === "Escape") setReportTarget(null);
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.classList.remove("post-report-open");
+      document.removeEventListener("keydown", onKeyDown);
+      if (previous instanceof HTMLElement) previous.focus();
+    };
+  }, [reportTarget]);
+
   const toggleComments = async (post) => {
     if (expandedComments[post.id]) {
       setExpandedComments((current) => ({ ...current, [post.id]: false }));
       return;
     }
     setExpandedComments((current) => ({ ...current, [post.id]: true }));
+    const reveal = () => requestAnimationFrame(() => {
+      document.getElementById(`comments-${post.id}`)?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    reveal();
     if (!Object.hasOwn(comments, post.id)) await loadComments(post.id);
+    reveal();
   };
 
   const submitComment = async (post, event) => {
@@ -273,7 +325,9 @@ export default function PostsScreen({
         values.get("details"),
       );
       setReportedTargets((current) => new Set(current).add(key));
-      setReportingTarget("");
+      setReportTarget(null);
+      setReportNotice("Report submitted for review.");
+      if (moderationOpen && moderationAllowed) void loadModerationReports();
       form.reset();
     } catch (err) {
       setReportErrors((current) => ({
@@ -393,6 +447,7 @@ export default function PostsScreen({
         </div>
         <p className="lead">Share encouragement and updates with the church.</p>
       </div>
+      <TimedMessage message={reportNotice} />
       {error && (
         <div className="posts-error" role="alert">
           <span>{error}</span>
@@ -526,45 +581,55 @@ export default function PostsScreen({
           const isAuthor = profile?.id === post.authorId;
           return (
             <article className="card community-post" key={post.id}>
-              <div className="who">
+              <div className="who post-head">
                 <Avatar name={author} src={post.avatar?.url} size={42} />
                 <div>
                   <b>{author}</b>
                   <span>{dateLabel(post.createdAt)} · Church</span>
                 </div>
+                <details className="post-options">
+                  <summary aria-label="Post options">⋯</summary>
+                  <div className="post-options-menu">
+                    {isAuthor ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            closePostOptions(event);
+                            setEditingPostId(post.id);
+                            setConfirmDeleteId("");
+                            setPostErrors((current) => ({ ...current, [post.id]: "" }));
+                          }}
+                        >
+                          Edit post
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            closePostOptions(event);
+                            setConfirmDeleteId(post.id);
+                            setEditingPostId("");
+                            setPostErrors((current) => ({ ...current, [post.id]: "" }));
+                          }}
+                        >
+                          Delete post
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={reportedTargets.has(`post:${post.id}`)}
+                        onClick={(event) => {
+                          closePostOptions(event);
+                          openReport("post", post, post.id);
+                        }}
+                      >
+                        {reportedTargets.has(`post:${post.id}`) ? "Post reported" : "Report post"}
+                      </button>
+                    )}
+                  </div>
+                </details>
               </div>
-              {isAuthor && (
-                <div className="post-manage-actions">
-                  <button
-                    className="btn soft"
-                    type="button"
-                    onClick={() => {
-                      setEditingPostId(post.id);
-                      setConfirmDeleteId("");
-                      setPostErrors((current) => ({
-                        ...current,
-                        [post.id]: "",
-                      }));
-                    }}
-                  >
-                    Edit post
-                  </button>
-                  <button
-                    className="btn soft"
-                    type="button"
-                    onClick={() => {
-                      setConfirmDeleteId(post.id);
-                      setEditingPostId("");
-                      setPostErrors((current) => ({
-                        ...current,
-                        [post.id]: "",
-                      }));
-                    }}
-                  >
-                    Delete post
-                  </button>
-                </div>
-              )}
               {postErrors[post.id] && (
                 <p className="post-manage-error" role="alert">
                   {postErrors[post.id]}
@@ -670,86 +735,32 @@ export default function PostsScreen({
               )}
               <div className="post-actions">
                 <button
-                  className={`btn soft post-amen${post.reacted ? " is-active" : ""}`}
+                  className={`post-icon-btn${post.reacted ? " is-active" : ""}`}
                   type="button"
                   aria-pressed={Boolean(post.reacted)}
+                  aria-label={post.reacted ? `Remove Amen (${post.amenCount || 0})` : `Say Amen (${post.amenCount || 0})`}
                   disabled={Boolean(reactionBusy[post.id])}
                   onClick={() => void toggleAmen(post)}
                 >
-                  {post.reacted
-                    ? `Remove Amen (${post.amenCount || 0})`
-                    : `Say Amen (${post.amenCount || 0})`}
+                  <Icon name="heart" fill={Boolean(post.reacted)} />
+                  <span className="post-action-count">{post.amenCount || 0}</span>
                 </button>
                 <button
-                  className="btn soft post-comments-toggle"
+                  className="post-icon-btn"
                   type="button"
                   aria-expanded={Boolean(expandedComments[post.id])}
-                  onClick={() => void toggleComments(post)}
-                >
-                  {expandedComments[post.id]
+                  aria-label={expandedComments[post.id]
                     ? `Hide comments (${post.commentCount || 0})`
                     : `View comments (${post.commentCount || 0})`}
-                </button>
-                {!isAuthor && (
-                  <button
-                    className="btn soft"
-                    type="button"
-                    disabled={reportedTargets.has(`post:${post.id}`)}
-                    onClick={() =>
-                      setReportingTarget((current) =>
-                        current === `post:${post.id}` ? "" : `post:${post.id}`,
-                      )
-                    }
-                  >
-                    {reportedTargets.has(`post:${post.id}`)
-                      ? "Post reported"
-                      : "Report post"}
-                  </button>
-                )}
-              </div>
-              {reportingTarget === `post:${post.id}` && (
-                <form
-                  className="post-report-form"
-                  onSubmit={(event) =>
-                    void submitReport("post", post.id, event)
-                  }
+                  onClick={() => void toggleComments(post)}
                 >
-                  <label htmlFor={`report-post-reason-${post.id}`}>
-                    Why are you reporting this post?
-                  </label>
-                  <select
-                    id={`report-post-reason-${post.id}`}
-                    name="reason"
-                    defaultValue="other"
-                  >
-                    <option value="spam">Spam</option>
-                    <option value="harassment">Harassment</option>
-                    <option value="inappropriate">Inappropriate content</option>
-                    <option value="hate">Hateful content</option>
-                    <option value="threats">Threats</option>
-                    <option value="other">Other</option>
-                  </select>
-                  <textarea
-                    name="details"
-                    maxLength={1000}
-                    placeholder="Add details for the moderation team (optional)."
-                  />
-                  {reportErrors[`post:${post.id}`] && (
-                    <p className="post-report-error" role="alert">
-                      {reportErrors[`post:${post.id}`]}
-                    </p>
-                  )}
-                  <button
-                    className="btn primary"
-                    type="submit"
-                    disabled={Boolean(reportBusy[`post:${post.id}`])}
-                  >
-                    {reportBusy[`post:${post.id}`] ? "Sending…" : "Send report"}
-                  </button>
-                </form>
-              )}
+                  <Icon name="comment" />
+                  <span className="post-action-count">{post.commentCount || 0}</span>
+                </button>
+              </div>
               {expandedComments[post.id] && (
                 <section
+                  id={`comments-${post.id}`}
                   className="post-comments"
                   aria-label={`Comments on ${author}'s post`}
                 >
@@ -798,13 +809,7 @@ export default function PostsScreen({
                                 disabled={reportedTargets.has(
                                   `comment:${item.id}`,
                                 )}
-                                onClick={() =>
-                                  setReportingTarget((current) =>
-                                    current === `comment:${item.id}`
-                                      ? ""
-                                      : `comment:${item.id}`,
-                                  )
-                                }
+                                onClick={() => openReport("comment", item, post.id)}
                               >
                                 {reportedTargets.has(`comment:${item.id}`)
                                   ? "Reported"
@@ -813,55 +818,6 @@ export default function PostsScreen({
                             )}
                           </div>
                           <p>{item.body}</p>
-                          {reportingTarget === `comment:${item.id}` && (
-                            <form
-                              className="post-report-form"
-                              onSubmit={(event) =>
-                                void submitReport("comment", item.id, event)
-                              }
-                            >
-                              <label
-                                htmlFor={`report-comment-reason-${item.id}`}
-                              >
-                                Why are you reporting this comment?
-                              </label>
-                              <select
-                                id={`report-comment-reason-${item.id}`}
-                                name="reason"
-                                defaultValue="other"
-                              >
-                                <option value="spam">Spam</option>
-                                <option value="harassment">Harassment</option>
-                                <option value="inappropriate">
-                                  Inappropriate content
-                                </option>
-                                <option value="hate">Hateful content</option>
-                                <option value="threats">Threats</option>
-                                <option value="other">Other</option>
-                              </select>
-                              <textarea
-                                name="details"
-                                maxLength={1000}
-                                placeholder="Add details for the moderation team (optional)."
-                              />
-                              {reportErrors[`comment:${item.id}`] && (
-                                <p className="post-report-error" role="alert">
-                                  {reportErrors[`comment:${item.id}`]}
-                                </p>
-                              )}
-                              <button
-                                className="btn primary"
-                                type="submit"
-                                disabled={Boolean(
-                                  reportBusy[`comment:${item.id}`],
-                                )}
-                              >
-                                {reportBusy[`comment:${item.id}`]
-                                  ? "Sending…"
-                                  : "Send report"}
-                              </button>
-                            </form>
-                          )}
                         </article>
                       );
                     })}
@@ -882,22 +838,29 @@ export default function PostsScreen({
                     className="post-comment-form"
                     onSubmit={(event) => void submitComment(post, event)}
                   >
-                    <label htmlFor={`comment-${post.id}`}>
+                    <Avatar
+                      name={[profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "You"}
+                      src={profile?.avatar?.url}
+                      size={32}
+                    />
+                    <label className="post-comment-label" htmlFor={`comment-${post.id}`}>
                       Write a comment
                     </label>
                     <textarea
                       id={`comment-${post.id}`}
                       name="body"
+                      rows={1}
                       maxLength={2000}
                       required
-                      placeholder="Share a thoughtful reply…"
+                      placeholder="Add a comment…"
                     />
                     <button
-                      className="btn primary"
+                      className="post-comment-submit"
                       type="submit"
+                      aria-label="Comment"
                       disabled={Boolean(commentBusy[post.id])}
                     >
-                      {commentBusy[post.id] ? "Posting…" : "Comment"}
+                      {commentBusy[post.id] ? "Posting…" : "Post"}
                     </button>
                   </form>
                 </section>
@@ -914,6 +877,66 @@ export default function PostsScreen({
         >
           {loadingMore ? "Loading…" : "Load more posts"}
         </button>
+      )}
+      {reportTarget && (
+        <div className="post-report-modal" role="presentation" onClick={() => setReportTarget(null)}>
+          <section
+            className="post-report-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="post-report-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="post-report-head">
+              <h2 id="post-report-title">Report {reportTarget.type}</h2>
+              <button
+                type="button"
+                className="post-report-close"
+                aria-label="Close report"
+                autoFocus
+                onClick={() => setReportTarget(null)}
+              >
+                ×
+              </button>
+            </header>
+            <p className="post-report-snippet">{reportTarget.content}</p>
+            <form
+              key={reportTarget.key}
+              className="post-report-form"
+              onSubmit={(event) => void submitReport(reportTarget.type, reportTarget.id, event)}
+            >
+              <label htmlFor="post-report-reason">
+                Why are you reporting this {reportTarget.type}?
+              </label>
+              <select id="post-report-reason" name="reason" defaultValue="other">
+                <option value="spam">Spam</option>
+                <option value="harassment">Harassment</option>
+                <option value="inappropriate">Inappropriate content</option>
+                <option value="hate">Hateful content</option>
+                <option value="threats">Threats</option>
+                <option value="other">Other</option>
+              </select>
+              <label htmlFor="post-report-details">More details (optional)</label>
+              <textarea
+                id="post-report-details"
+                name="details"
+                maxLength={1000}
+                placeholder="Add details for the moderation team (optional)."
+              />
+              {reportErrors[reportTarget.key] && (
+                <p className="post-report-error" role="alert">
+                  {reportErrors[reportTarget.key]}
+                </p>
+              )}
+              <div className="post-report-actions">
+                <button className="btn soft" type="button" onClick={() => setReportTarget(null)}>Cancel</button>
+                <button className="btn primary" type="submit" disabled={Boolean(reportBusy[reportTarget.key])}>
+                  {reportBusy[reportTarget.key] ? "Sending…" : "Send report"}
+                </button>
+              </div>
+            </form>
+          </section>
+        </div>
       )}
     </section>
   );

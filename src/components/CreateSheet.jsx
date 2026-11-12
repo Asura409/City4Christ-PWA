@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Icon } from "@/lib/icons";
+import { PassageLookup } from "@/bible/PassageLookup";
+import { formatPassageText } from "@/bible/formatPassageText";
 import { Avatar } from "./Avatar";
 import { useToast } from "./Toast";
 
@@ -12,11 +14,6 @@ const TYPES = [
     placeholder: "What's on your heart? Share with your church…",
     success: "Posted",
   },
-];
-const VERSES = [
-  '"The Lord is my strength and my shield." — Psalm 28:7',
-  '"Be strong and courageous." — Joshua 1:9',
-  '"Cast all your anxiety on him because he cares for you." — 1 Peter 5:7',
 ];
 
 export function CreateSheet({
@@ -32,9 +29,10 @@ export function CreateSheet({
   const [saving, setSaving] = useState(false);
   const [files, setFiles] = useState([]);
   const [uploadStatus, setUploadStatus] = useState("");
-  const [vi, setVi] = useState(0);
+  const [scriptureOpen, setScriptureOpen] = useState(false);
   const taRef = useRef(null);
   const fileRef = useRef(null);
+  const scriptureCloseRef = useRef(null);
 
   useEffect(() => {
     setType(defaultType);
@@ -42,7 +40,28 @@ export function CreateSheet({
   useEffect(() => {
     if (open)
       setTimeout(() => taRef.current?.focus({ preventScroll: true }), 320);
+    else setScriptureOpen(false);
   }, [open]);
+
+  useEffect(() => {
+    if (!scriptureOpen) return undefined;
+    const previous = document.activeElement;
+    const frame = requestAnimationFrame(() => scriptureCloseRef.current?.focus());
+    document.body.classList.add("scripture-picker-open");
+    function onKeyDown(event) {
+      if (event.key === "Escape") {
+        event.stopPropagation();
+        setScriptureOpen(false);
+      }
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.body.classList.remove("scripture-picker-open");
+      document.removeEventListener("keydown", onKeyDown);
+      if (previous instanceof HTMLElement) previous.focus();
+    };
+  }, [scriptureOpen]);
 
   const ct = TYPES.find((t) => t.id === type);
 
@@ -96,11 +115,22 @@ export function CreateSheet({
     setFiles(next);
   }
 
-  function addVerse() {
-    const v = VERSES[vi % VERSES.length];
-    setVi((i) => i + 1);
-    const next = (text.trimEnd() ? text.trimEnd() + "\n\n" : "") + v;
-    setText(next.slice(0, 5000));
+  function addScripture(passage) {
+    const passageText = formatPassageText(passage);
+    const attribution = `— ${passage.reference}${passage.translation?.name ? ` (${passage.translation.name})` : ""}`;
+    const block = `${passageText}\n\n${attribution}`;
+    const base = text.trimEnd();
+    const next = base ? `${base}\n\n${block}` : block;
+    if (next.length > 5000) {
+      toast(
+        "That passage would make your post longer than 5,000 characters. Choose a shorter passage.",
+      );
+      return;
+    }
+    setText(next);
+    setScriptureOpen(false);
+    toast("Scripture added to your post.");
+    setTimeout(() => taRef.current?.focus({ preventScroll: true }), 0);
   }
 
   return (
@@ -211,11 +241,51 @@ export function CreateSheet({
           aria-label="Attach photos, audio, or video"
           onChange={addFiles}
         />
-        <button onClick={addVerse}>
+        <button type="button" onClick={() => setScriptureOpen(true)}>
           <Icon name="book" />
           Add scripture
         </button>
       </div>
+      {scriptureOpen && (
+        <div
+          className="scripture-picker"
+          onClick={() => setScriptureOpen(false)}
+        >
+          <section
+            className="scripture-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="scriptureTitle"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="scripture-head">
+              <div>
+                <p className="scripture-kicker">BIBLE</p>
+                <h2 id="scriptureTitle">Add scripture</h2>
+                <p>Choose a book, chapter and verses to add to your post.</p>
+              </div>
+              <button
+                ref={scriptureCloseRef}
+                className="round"
+                type="button"
+                onClick={() => setScriptureOpen(false)}
+                aria-label="Close scripture picker"
+              >
+                <Icon name="close" />
+              </button>
+            </header>
+            <div className="scripture-body">
+              <PassageLookup
+                embedded
+                autoLookup={false}
+                onUse={addScripture}
+                useLabel="Add to post"
+                useHelp="Choose a passage of no more than 4,000 characters to add to your post."
+              />
+            </div>
+          </section>
+        </div>
+      )}
     </div>
   );
 }

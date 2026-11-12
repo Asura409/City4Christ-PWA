@@ -11,6 +11,8 @@ const MODULES = [
   { label: "Visitors", description: "Follow up with visitors", path: "/visitors", icon: "userplus", permission: "visitors.follow_up" },
   { label: "Account requests", description: "Review deletion requests", path: "/account-deletion-requests", icon: "lock", permission: "accounts.deletion.review" },
   { label: "Content", description: "Manage sermons and devotionals", path: "/admin/sermons", icon: "book", permission: "sermons.manage" },
+  { label: "Communications", description: "Draft and send church announcements", path: "/admin/communications", icon: "chat", permission: "broadcasts.send" },
+  { label: "Prayer reports", description: "Review reported prayer requests", path: "/admin/prayer-reports", icon: "flame", permission: "prayer.moderate" },
   { label: "Events", description: "Create and publish church events", path: "/admin/events", icon: "cal", permission: "events.manage" },
   { label: "Pastor profiles", description: "Create and manage pastor directory profiles", path: "/pastors", icon: "users", permission: "roles.privileged.manage" },
 ];

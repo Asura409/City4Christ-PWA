@@ -2,7 +2,14 @@ import React, { useEffect, useRef } from "react";
 import { useBibleLookup } from "./useBibleLookup";
 import { PassageView } from "./PassageView";
 import "./bible.css";
-export function PassageLookup({ onUse, autoUse = false, embedded = false, ...initial }) {
+export function PassageLookup({
+  onUse,
+  autoUse = false,
+  embedded = false,
+  useLabel,
+  useHelp,
+  ...initial
+}) {
   const s = useBibleLookup(initial);
   const imported = useRef("");
   useEffect(() => {
@@ -51,7 +58,13 @@ export function PassageLookup({ onUse, autoUse = false, embedded = false, ...ini
         </button>
       )}
       {s.passage && (
-        <PassageView passage={s.passage} onChapter={s.search} onUse={onUse} />
+        <PassageView
+          passage={s.passage}
+          onChapter={s.search}
+          onUse={onUse}
+          useLabel={useLabel}
+          useHelp={useHelp}
+        />
       )}
     </section>
   );

@@ -212,6 +212,9 @@
 /* Availability picker */
 .pastoral-picker { padding: 18px; }
 .pastoral-picker-head { margin-bottom: 12px; }
+.pastoral-picker-person { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pastoral-picker-person > .av { flex: none; }
+.pastoral-picker-person h2 { margin: 4px 0 0; }
 .pastoral-picker-head h2 { margin: 4px 0 6px; color: #2d1c37; font-family: var(--serif); font-size: 19px; line-height: 1.2; }
 .pastoral-picker-head p:not(.pastoral-eyebrow) { margin: 0; color: #8a7a95; font-size: 11px; line-height: 1.5; }
 .pastoral-datechips { display: flex; gap: 7px; overflow-x: auto; padding: 2px 0 8px; scrollbar-width: none; }
@@ -408,6 +411,9 @@
 
 .pastor-dashboard-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 24px; }
 .pastor-dashboard-header h1 { margin: 5px 0 7px; color: #3b165d; font-family: var(--serif); font-size: clamp(27px, 3.4vw, 40px); line-height: 1.08; }
+.pastor-dashboard-greeting { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.pastor-dashboard-greeting > .av { flex: none; }
+.pastor-dashboard-greeting h1 { margin: 0; }
 .pastor-dashboard-header p:not(.pastoral-eyebrow) { margin: 0; color: #806d8d; font-size: 12.5px; line-height: 1.5; }
 .pastor-dashboard-header-actions { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 10px; }
 .pastor-live-chip {
@@ -646,13 +652,25 @@
   .pastoral-member-table th:last-child, .pastoral-member-table td:last-child { width: 56px; }
   .pastoral-member-identity { gap: 6px; font-size: 12px; }
 
-  .pastoral-member-table, .pastoral-member-table thead, .pastoral-member-table tbody,
-  .pastoral-member-table tr, .pastoral-member-table td, .pastoral-member-table th { display: block; width: 100%; }
+  .pastoral-member-table { display: block; width: 100%; }
   .pastoral-member-table thead { display: none; }
-  .pastoral-member-table tr { margin-bottom: 8px; padding: 4px 10px; border: 1px solid #eadff0; border-radius: 13px; background: #fff; }
+  .pastoral-member-table tbody { display: block; width: 100%; }
+  .pastoral-member-table tr {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 4px 10px;
+    border: 1px solid #eadff0;
+    border-radius: 13px;
+    background: #fff;
+  }
   .pastoral-member-table tr.is-selected { border-color: #c9a3e3; background: #fbf6ff; }
-  .pastoral-member-table td { padding: 6px 0; border: 0; }
-  .pastoral-member-table td:last-child { width: auto; text-align: left; }
+  .pastoral-member-table td { display: block; width: auto; padding: 6px 0; border: 0; }
+  .pastoral-member-table td:first-child { flex: 1; min-width: 0; }
+  .pastoral-member-table td:last-child { flex: none; width: auto; text-align: center; }
   .pastoral-slot-row { flex-wrap: wrap; }
   .pastoral-slot-row .pastoral-slot-copy { flex: 1 1 100%; }
 }

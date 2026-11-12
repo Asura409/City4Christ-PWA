@@ -1,6 +1,12 @@
 import React from "react";
 import { safeUrl } from "../lib/sanitize.js";
-export function PassageView({ passage, onChapter, onUse }) {
+export function PassageView({
+  passage,
+  onChapter,
+  onUse,
+  useLabel = "Use passage in editor",
+  useHelp = "Choose an importable passage of no more than 4,000 characters for Daily Bread.",
+}) {
   const verses = Array.isArray(passage.verses) ? passage.verses : [],
     first = verses[0],
     canUse =
@@ -50,16 +56,11 @@ export function PassageView({ passage, onChapter, onUse }) {
             disabled={!canUse}
             onClick={() => onUse(passage)}
           >
-            Use passage in editor
+            {useLabel}
           </button>
         )}
       </div>
-      {onUse && !canUse && (
-        <p>
-          Choose an importable passage of no more than 4,000 characters for
-          Daily Bread.
-        </p>
-      )}
+      {onUse && !canUse && <p>{useHelp}</p>}
     </section>
   );
 }

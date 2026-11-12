@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { Avatar } from "@/components/Avatar";
 import { TimedMessage } from "@/components/TimedMessage";
 import { nextMonthRange, requestAppointment } from "./api";
 import { usePastoralList, ListState } from "./usePastoralList";
@@ -101,8 +102,13 @@ export function AvailabilityPicker({ pastor, revision, onChange, onRequested }) 
   return (
     <section className="auth-card pastoral-picker" aria-label="Available appointments">
       <div className="pastoral-picker-head">
-        <p className="pastoral-eyebrow">CHOOSE A TIME</p>
-        <h2>Availability for {pastor.firstName} {pastor.lastName}</h2>
+        <div className="pastoral-picker-person">
+          <Avatar name={`${pastor.firstName} ${pastor.lastName}`} src={pastor.avatar?.url} size={46} />
+          <div>
+            <p className="pastoral-eyebrow">CHOOSE A TIME</p>
+            <h2>Availability for {pastor.firstName} {pastor.lastName}</h2>
+          </div>
+        </div>
         <p>Next 30 days. Times are shown in the pastor’s time zone. A request holds its slot until the pastor reviews it.</p>
       </div>
       <TimedMessage message={message} />

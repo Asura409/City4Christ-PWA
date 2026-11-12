@@ -1,5 +1,5 @@
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { UK_TIME_ZONE } from "../../js/time.js";
-import React, { useCallback, useEffect, useState } from "react";
 import { TimedMessage } from "@/components/TimedMessage";
 import { useSession } from "@/auth/session";
 import { Avatar } from "@/components/Avatar";
@@ -8,14 +8,14 @@ import {
   acknowledgePrayer,
   createPrayerEncouragement,
   createPrayerRequest,
-  getPrayerModerationAccess,
-  listPrayerReports,
   listPrayerEncouragements,
   listPrayerRequests,
   reportPrayerRequest,
-  reviewPrayerReport,
   updatePrayerStatus,
 } from "@/prayer/api";
+import { PrayerComposer } from "@/prayer/PrayerComposer";
+import { PrayerSheet } from "@/prayer/PrayerSheet";
+import "@/prayer/prayer.css";
 
 function dateLabel(value) {
   const date = new Date(value);
@@ -29,9 +29,23 @@ function visibilityLabel(visibility) {
   return "Church community";
 }
 
+function expiryLabel(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "medium" }).format(date);
+}
+
+const AUDIENCES = [
+  ["all", "All"],
+  ["church", "Church"],
+  ["groups", "My groups"],
+  ["mine", "Mine"],
+];
+
 export default function PrayerScreen() {
   const { profile } = useSession();
   const [status, setStatus] = useState("open");
+  const [audience, setAudience] = useState("all");
   const [requests, setRequests] = useState([]);
   const [cursor, setCursor] = useState("");
   const [loading, setLoading] = useState(true);
@@ -46,59 +60,20 @@ export default function PrayerScreen() {
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupsError, setGroupsError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [composeOpen, setComposeOpen] = useState(false);
   const [pendingIds, setPendingIds] = useState(() => new Set());
-  const [moderationAllowed, setModerationAllowed] = useState(false);
-  const [moderationUnavailable, setModerationUnavailable] = useState(false);
-  const [view, setView] = useState("requests");
-  const [reports, setReports] = useState([]);
-  const [reportsLoading, setReportsLoading] = useState(false);
-  const [reportingId, setReportingId] = useState("");
+  const [encouraging, setEncouraging] = useState(null);
+  const [encouragements, setEncouragements] = useState({});
+  const [encouragementDraft, setEncouragementDraft] = useState("");
+  const [encouragementLoading, setEncouragementLoading] = useState(false);
+  const [encouragementBusy, setEncouragementBusy] = useState(false);
+  const [encouragementError, setEncouragementError] = useState("");
+  const [reporting, setReporting] = useState(null);
   const [reportReason, setReportReason] = useState("safety");
   const [reportDetails, setReportDetails] = useState("");
+  const [reportBusy, setReportBusy] = useState(false);
+  const [reportError, setReportError] = useState("");
   const [reportedIds, setReportedIds] = useState(() => new Set());
-  const [moderationReason, setModerationReason] = useState("");
-  const [encouragements, setEncouragements] = useState({});
-  const [encouragementsOpen, setEncouragementsOpen] = useState(() => new Set());
-  const [encouragementDrafts, setEncouragementDrafts] = useState({});
-  const [encouragementLoading, setEncouragementLoading] = useState(() => new Set());
-
-  async function toggleEncouragements(item) {
-    const isOpen = encouragementsOpen.has(item.id);
-    if (isOpen) {
-      setEncouragementsOpen((current) => { const next = new Set(current); next.delete(item.id); return next; });
-      return;
-    }
-    setEncouragementsOpen((current) => new Set(current).add(item.id));
-    if (Object.hasOwn(encouragements, item.id)) return;
-    setEncouragementLoading((current) => new Set(current).add(item.id));
-    try {
-      const items = await listPrayerEncouragements(item.id);
-      setEncouragements((current) => ({ ...current, [item.id]: items }));
-    } catch (err) {
-      setError(err.message || "Could not load prayer encouragements.");
-      setEncouragementsOpen((current) => { const next = new Set(current); next.delete(item.id); return next; });
-    } finally {
-      setEncouragementLoading((current) => { const next = new Set(current); next.delete(item.id); return next; });
-    }
-  }
-
-  async function submitEncouragement(event, item) {
-    event.preventDefault();
-    const draft = (encouragementDrafts[item.id] || "").trim();
-    if (!draft || pendingIds.has(item.id)) return;
-    setPendingIds((current) => new Set(current).add(item.id));
-    setError("");
-    try {
-      const created = await createPrayerEncouragement(item.id, draft);
-      setEncouragements((current) => ({ ...current, [item.id]: [...(current[item.id] || []), created] }));
-      setEncouragementDrafts((current) => ({ ...current, [item.id]: "" }));
-      setNotice("Your encouragement was shared.");
-    } catch (err) {
-      setError(err.message || "Could not share this encouragement.");
-    } finally {
-      setPendingIds((current) => { const next = new Set(current); next.delete(item.id); return next; });
-    }
-  }
 
   const load = useCallback(async (nextCursor = "", signal) => {
     try {
@@ -119,66 +94,11 @@ export default function PrayerScreen() {
   useEffect(() => {
     setRequests([]);
     setCursor("");
+    setAudience("all");
     const controller = new AbortController();
     void load("", controller.signal);
     return () => controller.abort();
   }, [load]);
-
-  useEffect(() => {
-    let current = true;
-    getPrayerModerationAccess()
-      .then((access) => {
-        if (current) setModerationAllowed((access.capabilities || []).some((capability) => capability.permission === "prayer.moderate"));
-      })
-      .catch(() => { if (current) setModerationUnavailable(true); });
-    return () => { current = false; };
-  }, []);
-
-  async function loadReports() {
-    setReportsLoading(true);
-    setError("");
-    try {
-      setReports(await listPrayerReports());
-      setView("reports");
-    } catch (err) {
-      setError(err.message || "Could not load prayer reports.");
-    } finally {
-      setReportsLoading(false);
-    }
-  }
-
-  async function submitReport(item) {
-    if (pendingIds.has(item.id)) return;
-    setPendingIds((current) => new Set(current).add(item.id));
-    setError("");
-    try {
-      await reportPrayerRequest(item.id, { reason: reportReason, ...(reportDetails.trim() ? { details: reportDetails.trim() } : {}) });
-      setReportedIds((current) => new Set(current).add(item.id));
-      setReportingId("");
-      setReportDetails("");
-    } catch (err) {
-      setError(err.message || "Could not send this report.");
-    } finally {
-      setPendingIds((current) => { const next = new Set(current); next.delete(item.id); return next; });
-    }
-  }
-
-  async function reviewReport(report, decision) {
-    if (pendingIds.has(report.id)) return;
-    setPendingIds((current) => new Set(current).add(report.id));
-    setError("");
-    setNotice("");
-    try {
-      await reviewPrayerReport(report.id, decision, moderationReason.trim());
-      setNotice(decision === "hide" ? "Request hidden from the prayer wall." : "Report dismissed.");
-      setModerationReason("");
-      setReports((current) => current.filter((item) => item.id !== report.id));
-    } catch (err) {
-      setError(err.message || "Could not review this report.");
-    } finally {
-      setPendingIds((current) => { const next = new Set(current); next.delete(report.id); return next; });
-    }
-  }
 
   useEffect(() => {
     if (visibility !== "group") return undefined;
@@ -198,10 +118,20 @@ export default function PrayerScreen() {
     return () => { current = false; };
   }, [visibility]);
 
+  const visible = useMemo(() => requests.filter((item) => {
+    if (audience === "church") return item.visibility === "community";
+    if (audience === "groups") return item.visibility === "group";
+    if (audience === "mine") return item.isOwner;
+    return true;
+  }), [requests, audience]);
+
+  const accountName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "You";
+  const accountAvatar = profile?.avatar?.url || "";
+
   async function submit(event) {
     event.preventDefault();
     const cleanBody = body.trim();
-    if (!cleanBody || submitting || (visibility === "group" && (!groupId || groupsLoading))) return;
+    if (!cleanBody || submitting) return;
     setSubmitting(true);
     setError("");
     setNotice("");
@@ -211,6 +141,8 @@ export default function PrayerScreen() {
       await createPrayerRequest(input);
       setBody("");
       setAnonymous(false);
+      setGroupId("");
+      setComposeOpen(false);
       setNotice("Your prayer request was shared.");
       if (status !== "open") setStatus("open");
       else await load();
@@ -261,141 +193,261 @@ export default function PrayerScreen() {
     }
   }
 
-  const groupUnavailable = visibility === "group" && (!groupId || groupsLoading || groups.length === 0);
-  const accountName = [profile?.firstName, profile?.lastName].filter(Boolean).join(" ") || "You";
-  const accountAvatar = profile?.avatar?.url || "";
+  async function openEncouragements(item) {
+    setEncouraging(item);
+    setEncouragementDraft("");
+    setEncouragementError("");
+    if (Object.hasOwn(encouragements, item.id)) return;
+    setEncouragementLoading(true);
+    try {
+      const notes = await listPrayerEncouragements(item.id);
+      setEncouragements((current) => ({ ...current, [item.id]: notes }));
+    } catch (err) {
+      setEncouragementError(err.message || "Could not load encouragements.");
+    } finally {
+      setEncouragementLoading(false);
+    }
+  }
+
+  async function submitEncouragement(event) {
+    event.preventDefault();
+    const draft = encouragementDraft.trim();
+    if (!draft || !encouraging || encouragementBusy) return;
+    setEncouragementBusy(true);
+    setEncouragementError("");
+    try {
+      const created = await createPrayerEncouragement(encouraging.id, draft);
+      setEncouragements((current) => ({ ...current, [encouraging.id]: [...(current[encouraging.id] || []), created] }));
+      setEncouragementDraft("");
+      setNotice("Your encouragement was shared.");
+    } catch (err) {
+      setEncouragementError(err.message || "Could not share this encouragement.");
+    } finally {
+      setEncouragementBusy(false);
+    }
+  }
+
+  function openReport(item) {
+    setReporting(item);
+    setReportReason("safety");
+    setReportDetails("");
+    setReportError("");
+  }
+
+  async function submitReport(event) {
+    event.preventDefault();
+    if (!reporting || reportBusy) return;
+    setReportBusy(true);
+    setReportError("");
+    setError("");
+    try {
+      await reportPrayerRequest(reporting.id, { reason: reportReason, ...(reportDetails.trim() ? { details: reportDetails.trim() } : {}) });
+      setReportedIds((current) => new Set(current).add(reporting.id));
+      setReporting(null);
+      setNotice("Report submitted for review.");
+    } catch (err) {
+      setReportError(err.message || "Could not send this report.");
+    } finally {
+      setReportBusy(false);
+    }
+  }
+
+  function closeMenu(event) {
+    event.currentTarget.closest("details")?.removeAttribute("open");
+  }
+
+  const notesForSelected = encouraging ? encouragements[encouraging.id] : null;
 
   return (
-    <section className="screen active prayer-screen" aria-label="Prayer wall">
-      <header className="prayer-heading">
-        <p className="group-eyebrow">PRAYER COMMUNITY</p>
-        <h1>Prayer wall</h1>
-        <p className="lead">Share a request, encourage one another, and let your church know when it has been answered.</p>
-      </header>
+    <section className="screen active prayer-v2-screen" aria-label="Prayer wall">
+      <div className="prayer-v2-layout">
+        <main className="prayer-v2-main">
+          <header className="prayer-v2-head">
+            <div>
+              <p className="prayer-v2-eyebrow">PRAYER COMMUNITY</p>
+              <h1>Prayer wall</h1>
+              <p>Come together in prayer. Share a request or quietly pray for someone.</p>
+            </div>
+          </header>
 
-      <form className="prayer-compose" aria-label="Share a prayer request" onSubmit={submit}>
-        <div className="prayer-compose-heading">
-          <Avatar name={anonymous ? "Anonymous member" : accountName} src={anonymous ? "" : accountAvatar} size={44} />
-          <div>
-            <h2>Share a prayer request</h2>
-            <p>{anonymous ? "Your name and photo will be hidden" : `Sharing as ${accountName}`}</p>
+          <button className="prayer-v2-share-mobile" type="button" onClick={() => setComposeOpen(true)}>
+            <span aria-hidden="true">＋</span> Share a prayer
+          </button>
+
+          <div className="prayer-v2-tabs" role="tablist" aria-label="Prayer wall views">
+            <button className="prayer-v2-tab" role="tab" aria-selected={status === "open"} onClick={() => setStatus("open")}>Open</button>
+            <button className="prayer-v2-tab" role="tab" aria-selected={status === "answered"} onClick={() => setStatus("answered")}>Answered</button>
           </div>
-        </div>
-        <label htmlFor="prayer-body">Your request</label>
-        <textarea
-          id="prayer-body"
-          aria-label="Prayer request"
-          value={body}
-          onChange={(event) => setBody(event.target.value)}
-          maxLength={3000}
-          required
-          placeholder="What would you like us to pray about?"
-        />
-        <label htmlFor="prayer-visibility">Who can see this request?</label>
-        <select id="prayer-visibility" value={visibility} onChange={(event) => { setVisibility(event.target.value); setGroupId(""); }}>
-          <option value="community">Church community</option>
-          <option value="group">One of my groups</option>
-          <option value="private">Only me</option>
-        </select>
-        {visibility === "group" && (
-          <div className="prayer-group-choice">
-            {groupsLoading ? <p role="status">Loading your active groups…</p> : groupsError ? <p className="prayer-inline-error" role="alert">{groupsError}</p> : groups.length === 0 ? <p className="prayer-help">You need to be an active member of a group to share a group request.</p> : (
-              <>
-                <label htmlFor="prayer-group">Group</label>
-                <select id="prayer-group" value={groupId} onChange={(event) => setGroupId(event.target.value)}>
-                  <option value="">Choose a group</option>
-                  {groups.map((group) => <option key={group.id} value={group.id}>{group.name}</option>)}
-                </select>
-              </>
-            )}
+
+          <div className="prayer-v2-chips" aria-label="Prayer audiences">
+            {AUDIENCES.map(([id, label]) => (
+              <button type="button" key={id} className={`prayer-v2-chip${audience === id ? " is-active" : ""}`} onClick={() => setAudience(id)}>
+                {label}
+              </button>
+            ))}
           </div>
-        )}
-        <label className="prayer-anonymous">
-          <input type="checkbox" checked={anonymous} onChange={(event) => setAnonymous(event.target.checked)} />
-          <span><b>Post anonymously</b><small>Your identity stays hidden from other members. You can still manage your request.</small></span>
-        </label>
-        <button className="btn gold block" type="submit" disabled={submitting || !body.trim() || groupUnavailable}>
-          {submitting ? "Sharing…" : "Submit request"}
-        </button>
-      </form>
 
-      <TimedMessage message={notice} className="prayer-notice" />
-      {error && <div className="prayer-error" role="alert"><span>{error}</span><button className="btn soft" onClick={() => void load()} type="button">Try again</button></div>}
+          <TimedMessage message={notice} />
+          {error && <TimedMessage tone="error" message={error} />}
 
-      <div className="tabs prayer-tabs" role="tablist" aria-label="Prayer wall views">
-        <button className="tab" role="tab" aria-selected={view === "requests"} onClick={() => { setView("requests"); void load(); }}>Requests</button>
-        {view === "requests" && <>
-          <button className="tab" role="tab" aria-selected={status === "open"} onClick={() => setStatus("open")}>Open</button>
-          <button className="tab" role="tab" aria-selected={status === "answered"} onClick={() => setStatus("answered")}>Answered</button>
-        </>}
-        {moderationAllowed && <button className="tab" role="tab" aria-selected={view === "reports"} onClick={() => void loadReports()}>Moderation reports</button>}
+          {loading ? (
+            <p className="prayer-v2-state" role="status">Loading prayer requests…</p>
+          ) : requests.length === 0 ? (
+            <div className="prayer-v2-empty">
+              <span className="prayer-v2-empty-icon" aria-hidden="true">♡</span>
+              <h2>{status === "answered" ? "No answered prayers yet." : "No prayers yet."}</h2>
+              <p>{status === "answered" ? "Prayers marked answered will gather here." : "Be the first to share a request with the church."}</p>
+              {status === "open" && <button type="button" className="btn gold" onClick={() => setComposeOpen(true)}>Share a prayer</button>}
+            </div>
+          ) : visible.length === 0 ? (
+            <div className="prayer-v2-empty">
+              <span className="prayer-v2-empty-icon" aria-hidden="true">♡</span>
+              <h2>No prayers in this filter.</h2>
+              <p>Try another audience or show all requests.</p>
+              <button type="button" className="btn soft" onClick={() => setAudience("all")}>Show all</button>
+            </div>
+          ) : (
+            <div className="prayer-v2-feed">
+              {visible.map((item) => {
+                const busy = pendingIds.has(item.id);
+                const noteCount = encouragements[item.id]?.length;
+                const hasMenu = item.isOwner || (item.visibility !== "private" && !reportedIds.has(item.id));
+                return (
+                  <article className="prayer-v2-card" key={item.id}>
+                    <div className="prayer-v2-card-head">
+                      <Avatar name={item.author || "Church member"} src={item.isOwner ? accountAvatar : item.authorAvatar?.url} size={38} />
+                      <div className="prayer-v2-who">
+                        <strong>{item.author || "Church member"}</strong>
+                        <span>{dateLabel(item.createdAt)} · {visibilityLabel(item.visibility)}</span>
+                      </div>
+                      {item.status === "answered" && <span className="prayer-v2-answered">Answered</span>}
+                    </div>
+                    <p className="prayer-v2-body">{item.body}</p>
+                    <div className="prayer-v2-actions">
+                      <button
+                        className={`prayer-v2-pray${item.hasPrayed ? " is-done" : ""}`}
+                        type="button"
+                        aria-pressed={item.hasPrayed}
+                        disabled={item.hasPrayed || busy}
+                        onClick={() => void acknowledge(item)}
+                      >
+                        {item.hasPrayed ? "You prayed" : "I prayed"} · {item.prayerCount}
+                      </button>
+                      <button className="prayer-v2-soft" type="button" onClick={() => void openEncouragements(item)}>
+                        Encourage{noteCount ? ` · ${noteCount}` : ""}
+                      </button>
+                      {hasMenu && (
+                        <details className="prayer-v2-more">
+                          <summary aria-label="More actions">⋯</summary>
+                          <div className="prayer-v2-menu">
+                            {item.isOwner && item.status === "open" && (
+                              <button type="button" disabled={busy} onClick={(event) => { closeMenu(event); void changeStatus(item, "answered"); }}>Mark answered</button>
+                            )}
+                            {item.isOwner && (
+                              <button type="button" disabled={busy} onClick={(event) => { closeMenu(event); void changeStatus(item, "archived"); }}>Archive</button>
+                            )}
+                            {!item.isOwner && item.visibility !== "private" && !reportedIds.has(item.id) && (
+                              <button type="button" disabled={busy} onClick={(event) => { closeMenu(event); openReport(item); }}>Report request</button>
+                            )}
+                            <small>Expires {expiryLabel(item.expiresAt)}</small>
+                          </div>
+                        </details>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          {!loading && cursor && <button className="btn soft prayer-v2-load-more" disabled={loadingMore} onClick={() => void load(cursor)}>{loadingMore ? "Loading…" : "Load more prayers"}</button>}
+        </main>
+
+        <aside className="prayer-v2-rail" aria-label="Share a prayer">
+          <section className="prayer-v2-rail-card">
+            <p className="prayer-v2-eyebrow">SHARE A REQUEST</p>
+            <h2>Share a prayer</h2>
+            <p className="prayer-v2-rail-copy">You can post to the church, one of your groups, or only yourself.</p>
+            <PrayerComposer
+              idPrefix="rail"
+              compact
+              body={body} setBody={setBody}
+              visibility={visibility} setVisibility={setVisibility}
+              groupId={groupId} setGroupId={setGroupId}
+              groups={groups} groupsLoading={groupsLoading} groupsError={groupsError}
+              anonymous={anonymous} setAnonymous={setAnonymous}
+              submitting={submitting}
+              onSubmit={submit}
+            />
+          </section>
+          <section className="prayer-v2-guide">
+            <h3>A gentle guide</h3>
+            <p>Keep requests specific and kind. Avoid sharing another person’s private details without permission.</p>
+          </section>
+        </aside>
       </div>
 
-      {view === "requests" && loading && <p className="prayer-state" role="status">Loading prayer requests…</p>}
-      {view === "requests" && !loading && !error && requests.length === 0 && <div className="empty">{status === "answered" ? "No answered requests to show." : "No prayer requests yet. Share the first one."}</div>}
-      {view === "requests" && <div className="prayer-feed">
-        {requests.map((item) => {
-          const busy = pendingIds.has(item.id);
-          return (
-            <article className="card prayer-card" key={item.id}>
-              <div className="prayer-card-heading">
-                <div className="who">
-                  <Avatar name={item.author || "Church member"} src={item.isOwner ? accountAvatar : item.authorAvatar?.url} size={42} />
-                  <div><b>{item.author || "Church member"}</b><span>{dateLabel(item.createdAt)} · {visibilityLabel(item.visibility)}</span><small>Expires {new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "medium" }).format(new Date(item.expiresAt))}</small></div>
-                </div>
-                {item.status === "answered" && <span className="prayer-answered">Answered</span>}
+      <PrayerSheet open={composeOpen} title="Share a prayer" onClose={() => setComposeOpen(false)}>
+        <PrayerComposer
+          idPrefix="sheet"
+          body={body} setBody={setBody}
+          visibility={visibility} setVisibility={setVisibility}
+          groupId={groupId} setGroupId={setGroupId}
+          groups={groups} groupsLoading={groupsLoading} groupsError={groupsError}
+          anonymous={anonymous} setAnonymous={setAnonymous}
+          submitting={submitting}
+          onSubmit={submit}
+        />
+      </PrayerSheet>
+
+      <PrayerSheet open={Boolean(encouraging)} title="Encouragements" onClose={() => setEncouraging(null)}>
+        {encouraging && (
+          <>
+            <p className="prayer-v2-sheet-label">For {encouraging.isOwner ? "your request" : `${encouraging.author || "this request"}`}</p>
+            <p className="prayer-v2-quoted">{encouraging.body}</p>
+            {encouragementLoading ? (
+              <p role="status">Loading encouragements…</p>
+            ) : encouragementError ? (
+              <p role="alert">{encouragementError}</p>
+            ) : notesForSelected?.length ? (
+              <div className="prayer-v2-notes">
+                {notesForSelected.map((note) => (
+                  <div className="prayer-v2-note" key={note.id}>
+                    <span className="prayer-v2-note-avatar" aria-hidden="true">{note.author?.[0] || "C"}</span>
+                    <div><strong>{note.author || "Church member"}</strong><p>{note.body}</p><small>{dateLabel(note.createdAt)}</small></div>
+                  </div>
+                ))}
               </div>
-              <p className="prayer-body">{item.body}</p>
-              <div className="prayer-actions">
-                <button className="btn soft" type="button" aria-pressed={item.hasPrayed} disabled={item.hasPrayed || busy} onClick={() => void acknowledge(item)}>
-                  {item.hasPrayed ? "You prayed" : "I prayed for this"} · {item.prayerCount}
-                </button>
-                {item.isOwner && item.status === "open" && <button className="btn soft" type="button" disabled={busy} onClick={() => void changeStatus(item, "answered")}>Mark answered</button>}
-                {item.isOwner && <button className="prayer-archive" type="button" disabled={busy} onClick={() => void changeStatus(item, "archived")}>Archive</button>}
-                {!item.isOwner && item.visibility !== "private" && !reportedIds.has(item.id) && <button className="prayer-archive" type="button" disabled={busy} onClick={() => { setReportingId(reportingId === item.id ? "" : item.id); setReportReason("safety"); }}>Report request</button>}
-              </div>
-              <div className="prayer-encouragements">
-                <button className="prayer-archive" type="button" aria-expanded={encouragementsOpen.has(item.id)} onClick={() => void toggleEncouragements(item)}>
-                  {encouragementsOpen.has(item.id) ? "Hide encouragements" : "Encourage"}
-                </button>
-                {encouragementsOpen.has(item.id) && <div className="prayer-encouragement-panel">
-                  {encouragementLoading.has(item.id) && <p role="status">Loading encouragements…</p>}
-                  {!encouragementLoading.has(item.id) && (encouragements[item.id] || []).length === 0 && <p className="prayer-help">Be the first to share a kind word.</p>}
-                  {(encouragements[item.id] || []).map((reply) => <div className="prayer-encouragement" key={reply.id}><b>{reply.author || "Church member"}</b><p>{reply.body}</p><small>{dateLabel(reply.createdAt)}</small></div>)}
-                  <form aria-label="Share encouragement" onSubmit={(event) => void submitEncouragement(event, item)}>
-                    <label htmlFor={`encouragement-${item.id}`}>Your encouragement</label>
-                    <textarea id={`encouragement-${item.id}`} maxLength={1000} value={encouragementDrafts[item.id] || ""} onChange={(event) => setEncouragementDrafts((current) => ({ ...current, [item.id]: event.target.value }))} />
-                    <button className="btn soft" type="submit" disabled={busy || !(encouragementDrafts[item.id] || "").trim()}>Share encouragement</button>
-                  </form>
-                </div>}
-              </div>
-              {reportingId === item.id && <form className="prayer-report-form" aria-label="Report prayer request" onSubmit={(event) => { event.preventDefault(); void submitReport(item); }}>
-                <label htmlFor={`report-reason-${item.id}`}>Reason for report</label>
-                <select id={`report-reason-${item.id}`} value={reportReason} onChange={(event) => setReportReason(event.target.value)}><option value="safety">Safety concern</option><option value="spam">Spam</option><option value="inappropriate">Inappropriate content</option><option value="other">Other</option></select>
-                <label htmlFor={`report-details-${item.id}`}>More detail (optional)</label>
-                <textarea id={`report-details-${item.id}`} maxLength={1000} value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} />
-                <button className="btn soft" type="submit" disabled={busy}>Submit report</button>
-              </form>}
-              {reportedIds.has(item.id) && <TimedMessage message="Report submitted for review." className="prayer-notice" />}
-            </article>
-          );
-        })}
-      </div>}
-      {view === "requests" && !loading && cursor && <button className="btn soft prayer-more" disabled={loadingMore} onClick={() => void load(cursor)}>{loadingMore ? "Loading…" : "Load more prayers"}</button>}
-      {view === "reports" && <section className="prayer-moderation" aria-label="Prayer moderation reports">
-        <h2>Prayer reports</h2>
-        {moderationUnavailable && <p role="alert">Could not verify moderation access.</p>}
-        {reportsLoading && <p role="status">Loading prayer reports…</p>}
-        {!reportsLoading && reports.length === 0 && <div className="empty">No pending reports in your moderation scope.</div>}
-        {reports.map((report) => <article className="card prayer-card" key={report.id}>
-          <p className="group-eyebrow">{report.requestVisibility === "group" ? "GROUP REQUEST" : "CHURCH COMMUNITY"} · {report.reason}</p>
-          <p className="prayer-body">{report.requestBody}</p>
-          {report.details && <p className="prayer-help">Report detail: {report.details}</p>}
-          <label htmlFor={`moderation-reason-${report.id}`}>Moderation reason</label>
-          <textarea id={`moderation-reason-${report.id}`} maxLength={500} value={moderationReason} onChange={(event) => setModerationReason(event.target.value)} />
-          <div className="prayer-actions"><button className="btn soft" disabled={pendingIds.has(report.id) || moderationReason.trim().length < 3} onClick={() => void reviewReport(report, "hide")}>Hide request</button><button className="prayer-archive" disabled={pendingIds.has(report.id) || moderationReason.trim().length < 3} onClick={() => void reviewReport(report, "dismiss")}>Dismiss report</button></div>
-        </article>)}
-      </section>}
+            ) : (
+              <p className="prayer-v2-help">Be the first to share a kind word.</p>
+            )}
+            <form className="prayer-v2-note-form" aria-label="Share encouragement" onSubmit={submitEncouragement}>
+              <label htmlFor="prayer-encouragement">Your encouragement</label>
+              <textarea id="prayer-encouragement" maxLength={1000} value={encouragementDraft} onChange={(event) => setEncouragementDraft(event.target.value)} />
+              <button className="btn soft" type="submit" disabled={encouragementBusy || !encouragementDraft.trim()}>Share encouragement</button>
+            </form>
+          </>
+        )}
+      </PrayerSheet>
+
+      <PrayerSheet open={Boolean(reporting)} title="Report prayer request" onClose={() => setReporting(null)}>
+        {reporting && (
+          <form className="prayer-v2-report-form" aria-label="Report prayer request" onSubmit={submitReport}>
+            <p className="prayer-v2-quoted">{reporting.body}</p>
+            <label htmlFor="prayer-report-reason">Reason for report</label>
+            <select id="prayer-report-reason" value={reportReason} onChange={(event) => setReportReason(event.target.value)}>
+              <option value="safety">Safety concern</option>
+              <option value="spam">Spam</option>
+              <option value="inappropriate">Inappropriate content</option>
+              <option value="other">Other</option>
+            </select>
+            <label htmlFor="prayer-report-details">More detail (optional)</label>
+            <textarea id="prayer-report-details" maxLength={1000} value={reportDetails} onChange={(event) => setReportDetails(event.target.value)} />
+            {reportError && <p role="alert">{reportError}</p>}
+            <button className="btn soft" type="submit" disabled={reportBusy}>Submit report</button>
+          </form>
+        )}
+      </PrayerSheet>
     </section>
   );
 }

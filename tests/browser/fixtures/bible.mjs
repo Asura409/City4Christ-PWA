@@ -32,11 +32,11 @@ export const TRANSLATIONS = [
 ];
 export async function bibleMock(
   page,
-  { daily = false, editor = false, available = false } = {},
+  { daily = false, editor = false, available = false, signedIn = false } = {},
 ) {
   const state = daily
     ? await dailyVerseMock(page, { editor, available })
-    : await mocked(page, { signedIn: false });
+    : await mocked(page, { signedIn });
   const requests = [];
   await page.route("**/api/v1/bible/**", (route) => {
     const u = new URL(route.request().url());

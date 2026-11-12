@@ -31,24 +31,45 @@ async function settings(page, { staff = false, push = false } = {}) {
   });
   return { saved: () => saved, all: () => all };
 }
+test("notification settings fit a 320px phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await settings(page);
+  await page.goto("/#/notifications/settings");
+  await expect(page.getByRole("form", { name: "Notification preferences" })).toBeVisible();
+  const overflow = await page.evaluate(() =>
+    Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) > window.innerWidth + 1,
+  );
+  expect(overflow).toBe(false);
+});
+test("staff communications fit a 320px phone", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await settings(page, { staff: true });
+  await page.goto("/#/admin/communications");
+  await expect(page.getByRole("form", { name: "Broadcast draft" })).toBeVisible();
+  const overflow = await page.evaluate(() =>
+    Math.max(document.documentElement.scrollWidth, document.body.scrollWidth) > window.innerWidth + 1,
+  );
+  expect(overflow).toBe(false);
+});
 test("member saves push categories and marks the inbox read without enabling device permission", async ({
   page,
 }) => {
   const state = await settings(page);
-  await page.goto("/#/notifications");
+  await page.goto("/#/notifications/settings");
   const form = page.getByRole("form", { name: "Notification preferences" });
   await form.getByLabel("Group updates", { exact: true }).uncheck();
   await form
     .getByRole("button", { name: "Save preferences", exact: true })
     .click();
   await expect.poll(() => state.saved()?.groups).toBe(false);
+  await expect(
+    page.getByText("Browser push is not configured yet.", { exact: true }),
+  ).toBeVisible();
+  await page.goto("/#/notifications");
   await page
     .getByRole("button", { name: "Mark all read", exact: true })
     .click();
   await expect.poll(state.all).toBe(1);
-  await expect(
-    page.getByText("Browser push is not configured yet.", { exact: true }),
-  ).toBeVisible();
 });
 test("staff reviews a draft audience and explicitly confirms sending a broadcast", async ({
   page,
@@ -76,7 +97,7 @@ test("staff reviews a draft audience and explicitly confirms sending a broadcast
       json: { data: u.pathname.endsWith(draft.id) ? draft : [] },
     });
   });
-  await page.goto("/#/notifications");
+  await page.goto("/#/admin/communications");
   const form = page.getByRole("form", { name: "Broadcast draft" });
   await form.getByLabel("Announcement title").fill(draft.title);
   await form.getByLabel("Announcement message").fill(draft.body);
@@ -119,7 +140,7 @@ test("staff can create a draft for the staff-only audience", async ({ page }) =>
     staffListQuery = new URL(route.request().url()).searchParams.get("audience");
     return route.fulfill({ json: { data: [] } });
   });
-  await page.goto("/#/notifications");
+  await page.goto("/#/admin/communications");
   await page.getByLabel("Broadcast audience").selectOption("staff");
   const form = page.getByRole("form", { name: "Broadcast draft" });
   await form.getByLabel("Announcement title").fill(draft.title);
@@ -206,7 +227,7 @@ test("device opt-in requests permission after a click and registers through the 
       json: { data: { id: "synthetic-device" } },
     });
   });
-  await page.goto("/#/notifications");
+  await page.goto("/#/notifications/settings");
   const enable = page.getByRole("button", {
     name: "Enable notifications on this device",
     exact: true,

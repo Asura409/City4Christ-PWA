@@ -32,6 +32,9 @@ import ResetPasswordScreen from "./screens/ResetPasswordScreen";
 import PostsScreen from "./screens/PostsScreen";
 import MessagesScreen from "./screens/MessagesScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
+import NotificationSettingsScreen from "./screens/NotificationSettingsScreen";
+import AdminCommunicationsScreen from "./screens/AdminCommunicationsScreen";
+import AdminPrayerReportsScreen from "./screens/AdminPrayerReportsScreen";
 import { NotificationButton } from "./components/NotificationButton";
 import { CreateSheet } from "./components/CreateSheet";
 import { createPost, uploadPostMedia } from "./posts/api";
@@ -158,6 +161,8 @@ export default function App() {
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/sermons" element={<ProtectedRoute><AdminShell><SermonPublishingScreen /></AdminShell></ProtectedRoute>} />
             <Route path="/admin/events" element={<ProtectedRoute><AdminShell><AdminEventsScreen /></AdminShell></ProtectedRoute>} />
+            <Route path="/admin/communications" element={<ProtectedRoute><AdminShell><AdminCommunicationsScreen /></AdminShell></ProtectedRoute>} />
+            <Route path="/admin/prayer-reports" element={<ProtectedRoute><AdminShell><AdminPrayerReportsScreen /></AdminShell></ProtectedRoute>} />
             <Route path="/pastor-dashboard" element={<ProtectedRoute><PastorDashboardScreen /></ProtectedRoute>} />
             <Route path="/pastor-availability" element={<ProtectedRoute><PastorAvailabilityScreen /></ProtectedRoute>} />
             <Route path="/community" element={<ProtectedRoute><CommunityScreen /></ProtectedRoute>} />
@@ -236,6 +241,14 @@ export default function App() {
               element={
                 <ProtectedRoute>
                   <NotificationsScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/notifications/settings"
+              element={
+                <ProtectedRoute>
+                  <NotificationSettingsScreen />
                 </ProtectedRoute>
               }
             />

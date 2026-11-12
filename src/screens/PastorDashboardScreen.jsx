@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { api, useSession } from "@/auth/session";
 import { hasCapability } from "../../js/access.js";
 import { dateLabel, decideAppointment } from "@/pastoral/api";
+import { Avatar } from "@/components/Avatar";
 import { TimedMessage } from "@/components/TimedMessage";
 import "@/pastoral/pastoral.css";
 
@@ -18,10 +19,6 @@ function dayKey(value, timeZone) {
 
 function statusLabel(value) {
   return value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
-}
-
-function initials(first, last) {
-  return `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase() || "•";
 }
 
 function scrollToSection(id) {
@@ -137,7 +134,10 @@ export default function PastorDashboardScreen() {
           <header className="pastor-dashboard-header">
             <div>
               <p className="pastoral-eyebrow">{new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, dateStyle: "full" }).format(new Date())}</p>
-              <h1>Good day, {profile?.firstName || "Pastor"}</h1>
+              <div className="pastor-dashboard-greeting">
+                <Avatar name={`${profile?.firstName || ""} ${profile?.lastName || ""}`.trim() || "Pastor"} src={pastor.avatar?.url || profile?.avatar?.url} size={46} />
+                <h1>Good day, {profile?.firstName || "Pastor"}</h1>
+              </div>
               <p>Here is your pastoral schedule and care queue.</p>
             </div>
             <div className="pastor-dashboard-header-actions">
@@ -161,6 +161,7 @@ export default function PastorDashboardScreen() {
                 ) : todayBookings.map((booking) => (
                   <article className="pastor-appointment-row" key={booking.id}>
                     <div className="pastor-time"><strong>{dateLabel(booking.startsAt, booking.timeZone || pastor.timeZone)}</strong><small>until {dateLabel(booking.endsAt, booking.timeZone || pastor.timeZone)}</small></div>
+                    <Avatar name={`${booking.memberFirstName} ${booking.memberLastName}`} src={booking.memberAvatar?.url} size={32} />
                     <div className="pastor-appointment-copy"><h3>{booking.memberFirstName} {booking.memberLastName}</h3><p>Pastoral appointment</p></div>
                     <span className={`pastor-status pastor-status-${booking.status}`}>{statusLabel(booking.status)}</span>
                   </article>
@@ -177,7 +178,7 @@ export default function PastorDashboardScreen() {
                 ) : pending.slice(0, 4).map((booking) => (
                   <article className="pastor-request" key={booking.id}>
                     <div className="pastor-request-top">
-                      <span className="pastor-avatar" aria-hidden="true">{initials(booking.memberFirstName, booking.memberLastName)}</span>
+                      <Avatar name={`${booking.memberFirstName} ${booking.memberLastName}`} src={booking.memberAvatar?.url} size={36} />
                       <div className="pastor-request-copy"><strong>{booking.memberFirstName} {booking.memberLastName}</strong><span>{dateLabel(booking.startsAt, booking.timeZone || pastor.timeZone)}</span></div>
                       <span className="pastor-status pastor-status-pending">{statusLabel(booking.status)}</span>
                     </div>
@@ -194,6 +195,7 @@ export default function PastorDashboardScreen() {
                 {!upcoming.length ? <p className="pastor-muted">No upcoming appointments.</p> : upcoming.map((booking) => (
                   <article className="pastor-upcoming-row" key={booking.id}>
                     <div className="pastor-date-badge"><strong>{new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, day: "2-digit" }).format(new Date(booking.startsAt))}</strong><small>{new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, month: "short" }).format(new Date(booking.startsAt))}</small></div>
+                    <Avatar name={`${booking.memberFirstName} ${booking.memberLastName}`} src={booking.memberAvatar?.url} size={30} />
                     <div className="pastor-appointment-copy"><strong>{booking.memberFirstName} {booking.memberLastName}</strong><p>{dateLabel(booking.startsAt, booking.timeZone || pastor.timeZone)}</p></div>
                     <span className={`pastor-status pastor-status-${booking.status}`}>{statusLabel(booking.status)}</span>
                   </article>

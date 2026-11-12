@@ -43,6 +43,25 @@ test("pastoral profile member table lists, paginates, filters and saves the sele
   expect(queries).toContainEqual({ query: "Joy", limit: "20" });
 });
 
+test("member selector keeps the radio beside the name on mobile", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await pastoralMock(page);
+  await page.route("**/api/v1/me/access", (route) => route.fulfill({ json: { data: {
+    roles: [], capabilities: [{ permission: "roles.privileged.manage", scope: "" }],
+  } } }));
+  await page.route("**/api/v1/members?**", (route) => route.fulfill({ json: {
+    data: [{ id: "11111111-1111-4111-8111-111111111111", firstName: "Grace", lastName: "Member" }],
+    meta: { nextCursor: "" },
+  } }));
+  await page.goto("/#/pastors");
+  const row = page.locator(".pastoral-member-table tr").filter({ hasText: "Grace Member" });
+  const name = row.locator(".pastoral-member-identity strong");
+  const radio = row.getByRole("radio", { name: "Select Grace Member" });
+  const [nameBox, radioBox] = await Promise.all([name.boundingBox(), radio.boundingBox()]);
+  expect(radioBox.x).toBeGreaterThan(nameBox.x + nameBox.width - 1);
+  expect(radioBox.y).toBeLessThan(nameBox.y + nameBox.height);
+  expect(radioBox.y + radioBox.height).toBeGreaterThan(nameBox.y);
+});
 test("member table reports load failures and permits an explicit retry", async ({ page }) => {
   await pastoralMock(page);
   await page.route("**/api/v1/me/access", (route) => route.fulfill({ json: { data: {

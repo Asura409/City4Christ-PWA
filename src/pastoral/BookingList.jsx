@@ -1,11 +1,8 @@
 import React, { useState } from "react";
+import { Avatar } from "@/components/Avatar";
 import { TimedMessage } from "@/components/TimedMessage";
 import { cancelAppointment, decideAppointment, dateLabel } from "./api";
 import { usePastoralList, ListState } from "./usePastoralList";
-
-function initials(first, last) {
-  return `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase() || "•";
-}
 
 export function BookingList({ assigned = false, revision, onChange }) {
   const state = usePastoralList(
@@ -63,7 +60,7 @@ export function BookingList({ assigned = false, revision, onChange }) {
         return (
           <article className="pastoral-appt" key={booking.id}>
             <div className="pastoral-appt-top">
-              <span className="pastor-card-avatar" aria-hidden="true">{initials(first, last)}</span>
+              <Avatar name={`${first} ${last}`} src={assigned ? booking.memberAvatar?.url : booking.pastorAvatar?.url} size={36} />
               <div className="pastoral-appt-copy">
                 <strong>{first} {last}</strong>
                 <span>Pastoral appointment</span>

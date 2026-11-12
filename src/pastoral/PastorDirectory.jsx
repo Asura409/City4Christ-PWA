@@ -1,9 +1,6 @@
 import React from "react";
+import { Avatar } from "@/components/Avatar";
 import { usePastoralList, ListState } from "./usePastoralList";
-
-function initials(first, last) {
-  return `${first?.[0] || ""}${last?.[0] || ""}`.toUpperCase() || "•";
-}
 
 export function PastorDirectory({ revision, onSelect }) {
   const state = usePastoralList("/api/v1/pastors", revision);
@@ -23,7 +20,7 @@ export function PastorDirectory({ revision, onSelect }) {
         {state.items.map((p) => (
           <article className="pastor-card" key={p.id}>
             <div className="pastor-card-head">
-              <span className="pastor-card-avatar" aria-hidden="true">{initials(p.firstName, p.lastName)}</span>
+              <Avatar name={`${p.firstName} ${p.lastName}`} src={p.avatar?.url} size={46} />
               <div className="pastor-card-copy">
                 <h3>{p.firstName} {p.lastName}</h3>
                 <span className="pastor-card-zone">{p.timeZone || "UK time"}</span>

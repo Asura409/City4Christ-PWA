@@ -30,10 +30,40 @@ test("members open a private notification and mark it read", async ({ page }) =>
   await bell.click();
   await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible();
   await expect(page.getByText("Event coordinator assigned")).toBeVisible();
-  await expect(page.getByRole("link", { name: "View details" })).toHaveAttribute("href", "/#/events");
-  await page.getByRole("button", { name: "Mark read" }).click();
-  await expect(page.getByRole("button", { name: "Mark read" })).toHaveCount(0);
+  await expect(page.getByRole("link", { name: /Event coordinator assigned/ })).toHaveAttribute("href", "/#/events");
+  await page.getByRole("button", { name: "Mark Event coordinator assigned as read" }).click();
+  await expect(page.getByRole("button", { name: "Mark Event coordinator assigned as read" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Notifications", exact: true })).toBeVisible();
+});
+test("notifications fit a 320px phone without horizontal overflow", async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 720 });
+  await mocked(page, { signedIn: true });
+  const notice = {
+    id: "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+    kind: "event.coordinator_assigned",
+    title: "A very long event coordinator assignment title that must wrap cleanly",
+    body: "This longer notification body checks that the message wraps inside the row without pushing the page sideways on a small phone.",
+    resourcePath: "/#/events",
+    createdAt: new Date().toISOString(),
+    readAt: null,
+  };
+  await page.route("**/api/v1/notifications/unread-count", (route) =>
+    route.fulfill({ json: { data: { unreadCount: 1 } } }),
+  );
+  await page.route("**/api/v1/notifications?**", (route) =>
+    route.fulfill({ json: { data: [notice], meta: { nextCursor: "" } } }),
+  );
+  await page.goto("/#/notifications");
+  await expect(page.getByRole("heading", { name: "Notifications" })).toBeVisible();
+  const overflow = await page.evaluate(() => {
+    const screen = document.querySelector(".notif-screen");
+    return Math.max(
+      document.documentElement.scrollWidth,
+      document.body.scrollWidth,
+      screen?.scrollWidth || 0,
+    ) > window.innerWidth + 1;
+  });
+  expect(overflow).toBe(false);
 });
 test("unread notifications float on login and open their destination", async ({ page }) => {
   await mocked(page, { signedIn: true });
