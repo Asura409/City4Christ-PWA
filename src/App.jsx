@@ -50,7 +50,9 @@ import { useSession } from "@/auth/session";
 import SermonPublishingScreen from "@/sermons/SermonPublishingScreen";
 import MemberDirectoryScreen from "@/screens/MemberDirectoryScreen";
 import CommunityScreen from "@/screens/CommunityScreen";
+import BroadcastManager from "./live/BroadcastManager";
 import LiveScreen from "@/screens/LiveScreen";
+import VideoTestScreen from "@/screens/VideoTestScreen";
 import GetAppScreen from "@/screens/GetAppScreen";
 import SettingsScreen from "@/screens/SettingsScreen";
 import SearchScreen from "@/screens/SearchScreen";
@@ -154,11 +156,13 @@ export default function App() {
 
         <main className="screens">
           <Routes>
+            <Route path="/video-test" element={<VideoTestScreen />} />
             <Route path="/search" element={<ProtectedRoute><SearchScreen /></ProtectedRoute>} />
             <Route path="/visitors" element={<ProtectedRoute><AdminShell><VisitorsScreen/></AdminShell></ProtectedRoute>}/>
             <Route path="/account-deletion-requests" element={<ProtectedRoute><AdminShell><DeletionRequestsScreen /></AdminShell></ProtectedRoute>} />
             <Route path="/admin/members" element={<ProtectedRoute><AdminShell><AdminMemberSearch /></AdminShell></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
+            <Route path="/admin/live" element={<ProtectedRoute><AdminShell><BroadcastManager /></AdminShell></ProtectedRoute>} />
             <Route path="/admin/sermons" element={<ProtectedRoute><AdminShell><SermonPublishingScreen /></AdminShell></ProtectedRoute>} />
             <Route path="/admin/events" element={<ProtectedRoute><AdminShell><AdminEventsScreen /></AdminShell></ProtectedRoute>} />
             <Route path="/admin/communications" element={<ProtectedRoute><AdminShell><AdminCommunicationsScreen /></AdminShell></ProtectedRoute>} />

@@ -6,6 +6,7 @@ import { Icon } from "@/lib/icons";
 import "./admin.css";
 
 const MODULES = [
+  { label: "Live broadcasts", description: "Publish live services and replays", path: "/admin/live", icon: "play", permission: "sermons.manage", accent: "purple" },
   { label: "Members", description: "Search verified member records", path: "/admin/members", icon: "users", permission: "members.records.read", accent: "purple" },
   { label: "Staff & roles", description: "Review ministry access", path: "/groups/manage", icon: "shield", permission: "roles.read", accent: "gold" },
   { label: "Visitors", description: "Follow up with visitors", path: "/visitors", icon: "userplus", permission: "visitors.follow_up", accent: "lavender" },

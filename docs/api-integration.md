@@ -354,3 +354,24 @@ as `reviewing`. There is no permanent-erasure, approval or reactivation control.
 Permission/session loss clears displayed names and contact details. Browser tests
 use synthetic identities; the optional real API deletion case requires the disposable
 loopback harness. No new frontend configuration or secrets are required.
+
+### Live broadcasts and replays
+
+`/#/live` now reads published YouTube broadcast records from `/api/v1/livebroadcasts`.
+The newest publication is featured; earlier publications remain in Past broadcasts.
+The separate `/#/admin/live` workspace uses `/api/v1/admin/livebroadcasts` and the
+existing global `sermons.manage` permission. Admin dashboard and Live provide links
+for authorized editors. All authorization is independently enforced by the API.
+
+Apply backend migration 61 and release backend OpenAPI 1.25.0 before this frontend.
+No new frontend settings, YouTube API key, worker, or role assignment is needed.
+Save draft is private; Publish uses a review dialog. Version conflicts preserve
+entered fields and require explicit reload. A successful create followed by failed
+publication retains the draft ID so retry cannot silently duplicate the draft.
+
+The service input uses Europe/London GMT/BST with existing clock-change validation.
+Live status is editorial: End live & keep replay does not stop YouTube streaming.
+Published replacement atomically demotes the prior live entry to replay. Unpublish
+hides the record and falls back to the previous latest publication. Plain-text
+metadata and validated canonical video URLs are used, never arbitrary iframe HTML.
+Private admin records are not persisted in browser storage or service-worker caches.
