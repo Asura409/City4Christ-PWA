@@ -22,10 +22,7 @@ export default function HomeScreen() {
           ["/events", "cal", "Events", "See upcoming gatherings"],
           ["/pastors", "users", "Book Pastor", "Request pastoral care"],
           ["/giving", "heart", "Giving", "Tithe, offering & more"],
-          ["/word", "book", "Word", "Sermons and media"],
-          ["/prayer", "flame", "Prayer", "Pray with the community"],
           ["/bible", "book", "Bible", "Read the Word together"],
-          ["/community", "chat", "Community", "Chats, members and ministry groups"],
           ["/live", "play", "Live", "Join worship online"],
           ["/get-app", "download", "Get the App", "Keep City4Christ close"],
         ].map(([path, icon, label, description]) => (
