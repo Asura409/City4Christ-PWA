@@ -35,6 +35,90 @@ test("members open a private notification and mark it read", async ({ page }) =>
   await expect(page.getByRole("button", { name: "Mark Event coordinator assigned as read" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Notifications", exact: true })).toBeVisible();
 });
+test("message notifications open chat instead of the login page", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  const notice = {
+    id: "dddddddd-dddd-4ddd-8ddd-dddddddddddd",
+    kind: "message.direct",
+    title: "New message",
+    body: "Open your messages to view a new update.",
+    resourcePath: "/#/messages",
+    createdAt: new Date().toISOString(),
+    readAt: null,
+  };
+  await page.route("**/api/v1/notifications/unread-count", (route) =>
+    route.fulfill({ json: { data: { unreadCount: 1 } } }),
+  );
+  await page.route("**/api/v1/notifications?**", (route) =>
+    route.fulfill({ json: { data: [notice], meta: { nextCursor: "" } } }),
+  );
+  await page.route("**/api/v1/notifications/*/read", (route) =>
+    route.fulfill({ json: { data: { changed: true } } }),
+  );
+
+  await page.goto("/#/home");
+  const toast = page.locator(".notification-toast");
+  await expect(toast).toBeVisible();
+  await toast.getByRole("button", { name: /New message/ }).click();
+  await expect(page).toHaveURL(/#\/chat/);
+  await expect(page).not.toHaveURL(/#\/login/);
+});
+test("prayer notifications with legacy per-request paths open prayer", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  const notice = {
+    id: "eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee",
+    kind: "prayer.encouragement",
+    title: "New prayer encouragement",
+    body: "A member shared encouragement on your prayer request.",
+    resourcePath: "/#/prayer/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+    createdAt: new Date().toISOString(),
+    readAt: null,
+  };
+  await page.route("**/api/v1/notifications/unread-count", (route) =>
+    route.fulfill({ json: { data: { unreadCount: 1 } } }),
+  );
+  await page.route("**/api/v1/notifications?**", (route) =>
+    route.fulfill({ json: { data: [notice], meta: { nextCursor: "" } } }),
+  );
+  await page.route("**/api/v1/notifications/*/read", (route) =>
+    route.fulfill({ json: { data: { changed: true } } }),
+  );
+
+  await page.goto("/#/home");
+  const toast = page.locator(".notification-toast");
+  await expect(toast).toBeVisible();
+  await toast.getByRole("button", { name: /New prayer encouragement/ }).click();
+  await expect(page).toHaveURL(/#\/prayer$/);
+  await expect(page).not.toHaveURL(/#\/login/);
+});
+test("post notifications with legacy per-post paths open posts", async ({ page }) => {
+  await mocked(page, { signedIn: true });
+  const notice = {
+    id: "ffffffff-ffff-4fff-8fff-ffffffffffff",
+    kind: "post.amen",
+    title: "Someone said Amen",
+    body: "Someone reacted to your post.",
+    resourcePath: "/#/posts/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+    createdAt: new Date().toISOString(),
+    readAt: null,
+  };
+  await page.route("**/api/v1/notifications/unread-count", (route) =>
+    route.fulfill({ json: { data: { unreadCount: 1 } } }),
+  );
+  await page.route("**/api/v1/notifications?**", (route) =>
+    route.fulfill({ json: { data: [notice], meta: { nextCursor: "" } } }),
+  );
+  await page.route("**/api/v1/notifications/*/read", (route) =>
+    route.fulfill({ json: { data: { changed: true } } }),
+  );
+
+  await page.goto("/#/home");
+  const toast = page.locator(".notification-toast");
+  await expect(toast).toBeVisible();
+  await toast.getByRole("button", { name: /Someone said Amen/ }).click();
+  await expect(page).toHaveURL(/#\/posts$/);
+  await expect(page).not.toHaveURL(/#\/login/);
+});
 test("notifications fit a 320px phone without horizontal overflow", async ({ page }) => {
   await page.setViewportSize({ width: 320, height: 720 });
   await mocked(page, { signedIn: true });

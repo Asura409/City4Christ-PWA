@@ -42,7 +42,7 @@ export function HomeCommunityPreview() {
           const imageURL = image ? safeUrl(image.url) : "#";
           return <article className="home-community-card" key={post.id}>
             <div className="who"><Avatar name={author} src={post.avatar?.url} size={38} /><div><strong>{author}</strong><small>{dateLabel(post.createdAt)}</small></div></div>
-            {post.body && <p>{post.body.length > 180 ? `${post.body.slice(0, 180)}…` : post.body}</p>}
+            {post.body && <p>{post.body}</p>}
             {imageURL !== "#" && <img src={imageURL} alt="Community post attachment" loading="lazy" />}
             <div className="home-community-card-footer"><span><Icon name="heart" /> {post.amenCount || 0} Amen</span><span>{post.commentCount || 0} comments</span></div>
           </article>;

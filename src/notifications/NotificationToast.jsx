@@ -2,18 +2,13 @@ import React, { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSession } from "@/auth/session";
 import { listNotifications, markNotificationRead, unreadNotificationCount } from "./api";
+import { notificationRoute } from "./routes";
 import { Icon } from "@/lib/icons";
 
 const TOAST_DURATION = 7000;
 const POLL_INTERVAL = 20000;
 const LOGIN_LIMIT = 50;
 const SUMMARY_ID = "__unread-summary__";
-
-function notificationRoute(value) {
-  if (typeof value !== "string" || !value.startsWith("/#/")) return "";
-  const route = value.slice(2);
-  return /^\/[A-Za-z0-9/_-]+$/.test(route) ? route : "";
-}
 
 export function NotificationToast() {
   const { profile } = useSession();

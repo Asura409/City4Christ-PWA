@@ -7,6 +7,7 @@ import {
   markAllNotificationsRead,
   unreadNotificationCount,
 } from "@/notifications/api";
+import { notificationRoute } from "@/notifications/routes";
 import "@/notifications/inbox.css";
 
 const FILTERS = [
@@ -29,12 +30,6 @@ function categoryFor(item) {
   if (kind.startsWith("message") || kind.startsWith("dm")) return "messages";
   if (kind.includes("broadcast") || kind.includes("announcement")) return "announcements";
   return "other";
-}
-
-function notificationRoute(value) {
-  if (typeof value !== "string" || !value.startsWith("/#/")) return "";
-  const route = value.slice(2);
-  return /^\/[A-Za-z0-9/_-]+$/.test(route) ? route : "";
 }
 
 const dayKey = new Intl.DateTimeFormat("en-CA", {
