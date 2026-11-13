@@ -1,65 +1,42 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "./session";
-import { googleProviderURL, googleReturnURL } from "./google";
+import { LoadingSpinner } from "@/components/LoadingSpinner";
+import { RefreshButton } from "@/components/RefreshButton";
 
-export function SessionConfirmation({
-  requireMFA = false,
-  reason = "",
-  revision = 0,
-  open = true,
-  onReady,
-  onClose,
-}) {
-  const [primary, setPrimary] = useState(null),
-    [factor, setFactor] = useState(null),
-    [method, setMethod] = useState(null);
-  const [error, setError] = useState(""),
-    [busy, setBusy] = useState(false);
-  const passwordRef = useRef(null),
-    codeRef = useRef(null),
-    dialogRef = useRef(null),
-    generation = useRef(0),
-    notifiedReady = useRef(false);
-  const readyRef = useRef(onReady);
+export function SessionConfirmation({ requireMFA = false, reason = "", revision = 0, open = true, onReady, onClose }) {
+  const [primary, setPrimary] = useState(null);
+  const [factor, setFactor] = useState(null);
+  const [method, setMethod] = useState(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const passwordRef = useRef(null), codeRef = useRef(null), dialogRef = useRef(null);
+  const generation = useRef(0), notifiedReady = useRef(false), readyRef = useRef(onReady);
   readyRef.current = onReady;
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
+    const opener = document.activeElement;
     if (open) {
       if (typeof dialog.showModal === "function" && !dialog.matches(":modal")) {
         if (dialog.open) dialog.close();
         dialog.showModal();
-      } else if (typeof dialog.showModal !== "function") {
-        dialog.setAttribute("open", "");
-      }
-    } else if (dialog.open) {
-      dialog.close();
-    }
+      } else if (typeof dialog.showModal !== "function") dialog.setAttribute("open", "");
+    } else if (dialog.open) dialog.close();
+    return () => { dialog.close(); if (opener?.isConnected) opener.focus({ preventScroll: true }); };
   }, [open]);
 
   const load = useCallback(async () => {
     const version = ++generation.current;
-    const [{ data: p }, { data: m }] = await Promise.all([
-      api.reauthenticationStatus(),
-      api.mfaStatus(),
-    ]);
+    const [{ data: p }, { data: m }] = await Promise.all([api.reauthenticationStatus(), api.mfaStatus()]);
     if (version !== generation.current) return;
-    if (typeof p?.fresh !== "boolean" || typeof m?.enabled !== "boolean")
+    if (typeof p?.fresh !== "boolean" || typeof p.passwordAvailable !== "boolean" || typeof m?.enabled !== "boolean")
       throw new Error("Identity confirmation is unavailable.");
-    setPrimary(p);
-    setFactor(m);
-    setMethod(
-      p.fresh
-        ? null
-        : p.passwordAvailable && !p.googleAvailable
-          ? "password"
-          : !p.passwordAvailable && p.googleAvailable
-            ? "google"
-            : null,
-    );
     const fresh = p.fresh && Date.parse(p.freshUntil) > Date.now();
     const second = m.enabled ? Date.parse(m.freshUntil) > Date.now() : !requireMFA;
+    setPrimary({ ...p, fresh });
+    setFactor(m);
+    setMethod(m.enabled && (fresh || requireMFA || !p.passwordAvailable) ? "authenticator" : p.passwordAvailable ? "password" : null);
     if (fresh && second && !notifiedReady.current) {
       notifiedReady.current = true;
       readyRef.current?.(true);
@@ -68,10 +45,7 @@ export function SessionConfirmation({
 
   useEffect(() => {
     notifiedReady.current = false;
-    setError("");
-    setPrimary(null);
-    setFactor(null);
-    setMethod(null);
+    setError(""); setPrimary(null); setFactor(null); setMethod(null);
     void load().catch((e) => setError(e.message));
     return () => {
       ++generation.current;
@@ -80,215 +54,60 @@ export function SessionConfirmation({
     };
   }, [load, revision]);
 
-  async function confirm(event, kind) {
+  async function confirm(event) {
     event.preventDefault();
-    setBusy(true);
-    setError("");
+    if (busy) return;
+    setBusy(true); setError("");
     try {
-      if (kind === "password")
-        await api.reauthenticatePassword(passwordRef.current.value);
-      else await api.verifyMFA(codeRef.current.value);
+      if (method === "password") await api.reauthenticatePassword(passwordRef.current.value);
+      else await api.reauthenticateAuthenticator(codeRef.current.value);
       await load();
-    } catch (e) {
-      setError(e.message);
-    } finally {
+    } catch (e) { setError(e.message); }
+    finally {
       if (passwordRef.current) passwordRef.current.value = "";
       if (codeRef.current) codeRef.current.value = "";
       setBusy(false);
     }
   }
-
-  async function google() {
-    setBusy(true);
-    setError("");
-    try {
-      // The OAuth callback is a full browser navigation, so remember the
-      // protected screen that opened this confirmation. The callback screen
-      // restores it after the server has recorded fresh authentication.
-      sessionStorage.setItem(
-        "city4christ:reauth-return",
-        `${location.pathname}${location.search}${location.hash}`,
-      );
-      const { data } = await api.beginGoogleReauthentication(
-        googleReturnURL("link"),
-      );
-      location.assign(googleProviderURL(data.url));
-    } catch (e) {
-      setError(e.message);
-      setBusy(false);
-    }
+  function changeMethod(next) {
+    if (passwordRef.current) passwordRef.current.value = "";
+    if (codeRef.current) codeRef.current.value = "";
+    setError(""); setMethod(next);
   }
 
-  return (
-    <dialog
-      ref={dialogRef}
-      className="confirmation-dialog"
-      aria-label="Confirm sensitive action"
-      onCancel={(event) => {
-        event.preventDefault();
-        if (!busy) onClose?.();
-      }}
-      onClick={(event) => {
-        if (event.target === dialogRef.current && !busy) onClose?.();
-      }}
-    >
-      <div className="confirmation-dialog-card">
-        <button
-          className="confirmation-dialog-close"
-          type="button"
-          aria-label="Cancel confirmation"
-          onClick={onClose}
-          disabled={busy}
-        >
-          ×
-        </button>
-        <section className="auth-card" aria-label="Confirm sensitive action">
-          <h3>Confirm your identity</h3>
-          <p>
-            {reason ||
-              "This action needs a fresh confirmation. It applies only to this session and does not submit anything until you continue."}
-          </p>
-          {error && <p role="alert">{error}</p>}
-          {!primary && !error && (
-            <p role="status">Checking identity confirmation…</p>
-          )}
-          {primary && (
-            <>
-              {primary.fresh && (
-                <p role="status">Primary identity is confirmed.</p>
-              )}
-              {!primary.fresh && (
-                <>
-                  <p>Choose how you want to confirm this session.</p>
-                  {!method && (
-                    <div
-                      className="confirmation-methods"
-                      aria-label="Identity confirmation methods"
-                    >
-                      {primary.passwordAvailable && (
-                        <button
-                          className="btn soft"
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setMethod("password")}
-                        >
-                          Confirm with password
-                        </button>
-                      )}
-                      {primary.googleAvailable && (
-                        <button
-                          className="btn soft"
-                          type="button"
-                          disabled={busy}
-                          onClick={google}
-                        >
-                          Confirm with Google
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </>
-              )}
-              {primary.passwordAvailable &&
-                method === "password" &&
-                !primary.fresh && (
-                  <form
-                    aria-label="Confirm password for sensitive action"
-                    onSubmit={(e) => confirm(e, "password")}
-                  >
-                    <label className="auth-field">
-                      Current password
-                      <input
-                        ref={passwordRef}
-                        type="password"
-                        autoComplete="current-password"
-                        required
-                        maxLength={1024}
-                        disabled={busy}
-                        autoFocus
-                      />
-                    </label>
-                    <button className="btn soft" disabled={busy}>
-                      Confirm with password
-                    </button>
-                  </form>
-                )}
-              {primary.googleAvailable && method === "google" && !primary.fresh && (
-                <div className="confirmation-selected-method">
-                  <button className="btn soft" disabled={busy} onClick={google}>
-                    Confirm with Google
-                  </button>
-                  {primary.passwordAvailable && !busy && (
-                    <button
-                      className="confirmation-change-method"
-                      type="button"
-                      onClick={() => setMethod(null)}
-                    >
-                      Use password instead
-                    </button>
-                  )}
-                </div>
-              )}
-              {primary.passwordAvailable &&
-                method === "password" &&
-                !primary.fresh &&
-                primary.googleAvailable && (
-                  <button
-                    className="confirmation-change-method"
-                    type="button"
-                    disabled={busy}
-                    onClick={() => setMethod(null)}
-                  >
-                    Use Google instead
-                  </button>
-                )}
-              {!primary.passwordAvailable && !primary.googleAvailable && (
-                <p>No confirmation method is available. Contact church support.</p>
-              )}
-            </>
-          )}
-          {primary?.fresh && factor?.enabled && (
-            <form
-              aria-label="Confirm authenticator for sensitive action"
-              onSubmit={(e) => confirm(e, "mfa")}
-            >
-              <label className="auth-field">
-                Authenticator code
-                <input
-                  ref={codeRef}
-                  autoComplete="one-time-code"
-                  inputMode="numeric"
-                  pattern="[0-9]{6}"
-                  required
-                  maxLength={6}
-                  disabled={busy}
-                  autoFocus
-                />
-              </label>
-              <button className="btn soft" disabled={busy}>
-                Confirm authenticator
-              </button>
-            </form>
-          )}
-          {requireMFA && factor && !factor.enabled && (
-            <p>
-              Authenticator protection is required for this action. Set it up
-              from Sign-in and security, then return here.
-            </p>
-          )}
-          <button
-            className="confirmation-refresh"
-            type="button"
-            disabled={busy}
-            onClick={() => {
-              setError("");
-              void load().catch((e) => setError(e.message));
-            }}
-          >
-            Check confirmation
-          </button>
-        </section>
-      </div>
-    </dialog>
-  );
+  return <dialog ref={dialogRef} className="confirmation-dialog" aria-label="Confirm sensitive action"
+    onCancel={(event) => { event.preventDefault(); if (!busy) onClose?.(); }}
+    onClick={(event) => { if (event.target === dialogRef.current && !busy) onClose?.(); }}>
+    <div className="confirmation-dialog-card">
+      <button className="confirmation-dialog-close" type="button" aria-label="Cancel confirmation" onClick={onClose} disabled={busy}>×</button>
+      <section className="auth-card" aria-label="Confirm sensitive action">
+        <h3>Confirm your identity</h3>
+        <p>{reason || "Confirm this sensitive action using your account password or authenticator app."}</p>
+        {error && <p role="alert">{error}</p>}
+        {!primary && !error && <LoadingSpinner label="Checking identity confirmation" />}
+        {primary && factor && <>
+          {primary.fresh && <p role="status">Primary identity is confirmed.</p>}
+          {method === "password" && !primary.fresh && <form aria-label="Confirm password for sensitive action" onSubmit={confirm}>
+            <label className="auth-field">Current password
+              <input ref={passwordRef} type="password" autoComplete="current-password" required maxLength={1024} disabled={busy} autoFocus />
+            </label>
+            <button className="btn soft" disabled={busy}>Confirm with password</button>
+          </form>}
+          {method === "authenticator" && factor.enabled && <form aria-label="Confirm authenticator for sensitive action" onSubmit={confirm}>
+            <label className="auth-field">Authenticator code
+              <input ref={codeRef} autoComplete="one-time-code" inputMode="numeric" pattern="[0-9]{6}" required minLength={6} maxLength={6} disabled={busy} autoFocus />
+            </label>
+            <button className="btn soft" disabled={busy}>Confirm authenticator</button>
+          </form>}
+          {!primary.fresh && primary.passwordAvailable && factor.enabled && !requireMFA && <button className="confirmation-change-method" type="button" disabled={busy} onClick={() => changeMethod(method === "password" ? "authenticator" : "password")}>
+            {method === "password" ? "Use authenticator app instead" : "Use password instead"}
+          </button>}
+          {primary.passwordAvailable && factor.enabled && method === "password" && <p>Your account also requires an authenticator code before continuing.</p>}
+          {!primary.passwordAvailable && !factor.enabled && <p>This account has no password or authenticator configured. Contact church support to set up a confirmation method.</p>}
+          {requireMFA && !factor.enabled && <p>Authenticator protection is required for this action. Set it up from Sign-in and security, then return here.</p>}
+        </>}
+        <RefreshButton label="Check confirmation" busy={busy} onClick={async () => { setError(""); try { await load(); } catch (e) { setError(e.message); } }} />
+      </section>
+    </div>
+  </dialog>;
 }

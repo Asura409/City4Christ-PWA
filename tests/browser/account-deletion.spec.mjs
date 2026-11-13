@@ -161,9 +161,10 @@ test("password and enrolled MFA confirmation never automatically submit deletion
     primary = true;
     return r.fulfill({ json: { data: { fresh: true, freshUntil } } });
   });
-  await page.route("**/api/v1/auth/mfa/verify", (r) => {
+  await page.route("**/api/v1/auth/reauthentication/authenticator", (r) => {
     expect(r.request().postDataJSON()).toEqual({ code: "123456" });
     factor = true;
+    primary = true;
     return r.fulfill({ json: { data: { enabled: true, freshUntil } } });
   });
   await page.route("**/api/v1/me", (r) => {
@@ -235,65 +236,18 @@ test("password and enrolled MFA confirmation never automatically submit deletion
     ),
   ).not.toContain("synthetic current password");
 });
-test("Google-only confirmation returns to profile without submitting a request", async ({
-  page,
-}) => {
+test("Google-only accounts without an authenticator show setup guidance without navigating away", async ({ page }) => {
   await setup(page, { fresh: false, hasPassword: false });
-  let starts = 0,
-    writes = 0;
-  await page.route("**/api/v1/auth/reauthentication/google", (r) => {
-    starts++;
-    expect(r.request().postDataJSON().returnTo).toBe(
-      "http://127.0.0.1:4173/account/auth.html",
-    );
-    return r.fulfill({
-      json: { data: { url: "https://accounts.google.com/test" } },
-    });
-  });
-  await page.route("https://accounts.google.com/**", (r) =>
-    r.fulfill({
-      contentType: "text/html",
-      body: "<h1>Google confirmation</h1>",
-    }),
-  );
-  await page.route("**/api/v1/me", (r) => {
-    if (r.request().method() !== "DELETE") return r.fallback();
-    return r.fulfill({
-      status: 403,
-      json: {
-        error: {
-          code: "reauthentication_required",
-          message: "Confirm your identity again.",
-        },
-      },
-    });
-  });
+  await page.route("**/api/v1/me", (r) => r.request().method() !== "DELETE" ? r.fallback() : r.fulfill({ status: 403, json: { error: { code: "reauthentication_required", message: "Confirm your identity again." } } }));
   await page.goto("/#/profile");
   await page.locator(".account-option > summary").filter({ hasText: /^Request account deletion/ }).click();
-  const panel = page.getByRole("region", {
-    name: "Request account deletion",
-    exact: true,
-  });
+  const panel = page.getByRole("region", { name: "Request account deletion", exact: true });
   await panel.getByRole("checkbox").check();
-  await panel
-    .getByRole("button", { name: "Request account deletion", exact: true })
-    .click();
-  const confirmation = page.getByRole("dialog", {
-    name: "Confirm sensitive action",
-  });
-  await expect(
-    confirmation.getByLabel("Current password", { exact: true }),
-  ).toHaveCount(0);
-  await confirmation
-    .getByRole("button", { name: "Confirm with Google", exact: true })
-    .click();
-  await expect(
-    page.getByRole("heading", { name: "Google confirmation" }),
-  ).toBeVisible();
-  await page.goto("/account/auth.html?reauthentication=complete");
-  await expect(page).toHaveURL(/#\/profile$/);
-  expect(starts).toBe(1);
-  expect(writes).toBe(0);
+  await panel.getByRole("button", { name: "Request account deletion", exact: true }).click();
+  const confirmation = page.getByRole("dialog", { name: "Confirm sensitive action" });
+  await expect(confirmation).toContainText("no password or authenticator configured");
+  await expect(confirmation.getByRole("button", { name: "Confirm with Google" })).toHaveCount(0);
+  expect(page.url()).toContain("/#/profile");
 });
 test("deletion policy failures and outages never pretend the account was disabled", async ({
   page,
@@ -558,8 +512,9 @@ test("admin proof renewal resumes the queue automatically after confirmation", a
     primary = true;
     return r.fulfill({ json: { data: { fresh: true, freshUntil } } });
   });
-  await page.route("**/api/v1/auth/mfa/verify", (r) => {
+  await page.route("**/api/v1/auth/reauthentication/authenticator", (r) => {
     factor = true;
+    primary = true;
     return r.fulfill({ json: { data: { enabled: true, freshUntil } } });
   });
   await page.route("**/api/v1/admin/account-deletion-requests?**", (r) => {
@@ -582,12 +537,6 @@ test("admin proof renewal resumes the queue automatically after confirmation", a
   const confirm = page.getByRole("dialog", {
     name: "Confirm sensitive action",
   });
-  await confirm
-    .getByLabel("Current password", { exact: true })
-    .fill("synthetic current password");
-  await confirm
-    .getByRole("button", { name: "Confirm with password", exact: true })
-    .click();
   await confirm
     .getByLabel("Authenticator code", { exact: true })
     .fill("123456");

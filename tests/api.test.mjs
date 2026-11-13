@@ -305,3 +305,19 @@ test('authenticated calendar downloads preserve the session header and return te
  assert.equal(await client.request('/api/v1/events/test/calendar.ics',{responseType:'text'}),'BEGIN:VCALENDAR\r\nEND:VCALENDAR\r\n');
  assert.equal(requests.at(-1).options.headers.Authorization,'Bearer synthetic-calendar-token');
 });
+
+test("authenticator reauthentication sends one session-bound code and never retries a rejected code", async () => {
+  const calls = [];
+  const client = createClient({ apiURL: "https://api.example", fetchImpl: async (url, options) => {
+    calls.push({ url, options });
+    if (url.endsWith("/login")) return json({ data: { accessToken: "existing-session", expiresIn: 600 } });
+    return json({ error: { code: "invalid_mfa_code", message: "Invalid code." } }, 400);
+  } });
+  await client.login("member@example.invalid", "synthetic password");
+  await assert.rejects(() => client.reauthenticateAuthenticator("123456"), (error) => error.code === "invalid_mfa_code");
+  assert.equal(calls.length, 2);
+  assert.equal(calls[1].url, "https://api.example/api/v1/auth/reauthentication/authenticator");
+  assert.equal(calls[1].options.headers.Authorization, "Bearer existing-session");
+  assert.equal(calls[1].options.cache, "no-store");
+  assert.deepEqual(JSON.parse(calls[1].options.body), { code: "123456" });
+});

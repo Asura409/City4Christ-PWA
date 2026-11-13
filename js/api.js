@@ -243,6 +243,8 @@ export function createClient({
         method: "POST",
         body: { password },
       }),
+    reauthenticateAuthenticator: (code) =>
+      request("/api/v1/auth/reauthentication/authenticator", { method: "POST", body: { code } }),
     beginGoogleReauthentication: (returnTo) =>
       request("/api/v1/auth/reauthentication/google", {
         method: "POST",
