@@ -14,6 +14,16 @@ function formatPlaybackTime(seconds) {
   return `${minutes}:${String(value % 60).padStart(2, "0")}`;
 }
 
+function attachmentTypeLabel(items = []) {
+  const types = new Set();
+  for (const item of items) {
+    if (item.contentType?.startsWith("audio/")) types.add("Audio");
+    else if (item.contentType?.startsWith("video/")) types.add("Video");
+    // Images are displayed in the sermon detail, but do not need a card label.
+  }
+  return [...types].join(" · ");
+}
+
 function AttachmentList({ items = [], resumeAt = 0, onPlaybackPosition = () => {} }) {
   const mediaRefs = useRef(new Map());
   useEffect(() => {
@@ -252,7 +262,7 @@ export default function WordScreen() {
                 <span className="sermon-card-type">SERMON</span>
               </div>
               <div className="sermon-card-body">
-                <div className="sermon-card-meta"><span>{s.speaker || "City4Christ teaching team"}</span>{s.attachments?.length > 0 && <span>{s.attachments.some((item) => item.contentType?.startsWith("video/")) ? "Video" : "Audio"}</span>}</div>
+                <div className="sermon-card-meta"><span>{s.speaker || "City4Christ teaching team"}</span>{attachmentTypeLabel(s.attachments) && <span>{attachmentTypeLabel(s.attachments)}</span>}</div>
                 <h2>{s.title}</h2>
                 <SermonDate value={s.preachedAt} />
                 <p>{s.summary || "A message to help you grow in faith and walk with Christ."}</p>
