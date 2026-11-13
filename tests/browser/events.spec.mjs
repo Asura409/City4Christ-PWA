@@ -115,6 +115,7 @@ test("event managers can create a draft and publish it", async ({ page }) => {
 
   await page.goto("/#/admin/events");
   await expect(page.getByRole("heading", { name: "Manage church events" })).toBeVisible();
+  await page.getByRole("button", { name: "+ New event", exact: true }).click();
   await page.getByLabel("Title", { exact: true }).fill("Community service day");
   await page.getByLabel(/Start time/).fill("2027-01-15T10:00");
   await page.getByRole("button", { name: "Create draft" }).click();
@@ -124,7 +125,7 @@ test("event managers can create a draft and publish it", async ({ page }) => {
   await page.getByRole("button", { name: "Save changes" }).click();
   await expect(page.getByRole("heading", { name: "Community service and cleanup day" })).toBeVisible();
   await page.getByRole("button", { name: "Publish event" }).click();
-  await expect(page.getByText("published · 1 reserved")).toBeVisible();
+  await expect(page.getByRole("article", { name: "Community service and cleanup day" })).toContainText("published");
 });
 
 test("event managers can assign and remove an eligible group coordinator", async ({ page }) => {
@@ -152,10 +153,118 @@ test("event managers can assign and remove an eligible group coordinator", async
   });
 
   await page.goto("/#/admin/events");
+  await page.getByRole("button", { name: "Coordinators", exact: true }).click();
   await page.getByLabel("Coordinator group").selectOption("33333333-3333-4333-8333-333333333333");
   await page.getByLabel("Event coordinator").selectOption("11111111-1111-4111-8111-111111111111");
   await page.getByRole("button", { name: "Assign coordinator" }).click();
-  await expect(page.getByText("Grace Member · Choir")).toBeVisible();
+  await expect(page.getByRole("dialog")).toContainText("Grace Member");
+  await expect(page.getByRole("dialog")).toContainText("Choir");
   await page.getByRole("button", { name: "Remove Grace Member" }).click();
-  await expect(page.getByText("Grace Member · Choir")).toHaveCount(0);
+  await expect(page.getByRole("dialog").getByLabel("Assigned coordinators").getByText("Grace Member", { exact: true })).toHaveCount(0);
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(page.getByRole("article", { name: event.title })).toContainText("No coordinator assigned");
+});
+
+async function manageEvents(page, events) {
+  await mocked(page, { signedIn: true, access: {
+    roles: [{ role: "staff", scope: "" }],
+    capabilities: [{ permission: "events.manage", scope: "" }],
+  } });
+  await page.route("**/api/v1/admin/events**", (route) => route.fulfill({ json: { data: events } }));
+  await page.route("**/api/v1/events/*/coordinators", (route) => route.fulfill({ json: { data: [] } }));
+}
+
+test("compact event cards search and open an isolated coordinator popup", async ({ page }, testInfo) => {
+  const first = sampleEvent({ title: "Church Bible Study" });
+  const second = sampleEvent({ id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", title: "IT Office Meeting" });
+  await manageEvents(page, [first, second]);
+  await page.goto("/#/admin/events");
+  const firstCard = page.getByRole("article", { name: first.title, exact: true });
+  const secondCard = page.getByRole("article", { name: second.title, exact: true });
+  await expect(firstCard).toBeVisible();
+  await expect(page.getByLabel("Coordinator group")).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Cancel event", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("form", { name: "Create event" })).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "Search managed events" }).fill("Bible");
+  await expect(secondCard).toHaveCount(0);
+  await page.getByRole("searchbox", { name: "Search managed events" }).fill("");
+  await firstCard.getByRole("button", { name: "Coordinators", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Coordinators", exact: true });
+  await expect(dialog).toContainText(first.title);
+  await page.getByLabel("Coordinator group").selectOption("33333333-3333-4333-8333-333333333333");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(firstCard.getByRole("button", { name: "Coordinators", exact: true })).toBeFocused();
+  await secondCard.getByRole("button", { name: "Coordinators", exact: true }).click();
+  await expect(dialog).toContainText(second.title);
+  await expect(page.getByLabel("Coordinator group")).toHaveValue("");
+  await expect(page.getByLabel("Event coordinator")).toBeDisabled();
+  await expect(page.getByRole("button", { name: "Assign coordinator", exact: true })).toBeDisabled();
+  await page.screenshot({ path: testInfo.outputPath("coordinators.png") });
+  await page.getByRole("button", { name: "Close", exact: true }).click();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: testInfo.outputPath("event-list.png"), fullPage: true });
+});
+
+test("event cancellation requires confirmation and retains errors for retry", async ({ page }) => {
+  const event = sampleEvent();
+  await manageEvents(page, [event]);
+  let cancellations = 0;
+  await page.route(`**/api/v1/admin/events/${event.id}`, (route) => {
+    cancellations++;
+    expect(route.request().postDataJSON()).toMatchObject({ status: "cancelled", version: event.version });
+    return route.fulfill({ status: 409, json: { error: { code: "conflict", message: "This event changed. Please reopen it.", fields: {} } } });
+  });
+  await page.goto("/#/admin/events");
+  await page.getByLabel(`More actions for ${event.title}`).click();
+  await page.getByRole("button", { name: "Cancel event", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Cancel event?", exact: true });
+  await expect(dialog).toBeVisible();
+  expect(cancellations).toBe(0);
+  await dialog.getByRole("button", { name: "Keep event" }).click();
+  expect(cancellations).toBe(0);
+  await page.getByLabel(`More actions for ${event.title}`).click();
+  await page.getByRole("button", { name: "Cancel event", exact: true }).click();
+  await dialog.getByRole("button", { name: "Cancel event", exact: true }).click();
+  await expect(dialog.getByRole("alert")).toContainText("This event changed");
+  expect(cancellations).toBe(1);
+  await expect(dialog.getByRole("button", { name: "Cancel event", exact: true })).toBeEnabled();
+});
+
+test("changing groups ignores a late member response and assignment failures stay in the popup", async ({ page }) => {
+  const event = sampleEvent();
+  await manageEvents(page, [event]);
+  const choir = "33333333-3333-4333-8333-333333333333", youth = "55555555-5555-4555-8555-555555555555";
+  await page.route("**/api/v1/groups?**", (route) => route.fulfill({ json: { data: [
+    { id: choir, name: "Choir", audience: "church" }, { id: youth, name: "Youth", audience: "church" },
+  ] } }));
+  let release;
+  const pending = new Promise((resolve) => { release = resolve; });
+  await page.route(`**/api/v1/groups/${choir}/members`, async (route) => {
+    await pending;
+    await route.fulfill({ json: { data: [{ accountId: "old", firstName: "Old", lastName: "Member", status: "active" }] } });
+  });
+  await page.route(`**/api/v1/groups/${youth}/members`, (route) => route.fulfill({ json: { data: [
+    { accountId: "new", firstName: "Youth", lastName: "Member", status: "active" },
+    { accountId: "inactive", firstName: "Inactive", lastName: "Member", status: "removed" },
+  ] } }));
+  await page.route(`**/api/v1/events/${event.id}/coordinators`, (route) => route.request().method() === "PUT"
+    ? route.fulfill({ status: 403, json: { error: { code: "forbidden", message: "This member is no longer eligible.", fields: {} } } })
+    : route.fulfill({ json: { data: [] } }));
+  await page.goto("/#/admin/events");
+  await page.getByRole("button", { name: "Coordinators", exact: true }).click();
+  const started = page.waitForRequest(`**/api/v1/groups/${choir}/members`);
+  await page.getByLabel("Coordinator group").selectOption(choir);
+  await started;
+  await page.getByLabel("Coordinator group").selectOption(youth);
+  await expect(page.getByLabel("Event coordinator").getByRole("option", { name: "Youth Member" })).toHaveCount(1);
+  const oldResponse = page.waitForResponse(`**/api/v1/groups/${choir}/members`);
+  release();
+  await oldResponse;
+  await expect(page.getByLabel("Event coordinator").getByRole("option", { name: "Old Member" })).toHaveCount(0);
+  await expect(page.getByLabel("Event coordinator").getByRole("option", { name: "Inactive Member" })).toHaveCount(0);
+  await page.getByLabel("Event coordinator").selectOption("new");
+  await page.getByRole("button", { name: "Assign coordinator", exact: true }).click();
+  await expect(page.getByRole("dialog").getByRole("alert")).toContainText("no longer eligible");
+  await expect(page.getByRole("button", { name: "Assign coordinator", exact: true })).toBeEnabled();
 });

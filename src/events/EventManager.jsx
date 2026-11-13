@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useToast } from "@/components/Toast";
 import {
   assignEventCoordinator,
@@ -10,10 +10,35 @@ import {
   updateEvent,
 } from "@/events/api";
 import { instantToLocalDateTime, localDateTimeToInstant } from "@/events/date";
-import { listGroupMembers, listGroups } from "@/groups/api";
+import { listGroups } from "@/groups/api";
 import { UK_TIME_ZONE } from "../../js/time.js";
+import { EventCoordinatorsDialog } from "./EventCoordinatorsDialog";
+import { EventDialog } from "./EventDialog";
 
 const eventTimeZone = UK_TIME_ZONE;
+function EventIcon({ name }) {
+  return <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={name === "edit" ? "M16 4l4 4M4 20l4-1 12-12-4-4L4 15z" : "M9 12a3.5 3.5 0 100-7 3.5 3.5 0 000 7zM2.5 20c0-3.5 3-5.5 6.5-5.5s6.5 2 6.5 5.5M16.5 5.2a3.5 3.5 0 010 6.6M21.5 20c0-2.5-1.4-4.2-3.4-5"} /></svg>;
+}
+function EventMenu({ item, busy, onCancel }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    function dismiss(event) {
+      if (event.type === "keydown" && event.key !== "Escape") return;
+      if (event.type === "keydown" || !ref.current?.contains(event.target)) {
+        if (event.type === "keydown" && ref.current?.open) ref.current.querySelector("summary").focus();
+        ref.current?.removeAttribute("open");
+      }
+    }
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", dismiss);
+    return () => { document.removeEventListener("pointerdown", dismiss); document.removeEventListener("keydown", dismiss); };
+  }, []);
+  return <details ref={ref} className="event-more">
+    <summary aria-label={`More actions for ${item.title}`}>⋯</summary>
+    <div className="event-more-menu"><button type="button" disabled={busy} onClick={() => { ref.current.removeAttribute("open"); onCancel(item); }}>Cancel event</button></div>
+  </details>;
+}
+const eventDate = (value, options) => new Intl.DateTimeFormat("en-GB", { timeZone: eventTimeZone, ...options }).format(new Date(value));
 const canManageEvents = (access, groupId = "") =>
   (access?.capabilities || []).some(
     (item) =>
@@ -37,10 +62,19 @@ export function EventManager({ profile, groupId = "" }) {
   const [capacity, setCapacity] = useState("");
   const [editing, setEditing] = useState(null);
   const [groups, setGroups] = useState([]);
-  const [members, setMembers] = useState([]);
   const [coordinators, setCoordinators] = useState({});
-  const [coordinatorGroup, setCoordinatorGroup] = useState("");
-  const [coordinatorAccount, setCoordinatorAccount] = useState("");
+  const [coordinatorEvent, setCoordinatorEvent] = useState(null);
+  const [cancelEvent, setCancelEvent] = useState(null);
+  const [cancelError, setCancelError] = useState("");
+  const [search, setSearch] = useState("");
+  const [showForm, setShowForm] = useState(false);
+  const formRef = useRef(null);
+  useEffect(() => {
+    if (showForm) {
+      formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      formRef.current?.querySelector("input")?.focus({ preventScroll: true });
+    }
+  }, [showForm, editing]);
 
   async function load() {
     if (!profile) {
@@ -97,30 +131,14 @@ export function EventManager({ profile, groupId = "" }) {
     void load();
   }, [profile?.id, groupId]);
 
-  useEffect(() => {
-    setMembers([]);
-    setCoordinatorAccount("");
-    if (coordinatorGroup)
-      void listGroupMembers(coordinatorGroup)
-        .then(setMembers)
-        .catch((e) => setError(e.message));
-  }, [coordinatorGroup]);
-
-  async function assign(item) {
+  async function assign(item, coordinatorGroup, coordinatorAccount) {
     if (!coordinatorGroup || !coordinatorAccount) return;
     setBusy(true);
-    setError("");
     try {
-      await assignEventCoordinator(
-        item.id,
-        coordinatorGroup,
-        coordinatorAccount,
-      );
+      await assignEventCoordinator(item.id, coordinatorGroup, coordinatorAccount);
       const updated = await listEventCoordinators(item.id);
       setCoordinators((current) => ({ ...current, [item.id]: updated }));
       toast("Event coordinator assigned");
-    } catch (e) {
-      setError(e.message);
     } finally {
       setBusy(false);
     }
@@ -128,7 +146,6 @@ export function EventManager({ profile, groupId = "" }) {
 
   async function removeCoordinator(item, coordinator) {
     setBusy(true);
-    setError("");
     try {
       await removeEventCoordinator(item.id, coordinator.accountId);
       setCoordinators((current) => ({
@@ -138,8 +155,6 @@ export function EventManager({ profile, groupId = "" }) {
         ),
       }));
       toast("Event coordinator removed");
-    } catch (e) {
-      setError(e.message);
     } finally {
       setBusy(false);
     }
@@ -173,6 +188,7 @@ export function EventManager({ profile, groupId = "" }) {
       setStartsAt("");
       setCapacity("");
       setEditing(null);
+      setShowForm(false);
       toast(editing ? "Event details updated" : "Event draft created");
       await load();
     } catch (e) {
@@ -183,6 +199,7 @@ export function EventManager({ profile, groupId = "" }) {
   }
 
   function edit(item) {
+    setShowForm(true);
     setEditing(item);
     setTitle(item.title);
     setDescription(item.description);
@@ -192,6 +209,7 @@ export function EventManager({ profile, groupId = "" }) {
   }
 
   function clearForm() {
+    setShowForm(false);
     setEditing(null);
     setTitle("");
     setDescription("");
@@ -215,9 +233,11 @@ export function EventManager({ profile, groupId = "" }) {
         version: item.version,
       });
       toast(status === "published" ? "Event published" : "Event cancelled");
+      setCancelEvent(null);
       await load();
     } catch (e) {
-      setError(e.message);
+      if (status === "cancelled") setCancelError(e.message);
+      else setError(e.message);
     } finally {
       setBusy(false);
     }
@@ -229,17 +249,22 @@ export function EventManager({ profile, groupId = "" }) {
     ) : null;
   }
 
+  const visibleItems = items.filter((item) =>
+    item.title.toLowerCase().includes(search.toLowerCase()),
+  );
+
   return (
     <section className="event-manager" aria-label="Event management">
-      <div className="sh">
-        <h2>{groupId ? "Manage group events" : "Manage church events"}</h2>
+      <div className="event-management-heading">
+        <div><span className="event-eyebrow">ADMINISTRATION / EVENTS</span><h2>{groupId ? "Manage group events" : "Manage church events"}</h2><p>Plan gatherings. Bring people together.</p></div>
+        <button type="button" className="event-control event-control-gold" disabled={busy} onClick={() => { clearForm(); setShowForm(true); }}>+ New event</button>
       </div>
       {error && (
         <p className="event-error" role="alert">
           {error}
         </p>
       )}
-      <form className="event-form" aria-label="Create event" onSubmit={submit}>
+      {showForm && <form ref={formRef} className="event-form" aria-label={editing ? "Edit event" : "Create event"} onSubmit={submit}>
         <h3>{editing ? `Edit ${editing.title}` : "Create an event draft"}</h3>
         <label className="auth-field">
           Title
@@ -291,142 +316,51 @@ export function EventManager({ profile, groupId = "" }) {
         <button className="btn gold" disabled={busy}>
           {editing ? "Save changes" : "Create draft"}
         </button>
-        {editing && (
-          <button
+        <button
             type="button"
             className="btn soft"
             disabled={busy}
             onClick={clearForm}
           >
-            Stop editing
-          </button>
-        )}
-      </form>
-      <div className="event-admin-list" aria-label="Managed events">
-        {items.length === 0 ? (
-          <p className="lead">No events to manage yet.</p>
-        ) : (
-          items.map((item) => (
-            <article className="event-admin-row" key={item.id}>
-              <div>
-                <h3>{item.title}</h3>
-                <p>
-                  {item.status} · {item.attendeeCount} reserved
-                </p>
-              </div>
-              {item.status !== "cancelled" && (
-                <button
-                  className="btn soft"
-                  disabled={busy}
-                  onClick={() => edit(item)}
-                >
-                  Edit
-                </button>
-              )}
-              {item.status === "draft" && (
-                <button
-                  className="btn blue"
-                  disabled={busy}
-                  onClick={() => transition(item, "published")}
-                >
-                  Publish event
-                </button>
-              )}
-              {item.status === "published" && (
-                <button
-                  className="btn soft"
-                  disabled={busy}
-                  onClick={() => transition(item, "cancelled")}
-                >
-                  Cancel event
-                </button>
-              )}
-              <div
-                className="event-coordinators"
-                aria-label={`${item.title} coordinators`}
-              >
-                {(coordinators[item.id] || []).map((coordinator) => (
-                  <div
-                    key={coordinator.accountId}
-                    className="event-coordinator"
-                  >
-                    <span>
-                      {coordinator.firstName} {coordinator.lastName} ·{" "}
-                      {coordinator.groupName}
-                    </span>
-                    <button
-                      className="btn soft"
-                      aria-label={`Remove ${coordinator.firstName} ${coordinator.lastName}`}
-                      disabled={busy}
-                      onClick={() => removeCoordinator(item, coordinator)}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))}
-                {item.status === "published" && (
-                  <div className="event-coordinator-form">
-                    <label className="auth-field">
-                      Coordinator group
-                      <select
-                        aria-label="Coordinator group"
-                        value={coordinatorGroup}
-                        onChange={(e) => setCoordinatorGroup(e.target.value)}
-                      >
-                        <option value="">Choose a church group</option>
-                        {groups.map((group) => (
-                          <option key={group.id} value={group.id}>
-                            {group.name}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                    {coordinatorGroup && (
-                      <label className="auth-field">
-                        Event coordinator
-                        <select
-                          aria-label="Event coordinator"
-                          value={coordinatorAccount}
-                          onChange={(e) =>
-                            setCoordinatorAccount(e.target.value)
-                          }
-                        >
-                          <option value="">
-                            Choose an active group member
-                          </option>
-                          {members
-                            .filter(
-                              (member) =>
-                                member.status === undefined ||
-                                member.status === "active",
-                            )
-                            .map((member) => (
-                              <option
-                                key={member.accountId}
-                                value={member.accountId}
-                              >
-                                {member.firstName} {member.lastName}
-                              </option>
-                            ))}
-                        </select>
-                      </label>
-                    )}
-                    <button
-                      className="btn soft"
-                      disabled={
-                        busy || !coordinatorGroup || !coordinatorAccount
-                      }
-                      onClick={() => assign(item)}
-                    >
-                      Assign coordinator
-                    </button>
-                  </div>
-                )}
-              </div>
-            </article>
-          ))
-        )}
+            {editing ? "Stop editing" : "Close form"}
+        </button>
+      </form>}
+      <div className="event-list-toolbar">
+        <input type="search" aria-label="Search managed events" placeholder="Search your events…" value={search} onChange={(event) => setSearch(event.target.value)} />
+        <span>{visibleItems.length} {visibleItems.length === 1 ? "event" : "events"}</span>
       </div>
+      <div className="event-admin-list" aria-label="Managed events">
+        {items.length === 0 ? <p className="lead">No events to manage yet.</p> :
+          !visibleItems.length ? <p className="event-help">No matching events.</p> :
+          visibleItems.map((item) => {
+            const assigned = coordinators[item.id] || [];
+            const first = assigned[0];
+            return <article className="event-admin-row" key={item.id} aria-label={item.title}>
+              <div className="event-date-tile" aria-hidden="true"><small>{eventDate(item.startsAt, { month: "short" })}</small><strong>{eventDate(item.startsAt, { day: "numeric" })}</strong></div>
+              <div className="event-admin-copy">
+                <div className="event-admin-title"><h3>{item.title}</h3><span className={`event-status event-status-${item.status}`}>{item.status}</span></div>
+                <p><time dateTime={item.startsAt}>{eventDate(item.startsAt, { weekday: "short", day: "numeric", month: "short", hour: "numeric", minute: "2-digit" })}</time> · {item.attendeeCount} reserved</p>
+              </div>
+              <div className="event-coordinator-summary" aria-label={`${item.title} coordinators`}>
+                {first ? <><span className="event-person-avatar" aria-hidden="true">{first.firstName?.[0]}{first.lastName?.[0]}</span><div><strong>{first.firstName} {first.lastName}{assigned.length > 1 ? ` +${assigned.length - 1}` : ""}</strong><small>{first.groupName}</small></div></> : <span>No coordinator assigned</span>}
+              </div>
+              <div className="event-admin-actions">
+                {item.status !== "cancelled" && <button type="button" className="event-control" disabled={busy} onClick={() => edit(item)}><EventIcon name="edit" />Edit</button>}
+                {item.status === "draft" && <button type="button" className="event-control event-control-gold" disabled={busy} onClick={() => transition(item, "published")}>Publish event</button>}
+                {item.status === "published" && <>
+                  <button type="button" className="event-control" disabled={busy} onClick={() => setCoordinatorEvent(item)}><EventIcon name="users" />Coordinators{assigned.length ? ` · ${assigned.length}` : ""}</button>
+                  <EventMenu item={item} busy={busy} onCancel={(event) => { setCancelError(""); setCancelEvent(event); }} />
+                </>}
+              </div>
+            </article>;
+          })}
+      </div>
+      {coordinatorEvent && <EventCoordinatorsDialog key={coordinatorEvent.id} item={coordinatorEvent} groups={groups} coordinators={coordinators[coordinatorEvent.id] || []} busy={busy} onAssign={assign} onRemove={removeCoordinator} onClose={() => setCoordinatorEvent(null)} />}
+      {cancelEvent && <EventDialog title="Cancel event?" subtitle={cancelEvent.title} busy={busy} onClose={() => setCancelEvent(null)}>
+        <p className="event-help">This event will be removed from upcoming events and will no longer accept reservations.</p>
+        {cancelError && <p className="event-error" role="alert">{cancelError}</p>}
+        <footer className="event-dialog-actions"><button type="button" className="event-control" disabled={busy} onClick={() => setCancelEvent(null)}>Keep event</button><button type="button" className="event-control event-control-danger" disabled={busy} onClick={() => transition(cancelEvent, "cancelled")}>Cancel event</button></footer>
+      </EventDialog>}
     </section>
   );
 }
