@@ -375,3 +375,23 @@ Published replacement atomically demotes the prior live entry to replay. Unpubli
 hides the record and falls back to the previous latest publication. Plain-text
 metadata and validated canonical video URLs are used, never arbitrary iframe HTML.
 Private admin records are not persisted in browser storage or service-worker caches.
+
+Home community highlights reuse the Community post controls with a three-post
+read limit. Amen, comments and their existing author/report controls use the same
+API and counters; View all opens the full feed. The main create sheet refreshes
+Home after a new post. Reaction failures roll back the count and clear on the
+next attempt without requiring a page refresh.
+
+Live archive cards load `https://i.ytimg.com/vi/<validated-video-id>/hqdefault.jpg`
+before selection. The root image CSP explicitly allows this single YouTube image
+host. Thumbnails require no Data API key, backend metadata fetch or migration;
+missing images retain a clickable play fallback. Only the selected broadcast
+loads a YouTube player.
+
+The React sermon editorial list exposes Unpublish for published/scheduled entries,
+using a confirmed versioned PATCH to draft. Failures leave the entry visible;
+409 disables another write until Reload sermons fetches its latest version.
+Direct-message Edit/Cut/Delete controls expire at the strict ten-minute boundary,
+including an already-open menu. The handlers recheck the deadline before writing.
+Group-message Delete/Cut is shown only for an explicit canModerate=true; ordinary
+senders retain Copy/Reply/Pin. Backend permissions and deletion windows are unchanged.

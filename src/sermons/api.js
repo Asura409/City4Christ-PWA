@@ -46,3 +46,9 @@ export async function saveSermonNote(id, body) {
 export async function deleteSermonNote(id) {
   await api.request(`/api/v1/me/sermons/${encodeURIComponent(id)}/notes`, { method: "DELETE" });
 }
+
+export async function unpublishSermon(id, version) {
+  return (await api.request(`/api/v1/admin/sermons/${encodeURIComponent(id)}`, {
+    method: "PATCH", body: { version, status: "draft" },
+  })).data;
+}

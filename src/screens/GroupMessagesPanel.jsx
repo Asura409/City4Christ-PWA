@@ -204,13 +204,14 @@ export default function GroupMessagesPanel() {
   }
 
   async function removeMessage(message) {
-    if (!selected || message.deleted) return;
+    if (!selected || message.deleted || selected.canModerate !== true) return;
+    if (!window.confirm("Remove this message for everyone in the group?")) return;
     setThreadError("");
     try {
       await deleteGroupMessage(selected.groupId, message.id);
-      setMessages((current) => current.map((item) => item.id === message.id ? { ...item, body: "", deleted: true } : item));
+      setMessages((current) => current.map((item) => item.id === message.id ? { ...item, body: "", attachments: [], attachmentCount: 0, deleted: true } : item));
       setGroups((current) => current.map((group) => group.groupId === selected.groupId && group.lastMessage?.id === message.id
-        ? { ...group, lastMessage: { ...group.lastMessage, body: "", deleted: true } }
+        ? { ...group, lastMessage: { ...group.lastMessage, body: "", attachments: [], attachmentCount: 0, deleted: true } }
         : group));
     } catch (err) {
       setThreadError(err.message || "Message could not be removed.");
@@ -218,7 +219,7 @@ export default function GroupMessagesPanel() {
   }
 
   async function cutOwnMessage(message) {
-    if (!await copyMessageText(message)) return;
+    if (selected?.canModerate !== true || !await copyMessageText(message)) return;
     await removeMessage(message);
   }
 
@@ -259,7 +260,7 @@ export default function GroupMessagesPanel() {
           <div className="message-history" aria-live="polite">
             {messages.length === 0 && !threadLoading && !threadError && <p className="messages-empty thread-empty">Start the group conversation.</p>}
             {messages.map((message, index) => { const sent = message.senderId === profile?.id; const { first, last } = messageGroupPosition(messages, index); const author = [message.senderFirstName, message.senderLastName].filter(Boolean).join(" ") || "Group member"; return <div key={message.id} className={`message-row ${sent ? "sent" : "received"} ${first ? "group-start" : "group-continued"} ${last ? "group-end" : "group-middle"}`}>
-              <MessageActionsMenu message={message} own={sent} canDelete={selected.canModerate || sent} pinned={pinnedMessageIds.has(message.id)} className={first ? "group-start" : "group-continued"} onDelete={() => removeMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}><article className={`message-bubble${sent ? " sent" : " received"}${message.deleted ? " removed" : ""}`}>
+              <MessageActionsMenu message={message} own={sent} canDelete={selected.canModerate === true} pinned={pinnedMessageIds.has(message.id)} className={first ? "group-start" : "group-continued"} onDelete={() => removeMessage(message)} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}><article className={`message-bubble${sent ? " sent" : " received"}${message.deleted ? " removed" : ""}`}>
               {!sent && (first || (message.senderAvatar?.url && !messages[index - 1]?.senderAvatar?.url)) && <div className="group-message-author"><Avatar name={author} src={message.senderAvatar?.url} size={24} /><span>{author}</span></div>}
               {message.deleted ? <p>This message was removed by a group moderator.</p> : <>{message.body && <p className="message-text">{message.body}</p>}<MessageAttachments items={message.attachments} /></>}
               <span className="message-meta"><time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time></span>

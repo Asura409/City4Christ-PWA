@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { youtubeWatchUrl } from "../src/media/youtube.js";
+import { youtubeWatchUrl, youtubeThumbnailUrl } from "../src/media/youtube.js";
 
 test("pasted YouTube video and broadcast links normalize to a safe watch URL", () => {
   const id = "M7lc1UVf-VE";
@@ -19,4 +19,10 @@ test("pasted YouTube video and broadcast links normalize to a safe watch URL", (
     `https://youtu.be/${id}/extra`,
     "https://youtube.com/@church/live", "javascript:alert(1)", "", null,
   ]) assert.equal(youtubeWatchUrl(link), "", String(link));
+});
+
+
+test("YouTube thumbnails use only a validated video ID and the fixed image host", () => {
+  assert.equal(youtubeThumbnailUrl("https://youtu.be/M7lc1UVf-VE"), "https://i.ytimg.com/vi/M7lc1UVf-VE/hqdefault.jpg");
+  for (const value of ["https://evil.test/image.jpg", "https://youtube.com.evil.test/watch?v=M7lc1UVf-VE", "javascript:alert(1)", null]) assert.equal(youtubeThumbnailUrl(value), "");
 });

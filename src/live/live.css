@@ -50,3 +50,8 @@
 .broadcast-featured-admin { border-bottom:1px solid var(--line); padding-bottom:20px; margin-bottom:20px; }
 .broadcast-featured-admin .broadcast-video { margin:12px 0; }
 .broadcast-status-field { display:grid; gap:7px; }
+
+.broadcast-thumb { position:relative; overflow:hidden; }
+.broadcast-thumb img { position:absolute; inset:0; display:block; width:100%; height:100%; object-fit:cover; }
+.broadcast-thumb-play { position:relative; z-index:1; display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:rgba(22,12,30,.65); color:#fff; font-size:10px; }
+.broadcast-archive-grid .broadcast-thumb-play { width:40px; height:40px; font-size:14px; }

@@ -1,6 +1,6 @@
-import React from "react";
+import React, { useState } from "react";
 import { youtubeEmbedUrl } from "../lib/sanitize";
-import { youtubeWatchUrl } from "../media/youtube";
+import { youtubeThumbnailUrl, youtubeWatchUrl } from "../media/youtube";
 export function BroadcastVideo({ entry }) {
   const watch = youtubeWatchUrl(entry.videoUrl);
   return watch ? <div className="broadcast-video"><iframe key={`${entry.id || "preview"}:${watch}`} title={`${entry.title || "Broadcast"} video`} src={`${youtubeEmbedUrl(watch)}?playsinline=1`} referrerPolicy="strict-origin-when-cross-origin" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowFullScreen /></div> : <p role="alert">This video link is unavailable.</p>;
@@ -12,4 +12,13 @@ export function BroadcastStatus({ entry }) {
 export function BroadcastDate({ value }) {
   if (!value || !Number.isFinite(Date.parse(value))) return null;
   return <time dateTime={value}>{new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/London", dateStyle: "long", timeStyle: "short" }).format(new Date(value))} (UK)</time>;
+}
+
+export function BroadcastThumbnail({ entry }) {
+  const src = youtubeThumbnailUrl(entry.videoUrl);
+  const [failedSrc, setFailedSrc] = useState("");
+  return <span className="broadcast-thumb" aria-hidden="true">
+    {src && failedSrc !== src && <img src={src} alt="" loading="lazy" decoding="async" referrerPolicy="no-referrer" onError={() => setFailedSrc(src)} />}
+    <span className="broadcast-thumb-play">▶</span>
+  </span>;
 }

@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useContentList, ContentListState } from "../content/useContentList";
 import { publicRoot, readBroadcast } from "../live/api";
-import { BroadcastVideo, BroadcastStatus, BroadcastDate } from "../live/BroadcastVideo";
+import { BroadcastVideo, BroadcastStatus, BroadcastDate, BroadcastThumbnail } from "../live/BroadcastVideo";
 import { useBroadcastAccess } from "../live/useBroadcastAccess";
 import { youtubeWatchUrl } from "../media/youtube";
 import "../live/live.css";
@@ -23,7 +23,7 @@ export default function LiveScreen() {
   function refresh() { setSelectedId(""); setDetail(null); setRevision((value) => value + 1); }
   function open(id) { setDetail(null); setSelectedId(id); setTab("latest"); }
   function archiveRow(entry) {
-    return <button className="broadcast-archive-item" key={entry.id} onClick={() => open(entry.id)}><span className="broadcast-thumb" aria-hidden="true">▶</span><span><small><BroadcastDate value={entry.serviceAt} /></small><strong>{entry.title}</strong><BroadcastStatus entry={entry} /></span><span aria-hidden="true">→</span></button>;
+    return <button className="broadcast-archive-item" key={entry.id} onClick={() => open(entry.id)}><BroadcastThumbnail entry={entry} /><span><small><BroadcastDate value={entry.serviceAt} /></small><strong>{entry.title}</strong><BroadcastStatus entry={entry} /></span><span aria-hidden="true">→</span></button>;
   }
   return <section className="screen active broadcasts-screen" aria-label="Live and replays">
     <header className="broadcast-heading"><div><p className="broadcast-eyebrow">WORSHIP ONLINE</p><h1>Live & replays</h1><p>Worship with us, wherever you are.</p></div><div className="broadcast-actions"><RefreshButton className="btn soft" busy={state.busy} onClick={refresh} label="Refresh" />{access.allowed && <button className="btn soft" onClick={() => navigate("/admin/live")}>Manage broadcasts</button>}</div></header>

@@ -4,7 +4,7 @@ import { DailyVerseCard } from "@/dailyverse/DailyVerseCard";
 import { Icon } from "@/lib/icons";
 import { useSession } from "@/auth/session";
 import { HomeCommunityPreview } from "@/posts/HomeCommunityPreview";
-export default function HomeScreen() {
+export default function HomeScreen({ refreshKey = 0 }) {
   const { profile } = useSession(),
     navigate = useNavigate();
   return (
@@ -33,7 +33,7 @@ export default function HomeScreen() {
           </button>
         ))}
       </div>
-      <HomeCommunityPreview />
+      <HomeCommunityPreview refreshKey={refreshKey} />
     </section>
   );
 }

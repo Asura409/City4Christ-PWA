@@ -1,3 +1,5 @@
+import { canMutateDirectMessage } from "@/messages/mutationWindow";
+import { useDirectMessageClock } from "@/messages/useDirectMessageClock";
 import { UK_TIME_ZONE } from "../../js/time.js";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Avatar } from "@/components/Avatar";
@@ -34,17 +36,13 @@ function timeLabel(value) {
   return Number.isNaN(date.getTime()) ? "" : new Intl.DateTimeFormat("en-GB", { timeZone: UK_TIME_ZONE, hour: "numeric", minute: "2-digit" }).format(date);
 }
 
-function canEditMessage(message) {
-  const created = Date.parse(message?.createdAt || "");
-  return Number.isFinite(created) && Date.now() - created <= 10 * 60 * 1000;
-}
-
 export default function MessagesScreen({ embedded = false }) {
   const { profile } = useSession();
   const [view, setView] = useState("direct");
   const [conversations, setConversations] = useState([]);
   const [selectedId, setSelectedId] = useState("");
   const [messages, setMessages] = useState([]);
+  const messageClock = useDirectMessageClock(messages);
   const [hasOlder, setHasOlder] = useState(false);
   const [loading, setLoading] = useState(true);
   const [conversationError, setConversationError] = useState("");
@@ -249,6 +247,7 @@ export default function MessagesScreen({ embedded = false }) {
 
   async function saveMessageEdit(message) {
     if (!selected || !editBody.trim()) return;
+    if (!canMutateDirectMessage(message)) { setThreadError("Messages can only be edited within 10 minutes of sending."); return; }
     try {
       const updated = await editMessage(selected.id, message.id, editBody);
       setMessages((current) => current.map((item) => item.id === updated.id ? updated : item));
@@ -262,7 +261,10 @@ export default function MessagesScreen({ embedded = false }) {
   }
 
   async function removeOwnMessage(message) {
-    if (!selected || !window.confirm("Delete this message for everyone in the conversation?")) return;
+    if (!selected || !canMutateDirectMessage(message)) { setThreadError("Messages can only be deleted within 10 minutes of sending."); return; }
+    if (!window.confirm("Delete this message for everyone in the conversation?")) return;
+    if (!canMutateDirectMessage(message)) { setThreadError("The 10-minute deletion window has ended."); return; }
+    setThreadError("");
     try {
       await deleteMessage(selected.id, message.id);
       const removed = { ...message, body: "", attachments: [], attachmentCount: 0, deleted: true };
@@ -276,7 +278,7 @@ export default function MessagesScreen({ embedded = false }) {
   }
 
   async function cutOwnMessage(message) {
-    if (!await copyMessageText(message)) return;
+    if (!canMutateDirectMessage(message) || !await copyMessageText(message)) return;
     await removeOwnMessage(message);
   }
 
@@ -373,7 +375,7 @@ export default function MessagesScreen({ embedded = false }) {
           <div className="message-history" aria-live="polite">
             {messages.length === 0 && !threadLoading && <p className="messages-empty thread-empty">Start the conversation with a message.</p>}
             {messages.map((message, index) => { const sent = message.senderId === profile?.id; const { first, last } = messageGroupPosition(messages, index); return <div key={message.id} className={`message-row ${sent ? "sent" : "received"} ${first ? "group-start" : "group-continued"} ${last ? "group-end" : "group-middle"}`}>
-              <MessageActionsMenu message={message} own={sent} canDelete={sent} canEdit={sent && canEditMessage(message)} pinned={pinnedMessageIds.has(message.id)} className={first ? "group-start" : "group-continued"} onDelete={() => removeOwnMessage(message)} onEdit={() => { setEditingMessageId(message.id); setEditBody(message.body || ""); }} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}>
+              <MessageActionsMenu message={message} own={sent} canDelete={sent && canMutateDirectMessage(message, messageClock)} canEdit={sent && canMutateDirectMessage(message, messageClock)} pinned={pinnedMessageIds.has(message.id)} className={first ? "group-start" : "group-continued"} onDelete={() => removeOwnMessage(message)} onEdit={() => { setEditingMessageId(message.id); setEditBody(message.body || ""); }} onReply={() => setReplyingTo(message)} onPin={() => togglePinned(message)} onCut={() => cutOwnMessage(message)}>
               <article className={`message-bubble${sent ? " sent" : " received"}${message.deleted ? " removed" : ""}`}>
               {message.deleted ? <p>This message was deleted.</p> : editingMessageId === message.id ? <form className="message-edit-form" onSubmit={(event) => { event.preventDefault(); void saveMessageEdit(message); }}><label className="sr-only" htmlFor={`edit-${message.id}`}>Edit message</label><textarea id={`edit-${message.id}`} value={editBody} onChange={(event) => setEditBody(event.target.value)} /><div><button className="btn soft" type="button" onClick={() => setEditingMessageId("")}>Cancel</button><button className="btn dark" type="submit" disabled={!editBody.trim()}>Save edit</button></div></form> : <>{message.body && <p className="message-text">{message.body}</p>}<MessageAttachments items={message.attachments} />{message.editedAt && <span className="message-edited-label">Edited</span>}</>}
               <span className="message-meta"><time dateTime={message.createdAt}>{timeLabel(message.createdAt)}</time>{message.id === latestSeenOutgoingId && <span className="message-read-receipt">Seen</span>}</span>

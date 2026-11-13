@@ -45,7 +45,7 @@ test("React release permits only the configured private media origin in CSP", as
     await buildSite({ apiURL: "https://api.example", mediaOrigin: "https://0123456789abcdef0123456789abcdef.r2.cloudflarestorage.com", outDir: out });
     const html = await readFile(join(out, "index.html"), "utf8");
     assert.match(html, /connect-src 'self' https:\/\/api\.example https:\/\/0123456789abcdef0123456789abcdef\.r2\.cloudflarestorage\.com/);
-    assert.match(html, /img-src 'self' data: blob: https:\/\/images\.unsplash\.com https:\/\/0123456789abcdef0123456789abcdef\.r2\.cloudflarestorage\.com/);
+    assert.match(html, /img-src 'self' data: blob: https:\/\/images\.unsplash\.com https:\/\/i\.ytimg\.com https:\/\/0123456789abcdef0123456789abcdef\.r2\.cloudflarestorage\.com/);
     assert.match(html, /media-src 'self' blob: https:\/\/0123456789abcdef0123456789abcdef\.r2\.cloudflarestorage\.com/);
   } finally {
     await rm(out, { recursive: true, force: true });

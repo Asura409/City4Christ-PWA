@@ -1529,3 +1529,13 @@
 @media (min-width: 1024px) {
   .app:has(.topbar) > .screens { height: calc(100dvh - 80px - env(safe-area-inset-top, 0px)); max-height: calc(100dvh - 80px - env(safe-area-inset-top, 0px)); }
 }
+
+.home-posts-feed { min-width:0; width:100%; }
+.home-posts-feed .community-post { min-width:0; }
+.home-posts-feed .community-post .body { overflow-wrap:anywhere; }
+
+.editorial-sermon-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.editorial-sermon-item .sermon-unpublish { height:36px; min-height:36px; padding:0 12px; font-size:12px; border-radius:10px; flex:none; }
+.editorial-sermon-error { color:#b42318; }
+.editorial-sermon-item { grid-template-columns:minmax(0,1fr) auto auto auto; }
+@media(max-width:650px) { .editorial-sermon-item { grid-template-columns:auto minmax(0,1fr) auto; } .editorial-sermon-item>div { grid-column:1 / -1; min-width:0; } .editorial-sermon-item small { grid-column:auto; } }

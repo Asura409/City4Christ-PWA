@@ -33,6 +33,8 @@ function dateLabel(value) {
 
 export default function PostsScreen({
   refreshKey = 0,
+  embedded = false,
+  pageSize = 20,
   groupId = "",
   onAccessChange,
   composer = null,
@@ -44,6 +46,7 @@ export default function PostsScreen({
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [reactionBusy, setReactionBusy] = useState({});
+  const [reactionErrors, setReactionErrors] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
   const [comments, setComments] = useState({});
   const [commentCursors, setCommentCursors] = useState({});
@@ -74,8 +77,9 @@ export default function PostsScreen({
         setError("");
         if (next) setLoadingMore(true);
         else setLoading(true);
-        const page = await listPosts({ cursor: next, signal, groupId });
+        const page = await listPosts({ cursor: next, signal, groupId, limit: pageSize });
         onAccessChange?.(true);
+        setReactionErrors({});
         setPosts((current) =>
           next ? [...current, ...page.posts] : page.posts,
         );
@@ -92,11 +96,12 @@ export default function PostsScreen({
         setLoadingMore(false);
       }
     },
-    [groupId, onAccessChange],
+    [groupId, onAccessChange, pageSize],
   );
 
   const toggleAmen = async (post) => {
     if (reactionBusy[post.id]) return;
+    setReactionErrors((current) => ({ ...current, [post.id]: "" }));
     const nextReacted = !post.reacted;
     setReactionBusy((current) => ({ ...current, [post.id]: true }));
     setPosts((current) =>
@@ -129,7 +134,7 @@ export default function PostsScreen({
             : item,
         ),
       );
-      setError(err.message || "Could not update your Amen reaction.");
+      setReactionErrors((current) => ({ ...current, [post.id]: err.message || "Could not update your Amen reaction." }));
     } finally {
       setReactionBusy((current) => ({ ...current, [post.id]: false }));
     }
@@ -416,6 +421,7 @@ export default function PostsScreen({
   }, [load, refreshKey]);
 
   useEffect(() => {
+    if (embedded) { setModerationAllowed(false); return; }
     let current = true;
     getCommunityModerationAccess()
       .then((access) => {
@@ -434,20 +440,20 @@ export default function PostsScreen({
     return () => {
       current = false;
     };
-  }, [groupId, onAccessChange]);
+  }, [groupId, onAccessChange, embedded]);
 
   return (
     <section
-      className="screen active posts-screen"
-      aria-label="Church community"
+      className={embedded ? "home-posts-feed" : "screen active posts-screen"}
+      aria-label={embedded ? "Home community posts" : "Church community"}
     >
-      <div className="posts-heading">
+      {!embedded && <div className="posts-heading">
         <div>
           <p className="group-eyebrow">CITY4CHRIST COMMUNITY</p>
           <h1>{groupId ? "Group community" : "Church community"}</h1>
         </div>
         <p className="lead">Share encouragement and updates with the church.</p>
-      </div>
+      </div>}
       <TimedMessage message={reportNotice} />
       {error && (
         <div className="posts-error" role="alert">
@@ -457,7 +463,7 @@ export default function PostsScreen({
           </button>
         </div>
       )}
-      {moderationAllowed && (
+      {!embedded && moderationAllowed && (
         <section
           className="community-moderation"
           aria-label="Community moderation"
@@ -732,6 +738,7 @@ export default function PostsScreen({
                   })}
                 </div>
               )}
+              {reactionErrors[post.id] && <p className="post-comment-error" role="alert">{reactionErrors[post.id]}</p>}
               <div className="post-actions">
                 <button
                   className={`post-icon-btn${post.reacted ? " is-active" : ""}`}
@@ -868,7 +875,7 @@ export default function PostsScreen({
           );
         })}
       </div>
-      {!loading && cursor && (
+      {!embedded && !loading && cursor && (
         <button
           className="btn soft posts-more"
           disabled={loadingMore}

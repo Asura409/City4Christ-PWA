@@ -40,7 +40,13 @@ async function fill(page) {
   await page.getByLabel("Description (optional)", { exact: true }).fill("Come worship with us.");
 }
 test("viewer opens latest and archive without management controls", async ({ page }) => {
-  await fixture(page); await page.goto("/#/live");
+  await fixture(page);
+  await page.route("https://i.ytimg.com/**", route => route.fulfill({ contentType:"image/png", body:Buffer.from("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aZ1cAAAAASUVORK5CYII=", "base64") }));
+  await page.goto("/#/live");
+  const thumbnail = page.locator(".broadcast-list .broadcast-thumb img");
+  await expect(thumbnail).toHaveAttribute("src", "https://i.ytimg.com/vi/M7lc1UVf-VE/hqdefault.jpg");
+  await expect.poll(() => thumbnail.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+  await expect(page.locator("iframe")).toHaveCount(1);
   await expect(page.getByRole("heading", { name: "Latest worship", exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Manage broadcasts", exact: true })).toHaveCount(0);
   await expect(page.locator("iframe")).toHaveAttribute("src", "https://www.youtube-nocookie.com/embed/M7lc1UVf-VE?playsinline=1");
@@ -98,4 +104,17 @@ test("ordinary member cannot open the management screen", async ({ page }) => {
   await expect(page.getByRole("alert")).toContainText("Content editor access");
   await expect(page.getByLabel("YouTube link", { exact: true })).toHaveCount(0);
   expect(calls.some((c) => c.admin)).toBe(false);
+});
+
+
+test("missing YouTube thumbnail keeps the archive usable with a play fallback", async ({ page }) => {
+  await fixture(page);
+  await page.route("https://i.ytimg.com/**", route => route.fulfill({status:404,body:"Not found"}));
+  await page.goto("/#/live");
+  const row = page.locator(".broadcast-list .broadcast-archive-item");
+  await expect(row).toContainText("Earlier worship");
+  await expect(row.locator("img")).toHaveCount(0);
+  await expect(row.locator(".broadcast-thumb-play")).toBeVisible();
+  await row.click();
+  await expect(page.getByRole("heading", {name:"Earlier worship",exact:true})).toBeVisible();
 });

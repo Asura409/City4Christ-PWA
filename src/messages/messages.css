@@ -153,3 +153,7 @@
   .community-chat-screen > .messages-workspace { width: calc(100% + 32px); margin-inline: -16px; }
   .community-chat-screen .messages-list-panel { border-right: 0; }
 }
+
+/* Render message menus above scrolling panels without clipping under headers. */
+.message-actions-menu { max-width:calc(100vw - 16px); max-height:calc(100dvh - 16px); overflow-y:auto; }
+.message-actions-anchor:focus-visible { outline:2px solid var(--purple); outline-offset:3px; border-radius:12px; }

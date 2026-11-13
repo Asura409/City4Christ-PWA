@@ -176,13 +176,15 @@ test("senders can edit or delete their own messages inside the 10-minute window"
   await page.goto("/#/chat");
   await page.getByRole("button", { name: "Open conversation with Daniel James" }).click();
   const thread = page.getByRole("region", { name: "Conversation" });
-  await thread.getByRole("button", { name: "Edit message" }).click();
+  await thread.locator(".message-actions-anchor").filter({ hasText: "My recent message." }).dispatchEvent("contextmenu");
+  await page.getByRole("menuitem", { name: "Edit message", exact: true }).click();
   await thread.getByRole("textbox", { name: "Edit message" }).fill("Corrected message.");
   await thread.getByRole("button", { name: "Save edit" }).click();
   await expect(thread.getByText("Corrected message.")).toBeVisible();
   await expect(thread.getByText("Edited", { exact: true })).toBeVisible();
   expect(fixture.calls.some((call) => call.method === "PATCH" && call.path.endsWith("/12121212-1212-4212-8212-121212121212"))).toBe(true);
-  await thread.getByRole("button", { name: "Delete message" }).click();
+  await thread.locator(".message-actions-anchor").filter({ hasText: "Corrected message." }).dispatchEvent("contextmenu");
+  await page.getByRole("menuitem", { name: "Delete", exact: true }).click();
   await expect(thread.getByText("This message was deleted.")).toBeVisible();
   expect(fixture.calls.some((call) => call.method === "DELETE" && call.path.endsWith("/12121212-1212-4212-8212-121212121212"))).toBe(true);
 });
@@ -192,9 +194,12 @@ test("direct messages become immutable after 10 minutes", async ({ page }) => {
   await mockMessaging(page, { existing: true, ownMessage: true, ownMessageAge: 11 * 60 * 1000 });
   await page.goto("/#/chat");
   await page.getByRole("button", { name: "Open conversation with Daniel James" }).click();
-  const ownMessage = page.getByRole("region", { name: "Conversation" }).locator(".message-bubble.sent").filter({ hasText: "My recent message." });
-  await expect(ownMessage.getByRole("button", { name: "Edit message" })).toHaveCount(0);
-  await expect(ownMessage.getByRole("button", { name: "Delete message" })).toHaveCount(0);
+  const ownMessage = page.getByRole("region", { name: "Conversation" }).locator(".message-actions-anchor").filter({ hasText: "My recent message." });
+  await ownMessage.dispatchEvent("contextmenu");
+  await expect(page.getByRole("menu")).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Copy", exact: true })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Edit message", exact: true })).toHaveCount(0);
+  await expect(page.getByRole("menuitem", { name: "Delete", exact: true })).toHaveCount(0);
 });
 
 test("members can search messages inside their private conversation", async ({ page }) => {

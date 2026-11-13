@@ -18,3 +18,10 @@ export function youtubeWatchUrl(value) {
     return "";
   }
 }
+
+export function youtubeThumbnailUrl(value) {
+  const watch = youtubeWatchUrl(value);
+  if (!watch) return "";
+  const id = new URL(watch).searchParams.get("v");
+  return `https://i.ytimg.com/vi/${id}/hqdefault.jpg`;
+}

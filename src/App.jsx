@@ -178,7 +178,7 @@ export default function App() {
               path="/home"
               element={
                 <ProtectedRoute>
-                  <HomeScreen />
+                  <HomeScreen refreshKey={postsVersion} />
                 </ProtectedRoute>
               }
             />
