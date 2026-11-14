@@ -62,7 +62,7 @@ export function SermonComposer({ onPublished, onChanged }) {
     const allowed = selected.filter((file) => /^(image\/(jpeg|png|webp|gif)|audio\/(mpeg|mp4|wav|x-wav|ogg)|video\/(mp4|webm))$/.test(file.type));
     if (allowed.length !== selected.length) { setError("Choose JPG, PNG, WebP, GIF, MP3, WAV, OGG, MP4, or WebM files."); return; }
     if (allowed.length > 10) { setError("A sermon can include up to 10 files."); return; }
-    const oversized = allowed.find((file) => file.size > (file.type.startsWith("image/") ? 20 : file.type.startsWith("audio/") ? 50 : 100) * 1024 * 1024);
+    const oversized = allowed.find((file) => file.size > (file.type.startsWith("image/") ? 20 : file.type.startsWith("audio/") ? 400 : 100) * 1024 * 1024);
     if (oversized) { setError(`${oversized.name} is too large for this media type.`); return; }
     setError(""); setFiles(allowed);
   }

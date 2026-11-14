@@ -103,7 +103,7 @@ export function CreateSheet({
         (file.type.startsWith("image/")
           ? 20
           : file.type.startsWith("audio/")
-            ? 50
+            ? 400
             : 100) *
           1024 *
           1024,
